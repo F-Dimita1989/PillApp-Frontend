@@ -4,16 +4,18 @@ import { Image } from 'expo-image';
 import * as ImageManipulator from 'expo-image-manipulator';
 import Constants from 'expo-constants';
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Colors } from '@/constants/theme';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
@@ -42,6 +44,7 @@ const supabase =
         auth: { persistSession: false },
       })
     : null;
+const LAST_SCANNED_FARMACO_KEY = 'pillapp:lastScannedFarmaco';
 
 function extractAicCodes(text: string): string[] {
   const matches = [...text.matchAll(AIC_REGEX)];
@@ -68,6 +71,31 @@ function createAicCandidates(aic: string): string[] {
   const onlyDigits = aic.replace(/\D/g, '');
   const withoutLeadingZero = onlyDigits.replace(/^0+/, '');
   return [...new Set([onlyDigits, withoutLeadingZero].filter(Boolean))];
+}
+
+function mapFarmacoToDynamicForm(
+  data: Record<string, unknown>,
+  detectedAic: string
+): Record<string, string> {
+  const form: Record<string, string> = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      form[key] = '';
+      return;
+    }
+    if (typeof value === 'object') {
+      form[key] = JSON.stringify(value);
+      return;
+    }
+    form[key] = String(value);
+  });
+
+  if (!Object.keys(form).some((key) => /aic/i.test(key))) {
+    form.codice_aic = detectedAic;
+  }
+
+  return form;
 }
 
 function resolveFarmaciApiBase(): string {
@@ -128,15 +156,35 @@ async function callOcrSpace(base64: string, engine: '1' | '2'): Promise<string> 
 }
 
 export default function HomeScreen() {
+  const colors = Colors.light;
+  const ui = {
+    panelBorder: '#C7DFF2',
+    panelBg: '#F2FAFF',
+    mutedBorder: '#B8D4E8',
+    inputBg: '#FFFFFF',
+    placeholder: '#667085',
+    stepBg: '#EAF6FF',
+    stepText: '#1F2937',
+    stepActiveBorder: colors.tint,
+    stepActiveBg: '#DCE8FF',
+    buttonPrimary: '#2E7D32',
+    buttonSecondary: '#1565C0',
+    error: '#C62828',
+    infoBorder: '#B7D4E9',
+    infoBg: '#E8F1FF',
+    infoText: '#0F2A56',
+    buttonText: '#FFFFFF',
+  } as const;
   const farmaciApiBase = useMemo(resolveFarmaciApiBase, []);
   const hasSupabaseConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  const insets = useSafeAreaInsets();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [ocrText, setOcrText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [farmacoData, setFarmacoData] = useState<Record<string, unknown> | null>(null);
   const [farmacoError, setFarmacoError] = useState('');
   const [isFarmacoLoading, setIsFarmacoLoading] = useState(false);
-  const [farmacoSource, setFarmacoSource] = useState<'supabase' | 'backend' | null>(null);
+  const [farmacoForm, setFarmacoForm] = useState<Record<string, string>>({});
 
   const aicCodes = useMemo(() => extractAicCodes(ocrText), [ocrText]);
 
@@ -144,7 +192,7 @@ export default function HomeScreen() {
     setIsFarmacoLoading(true);
     setFarmacoError('');
     setFarmacoData(null);
-    setFarmacoSource(null);
+    setFarmacoForm({});
 
     try {
       const candidates = createAicCandidates(aic);
@@ -166,7 +214,15 @@ export default function HomeScreen() {
         }
         if (data) {
           setFarmacoData(data as Record<string, unknown>);
-          setFarmacoSource('supabase');
+          setFarmacoForm(mapFarmacoToDynamicForm(data as Record<string, unknown>, candidates[0]));
+          await AsyncStorage.setItem(
+            LAST_SCANNED_FARMACO_KEY,
+            JSON.stringify({
+              aic: candidates[0],
+              data: data as Record<string, unknown>,
+              scannedAt: new Date().toISOString(),
+            })
+          );
           return;
         }
       }
@@ -177,7 +233,15 @@ export default function HomeScreen() {
       }
       const backendData = (await response.json()) as Record<string, unknown>;
       setFarmacoData(backendData);
-      setFarmacoSource('backend');
+      setFarmacoForm(mapFarmacoToDynamicForm(backendData, candidates[0]));
+      await AsyncStorage.setItem(
+        LAST_SCANNED_FARMACO_KEY,
+        JSON.stringify({
+          aic: candidates[0],
+          data: backendData,
+          scannedAt: new Date().toISOString(),
+        })
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Errore sconosciuto durante il recupero farmaco.';
@@ -276,32 +340,94 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          {
+            paddingTop: 12,
+            paddingBottom: Math.max(insets.bottom + 16, 24),
+          },
+        ]}>
+        <ThemedView style={styles.stepperContainer}>
+          <ThemedView
+            style={[
+              styles.stepItem,
+              { borderColor: colors.icon, backgroundColor: ui.stepBg },
+              styles.stepItemActive,
+              { borderColor: ui.stepActiveBorder, backgroundColor: ui.stepActiveBg },
+            ]}>
+            <ThemedText style={[styles.stepText, { color: ui.buttonText }]}>1. Scansione</ThemedText>
+          </ThemedView>
+          <ThemedView
+            style={[
+              styles.stepItem,
+              { borderColor: colors.icon, backgroundColor: ui.stepBg },
+              aicCodes.length > 0 ? styles.stepItemActive : null,
+              aicCodes.length > 0 ? { borderColor: ui.stepActiveBorder, backgroundColor: ui.stepActiveBg } : null,
+            ]}>
+            <ThemedText style={[styles.stepText, { color: aicCodes.length > 0 ? ui.buttonText : ui.stepText }]}>
+              2. Verifica AIC
+            </ThemedText>
+          </ThemedView>
+          <ThemedView
+            style={[
+              styles.stepItem,
+              { borderColor: colors.icon, backgroundColor: ui.stepBg },
+              farmacoData ? styles.stepItemActive : null,
+              farmacoData ? { borderColor: ui.stepActiveBorder, backgroundColor: ui.stepActiveBg } : null,
+            ]}>
+            <ThemedText style={[styles.stepText, { color: farmacoData ? ui.buttonText : ui.stepText }]}>
+              3. Dati farmaco
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
+
         <ThemedText type="title">Demo OCR Farmaci</ThemedText>
         <ThemedText style={styles.subtitle}>
-          Scansiona una scatola e individua il codice AIC come dato principale.
+          Scansiona la confezione del farmaco e controlla i dati in modo semplice e guidato.
         </ThemedText>
 
         <ThemedView style={styles.buttonRow}>
-          <Pressable style={styles.primaryButton} onPress={() => pickImage('camera')}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Scatta una foto della confezione"
+            style={[styles.primaryButton, { backgroundColor: ui.buttonPrimary }]}
+            onPress={() => pickImage('camera')}>
             <ThemedText style={styles.buttonLabel}>Scatta foto</ThemedText>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => pickImage('gallery')}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Scegli una foto dalla galleria"
+            style={[styles.secondaryButton, { backgroundColor: ui.buttonSecondary }]}
+            onPress={() => pickImage('gallery')}>
             <ThemedText style={styles.buttonLabel}>Scegli da galleria</ThemedText>
           </Pressable>
         </ThemedView>
 
-        {imageUri ? <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" /> : null}
+        {imageUri ? (
+          <Image
+            source={{ uri: imageUri }}
+            style={[styles.preview, { borderColor: ui.mutedBorder }]}
+            contentFit="cover"
+          />
+        ) : null}
 
         {isLoading ? (
           <ThemedView style={styles.loadingContainer}>
             <ActivityIndicator />
-            <ThemedText>OCR in corso...</ThemedText>
+            <ThemedText style={styles.statusText}>Sto leggendo la confezione, attendi un momento...</ThemedText>
           </ThemedView>
         ) : null}
 
-        <ThemedView style={styles.resultCard}>
+        <ThemedView
+          style={[
+            styles.resultCard,
+            {
+              borderColor: ui.panelBorder,
+              backgroundColor: ui.panelBg,
+            },
+          ]}>
           <ThemedText type="subtitle">Codice AIC rilevato</ThemedText>
           <ThemedText style={styles.aicValue}>
             {aicCodes.length > 0 ? aicCodes[0] : 'Nessun codice AIC trovato'}
@@ -311,38 +437,68 @@ export default function HomeScreen() {
           ) : null}
         </ThemedView>
 
-        <ThemedView style={styles.resultCard}>
+        <ThemedView
+          style={[
+            styles.resultCard,
+            {
+              borderColor: ui.panelBorder,
+              backgroundColor: ui.panelBg,
+            },
+          ]}>
           <ThemedText type="subtitle">Dati farmaco</ThemedText>
-          <ThemedText style={styles.endpointText}>
-            {hasSupabaseConfig
-              ? `Fonte primaria: Supabase (${SUPABASE_TABLE}.${SUPABASE_AIC_COLUMN})`
-              : `Fonte: Backend (${farmaciApiBase}/{'{AIC}'})`}
-          </ThemedText>
-          {farmacoSource ? (
-            <ThemedText style={styles.helperText}>Origine risposta: {farmacoSource}</ThemedText>
-          ) : null}
           {isFarmacoLoading ? <ThemedText>Caricamento dati farmaco...</ThemedText> : null}
-          {farmacoError ? <ThemedText style={styles.errorText}>Errore: {farmacoError}</ThemedText> : null}
+          {farmacoError ? <ThemedText style={[styles.errorText, { color: ui.error }]}>Errore: {farmacoError}</ThemedText> : null}
           {!isFarmacoLoading && !farmacoError && farmacoData ? (
-            <TextInput
-              editable={false}
-              multiline
-              value={JSON.stringify(farmacoData, null, 2)}
-              style={styles.apiResponseText}
-            />
+            <ThemedView style={styles.formContainer}>
+              {Object.keys(farmacoForm).length === 0 ? (
+                <ThemedText style={styles.helperText}>Nessun campo disponibile.</ThemedText>
+              ) : (
+                Object.entries(farmacoForm).map(([key, value]) => (
+                  <ThemedView key={key} style={styles.fieldContainer}>
+                    <ThemedText style={styles.fieldLabel}>{key}</ThemedText>
+                    <TextInput
+                      style={[
+                        styles.formInput,
+                        {
+                          borderColor: ui.mutedBorder,
+                          color: colors.text,
+                          backgroundColor: ui.inputBg,
+                        },
+                      ]}
+                      value={value}
+                      placeholder={key}
+                      placeholderTextColor={ui.placeholder}
+                      multiline={value.length > 80}
+                      onChangeText={(nextValue) =>
+                        setFarmacoForm((prev) => ({ ...prev, [key]: nextValue }))
+                      }
+                    />
+                  </ThemedView>
+                ))
+              )}
+            </ThemedView>
           ) : null}
           {!isFarmacoLoading && !farmacoError && !farmacoData && aicCodes.length === 0 ? (
             <ThemedText style={styles.helperText}>Rileva prima un codice AIC per interrogare l&apos;endpoint.</ThemedText>
           ) : null}
         </ThemedView>
 
-        <ThemedText type="subtitle">Testo OCR completo</ThemedText>
-        <TextInput
-          editable={false}
-          multiline
-          value={ocrText || 'Il testo OCR apparira qui dopo la scansione.'}
-          style={styles.ocrText}
-        />
+        <ThemedView
+          style={[
+            styles.infoCard,
+            {
+              borderColor: ui.infoBorder,
+              backgroundColor: ui.infoBg,
+            },
+          ]}>
+          <ThemedText style={[styles.infoText, { color: ui.infoText }]}>
+            Suggerimento: inquadra solo il codice AIC, evita riflessi e mantieni il telefono fermo.
+          </ThemedText>
+          <ThemedText style={[styles.infoText, { color: ui.infoText }]}>
+            Verifica sempre i dati con il farmacista o con il foglietto illustrativo.
+          </ThemedText>
+        </ThemedView>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -353,29 +509,60 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    padding: 16,
+    paddingHorizontal: 16,
     gap: 12,
   },
   subtitle: {
-    opacity: 0.85,
+    fontSize: 18,
+    lineHeight: 26,
+    opacity: 0.9,
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  stepItem: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#9E9E9E',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    backgroundColor: '#1F1F1F',
+  },
+  stepItemActive: {
+    borderColor: '#0B5FFF',
+    backgroundColor: '#163E94',
+  },
+  stepText: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#FFFFFF',
   },
   buttonRow: {
     gap: 10,
   },
   primaryButton: {
     backgroundColor: '#2E7D32',
-    paddingVertical: 12,
+    minHeight: 52,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryButton: {
     backgroundColor: '#1565C0',
-    paddingVertical: 12,
+    minHeight: 52,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonLabel: {
     color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '700',
   },
   preview: {
@@ -390,6 +577,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  statusText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
   resultCard: {
     padding: 12,
     borderRadius: 12,
@@ -398,15 +589,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   aicValue: {
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: '800',
   },
   extraCodes: {
     fontSize: 13,
-    opacity: 0.75,
-  },
-  endpointText: {
-    fontSize: 12,
     opacity: 0.75,
   },
   helperText: {
@@ -416,24 +603,39 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#FF5252',
   },
-  apiResponseText: {
-    minHeight: 140,
+  formContainer: {
+    gap: 8,
+  },
+  fieldContainer: {
+    gap: 4,
+  },
+  fieldLabel: {
+    fontSize: 15,
+    opacity: 0.9,
+    fontWeight: '600',
+  },
+  formInput: {
+    minHeight: 52,
     borderWidth: 1,
     borderColor: '#9E9E9E',
     borderRadius: 10,
-    padding: 10,
-    textAlignVertical: 'top',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 18,
     color: '#E0E0E0',
     backgroundColor: '#1F1F1F',
   },
-  ocrText: {
-    minHeight: 180,
+  infoCard: {
+    gap: 8,
     borderWidth: 1,
-    borderColor: '#9E9E9E',
-    borderRadius: 10,
-    padding: 10,
-    textAlignVertical: 'top',
-    color: '#E0E0E0',
-    backgroundColor: '#1F1F1F',
+    borderColor: '#5E6B7A',
+    borderRadius: 12,
+    backgroundColor: '#11213B',
+    padding: 12,
+  },
+  infoText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#E9F0FF',
   },
 });
