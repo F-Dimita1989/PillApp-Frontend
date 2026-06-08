@@ -2,39 +2,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenSafeArea } from '@/components/screen-safe-area';
+import { TherapyWeekCalendar } from '@/components/therapy-week-calendar';
+import { syncTherapyPlanToDeviceCalendar } from '@/lib/calendar/device-calendar';
+import {
+  INITIAL_THERAPY_DAY_PLAN,
+  THERAPY_DAY_TO_WEEKDAY,
+  THERAPY_DAYS,
+  type TherapyDayKey,
+  type TherapyDayPlan,
+} from '@/lib/therapy/types';
 
 const LAST_SCANNED_FARMACO_KEY = 'pillapp:lastScannedFarmaco';
 const PLAN_KEY = 'pillapp:weeklyTherapyPlan';
 const PLAN_NOTIFICATION_IDS_KEY = 'pillapp:weeklyTherapyNotificationIds';
-const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'] as const;
-
-type DayKey = (typeof DAYS)[number];
-type DayPlan = Record<DayKey, boolean>;
-
-const INITIAL_DAY_PLAN: DayPlan = {
-  Lun: true,
-  Mar: true,
-  Mer: true,
-  Gio: true,
-  Ven: true,
-  Sab: false,
-  Dom: false,
-};
-
-const DAY_TO_WEEKDAY: Record<DayKey, 1 | 2 | 3 | 4 | 5 | 6 | 7> = {
-  Dom: 1,
-  Lun: 2,
-  Mar: 3,
-  Mer: 4,
-  Gio: 5,
-  Ven: 6,
-  Sab: 7,
-};
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -48,26 +32,19 @@ Notifications.setNotificationHandler({
 export default function TherapyUserScreen() {
   const colors = Colors.light;
   const ui = {
-    panelBorder: '#C7DFF2',
-    panelBg: '#F2FAFF',
-    inputBorder: '#B8D4E8',
-    inputBg: '#FFFFFF',
+    mutedBorder: '#B8D4E8',
+    inputBg: '#F8FAFC',
     placeholder: '#667085',
-    chipBorder: '#B8D4E8',
-    chipBg: '#EAF6FF',
-    chipActiveBorder: colors.tint,
-    chipActiveBg: '#DCE8FF',
-    chipActiveText: '#0F172A',
     saveButton: '#0B5FFF',
     success: '#1B8A3E',
+    error: '#C62828',
   } as const;
-  const insets = useSafeAreaInsets();
   const [aic, setAic] = useState('');
   const [farmacoNome, setFarmacoNome] = useState('');
   const [orario, setOrario] = useState('08:00');
   const [dose, setDose] = useState('1 compressa');
   const [note, setNote] = useState('');
-  const [dayPlan, setDayPlan] = useState<DayPlan>(INITIAL_DAY_PLAN);
+  const [dayPlan, setDayPlan] = useState<TherapyDayPlan>(INITIAL_THERAPY_DAY_PLAN);
   const [saveMessage, setSaveMessage] = useState('');
 
   const activeDaysCount = useMemo(() => Object.values(dayPlan).filter(Boolean).length, [dayPlan]);
@@ -105,7 +82,7 @@ export default function TherapyUserScreen() {
             orario?: string;
             dose?: string;
             note?: string;
-            dayPlan?: Partial<DayPlan>;
+            dayPlan?: Partial<TherapyDayPlan>;
           };
           setAic(saved.aic ?? '');
           setFarmacoNome(saved.farmacoNome ?? '');
@@ -113,7 +90,7 @@ export default function TherapyUserScreen() {
           setDose(saved.dose ?? '1 compressa');
           setNote(saved.note ?? '');
           setDayPlan({
-            ...INITIAL_DAY_PLAN,
+            ...INITIAL_THERAPY_DAY_PLAN,
             ...(saved.dayPlan ?? {}),
           });
         }
@@ -127,7 +104,7 @@ export default function TherapyUserScreen() {
     }, [])
   );
 
-  const toggleDay = (day: DayKey) => {
+  const toggleDay = (day: TherapyDayKey) => {
     setDayPlan((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
@@ -155,7 +132,7 @@ export default function TherapyUserScreen() {
       throw new Error('Formato orario non valido. Usa HH:mm (es. 08:00).');
     }
 
-    const activeDays = DAYS.filter((day) => dayPlan[day]);
+    const activeDays = THERAPY_DAYS.filter((day) => dayPlan[day]);
     if (activeDays.length === 0) {
       throw new Error('Seleziona almeno un giorno della settimana per i promemoria.');
     }
@@ -182,7 +159,7 @@ export default function TherapyUserScreen() {
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-          weekday: DAY_TO_WEEKDAY[day],
+          weekday: THERAPY_DAY_TO_WEEKDAY[day],
           hour: time.hour,
           minute: time.minute,
           repeats: true,
@@ -208,7 +185,29 @@ export default function TherapyUserScreen() {
       };
       await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(payload));
       const reminders = await scheduleWeeklyNotifications();
-      setSaveMessage(`Piano salvato. Promemoria attivi: ${reminders} a settimana.`);
+
+      let calendarEvents = 0;
+      try {
+        calendarEvents = await syncTherapyPlanToDeviceCalendar({
+          farmacoNome,
+          orario,
+          dose,
+          dayPlan,
+        });
+      } catch (calendarError) {
+        const message =
+          calendarError instanceof Error
+            ? calendarError.message
+            : 'Errore sincronizzazione calendario.';
+        setSaveMessage(
+          `Piano salvato. Promemoria: ${reminders}. Calendario: ${message}`,
+        );
+        return;
+      }
+
+      setSaveMessage(
+        `Piano salvato. Promemoria: ${reminders}. Eventi nel calendario del telefono: ${calendarEvents}.`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Errore salvataggio terapia.';
       setSaveMessage(`Attenzione: ${message}`);
@@ -216,145 +215,63 @@ export default function TherapyUserScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.container,
-          {
-            paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom + 16, 24),
-          },
-        ]}>
+    <ScreenSafeArea style={styles.safeArea}>
+      <ScrollView contentContainerStyle={[styles.container, styles.scrollContent]}>
         <ThemedText type="title">Terapia Utente</ThemedText>
         <ThemedText style={styles.subtitle}>
-          Crea il tuo piano terapeutico settimanale a partire dal farmaco scansionato.
+          Programma la terapia e visualizza la settimana dal calendario reale del telefono.
         </ThemedText>
 
-        <ThemedView
-          style={[
-            styles.card,
-            {
-              borderColor: ui.panelBorder,
-              backgroundColor: ui.panelBg,
-            },
-          ]}>
+        <View style={styles.section}>
           <ThemedText type="subtitle">Farmaco</ThemedText>
           <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: ui.inputBorder,
-                color: colors.text,
-                backgroundColor: ui.inputBg,
-              },
-            ]}
+            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
             value={aic}
             onChangeText={setAic}
             placeholder="Codice AIC"
             placeholderTextColor={ui.placeholder}
           />
           <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: ui.inputBorder,
-                color: colors.text,
-                backgroundColor: ui.inputBg,
-              },
-            ]}
+            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
             value={farmacoNome}
             onChangeText={setFarmacoNome}
             placeholder="Nome farmaco"
             placeholderTextColor={ui.placeholder}
           />
-        </ThemedView>
+        </View>
 
-        <ThemedView
-          style={[
-            styles.card,
-            {
-              borderColor: ui.panelBorder,
-              backgroundColor: ui.panelBg,
-            },
-          ]}>
+        <View style={styles.section}>
           <ThemedText type="subtitle">Programmazione</ThemedText>
           <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: ui.inputBorder,
-                color: colors.text,
-                backgroundColor: ui.inputBg,
-              },
-            ]}
+            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
             value={orario}
             onChangeText={setOrario}
             placeholder="Orario (es. 08:00)"
             placeholderTextColor={ui.placeholder}
           />
           <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: ui.inputBorder,
-                color: colors.text,
-                backgroundColor: ui.inputBg,
-              },
-            ]}
+            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
             value={dose}
             onChangeText={setDose}
             placeholder="Dose (es. 1 compressa)"
             placeholderTextColor={ui.placeholder}
           />
           <TextInput
-            style={[
-              styles.input,
-              styles.notesInput,
-              {
-                borderColor: ui.inputBorder,
-                color: colors.text,
-                backgroundColor: ui.inputBg,
-              },
-            ]}
+            style={[styles.input, styles.notesInput, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
             value={note}
             onChangeText={setNote}
             placeholder="Note utili (facoltative)"
             placeholderTextColor={ui.placeholder}
             multiline
           />
-        </ThemedView>
+        </View>
 
-        <ThemedView
-          style={[
-            styles.card,
-            {
-              borderColor: ui.panelBorder,
-              backgroundColor: ui.panelBg,
-            },
-          ]}>
-          <ThemedText type="subtitle">Giorni della settimana</ThemedText>
-          <ThemedText style={styles.helper}>Giorni attivi: {activeDaysCount}/7</ThemedText>
-          <ThemedView style={styles.daysGrid}>
-            {DAYS.map((day) => (
-              <Pressable
-                key={day}
-                style={[
-                  styles.dayChip,
-                  {
-                    borderColor: ui.chipBorder,
-                    backgroundColor: ui.chipBg,
-                  },
-                  dayPlan[day] ? styles.dayChipActive : null,
-                  dayPlan[day] ? { borderColor: ui.chipActiveBorder, backgroundColor: ui.chipActiveBg } : null,
-                ]}
-                onPress={() => toggleDay(day)}>
-                <ThemedText style={[styles.dayChipText, { color: dayPlan[day] ? ui.chipActiveText : colors.text }]}>
-                  {day}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </ThemedView>
-        </ThemedView>
+        <View style={styles.section}>
+          <TherapyWeekCalendar dayPlan={dayPlan} onToggleDay={toggleDay} />
+          <ThemedText style={styles.helper}>
+            Giorni terapia attivi: {activeDaysCount}/7 · Tocca un giorno per attivarlo o disattivarlo
+          </ThemedText>
+        </View>
 
         <Pressable
           style={[styles.saveButton, { backgroundColor: ui.saveButton }]}
@@ -362,12 +279,16 @@ export default function TherapyUserScreen() {
           <ThemedText style={styles.saveButtonText}>Salva piano settimanale</ThemedText>
         </Pressable>
         {saveMessage ? (
-          <ThemedText style={[styles.successText, { color: ui.success }]}>
+          <ThemedText
+            style={[
+              styles.feedbackText,
+              { color: saveMessage.startsWith('Attenzione') ? ui.error : ui.success },
+            ]}>
             {saveMessage}
           </ThemedText>
         ) : null}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenSafeArea>
   );
 }
 
@@ -377,30 +298,27 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 14,
+  },
+  scrollContent: {
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   subtitle: {
     fontSize: 17,
     lineHeight: 24,
     opacity: 0.9,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: '#BDBDBD',
-    borderRadius: 12,
-    padding: 12,
-    gap: 8,
+  section: {
+    gap: 10,
   },
   input: {
     minHeight: 50,
     borderWidth: 1,
-    borderColor: '#9E9E9E',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 17,
-    color: '#E0E0E0',
-    backgroundColor: '#1F1F1F',
   },
   notesInput: {
     minHeight: 88,
@@ -408,35 +326,11 @@ const styles = StyleSheet.create({
   },
   helper: {
     fontSize: 14,
-    opacity: 0.8,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  dayChip: {
-    minWidth: 58,
-    borderWidth: 1,
-    borderColor: '#9E9E9E',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#1F1F1F',
-  },
-  dayChipActive: {
-    borderColor: '#0B5FFF',
-    backgroundColor: '#163E94',
-  },
-  dayChipText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontWeight: '700',
+    opacity: 0.85,
   },
   saveButton: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: '#0B5FFF',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -446,8 +340,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  successText: {
-    color: '#1B8A3E',
-    fontWeight: '700',
+  feedbackText: {
+    fontWeight: '600',
+    lineHeight: 22,
   },
 });
