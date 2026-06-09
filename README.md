@@ -68,18 +68,26 @@ npm run android
 
 ## Struttura del progetto
 
-| Percorso | Descrizione |
-|----------|-------------|
-| `app/(tabs)/index.tsx` | Home e flusso principale di gestione terapia |
-| `lib/ocr/` | Preprocessing immagine, OCR e estrazione codice AIC |
-| `components/therapy-week-calendar.tsx` | Calendario settimanale della terapia |
-| `components/onboarding-screen.tsx` | Onboarding iniziale |
-| `lib/therapy/` | Tipi e logica dei piani terapeutici |
+| Percorso                               | Descrizione                                         |
+| -------------------------------------- | --------------------------------------------------- |
+| `app/(tabs)/index.tsx`                 | Home e flusso principale di gestione terapia        |
+| `lib/ocr/`                             | Preprocessing immagine, OCR e estrazione codice AIC |
+| `components/therapy-week-calendar.tsx` | Calendario settimanale della terapia                |
+| `components/onboarding-screen.tsx`     | Onboarding iniziale                                 |
+| `lib/therapy/`                         | Tipi e logica dei piani terapeutici                 |
 
 ## Documentazione aggiuntiva
 
 Per configurazione produzione, backend e ottimizzazioni, consulta `docs/guida-produzione-supabase-render.md`.
 
-## Licenza
+## Diritti d'autore e licenza
 
-Progetto privato.
+**Copyright © 2026 F-Dimita89. Tutti i diritti riservati.**
+
+Titolare: **F-Dimita89** — [f.dimita1989@gmail.com](mailto:f.dimita1989@gmail.com)
+
+Questo progetto — inclusi codice sorgente, design, interfacce, documentazione, logica applicativa e l'idea concettuale di PillApp — è di **esclusiva proprietà del titolare**. I diritti appartengono unicamente a me; non sono concessi a terzi.
+
+È **vietato** copiare, riprodurre, modificare, distribuire, pubblicare o utilizzare questo progetto o parti di esso — in qualsiasi forma — senza la mia **autorizzazione scritta espressa**.
+
+Progetto privato e non open source. I termini completi sono nel file [LICENSE](./LICENSE).
