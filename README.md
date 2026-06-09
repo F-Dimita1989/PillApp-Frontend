@@ -82,9 +82,9 @@ Per configurazione produzione, backend e ottimizzazioni, consulta `docs/guida-pr
 
 ## Diritti d'autore e licenza
 
-**Copyright © 2026 F-Dimita89. Tutti i diritti riservati.**
+**Copyright © 2026 Filippo Dimita. Tutti i diritti riservati.**
 
-Titolare: **F-Dimita89** — [f.dimita1989@gmail.com](mailto:f.dimita1989@gmail.com)
+Titolare: **Filippo Dimita** — [f.dimita1989@gmail.com](mailto:f.dimita1989@gmail.com)
 
 Questo progetto — inclusi codice sorgente, design, interfacce, documentazione, logica applicativa e l'idea concettuale di PillApp — è di **esclusiva proprietà del titolare**. I diritti appartengono unicamente a me; non sono concessi a terzi.
 

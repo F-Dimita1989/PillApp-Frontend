@@ -2,7 +2,7 @@
   "name": "pillapp",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "author": "F-Dimita89 <f.dimita1989@gmail.com>",
+  "author": "Filippo Dimita <f.dimita1989@gmail.com>",
   "license": "UNLICENSED",
   "scripts": {
     "start": "expo start --dev-client",
