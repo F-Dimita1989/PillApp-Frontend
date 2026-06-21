@@ -4,6 +4,7 @@ import { ActivityIndicator } from "react-native";
 import { YStack } from "tamagui";
 
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
+import { DrugPackageImage } from "@/components/farmaci/drug-package-image";
 import {
   AppCard,
   AppCardContent,
@@ -161,6 +162,7 @@ export function AicScannerScreen() {
           <AppCard>
             <AppCardContent>
               <AppText variant="title">Conferma dati</AppText>
+              <DrugPackageImage values={scanFormValues} />
               <ScannedMedicationForm
                 key={`scan-form-${scanFormValues.aic}`}
                 values={scanFormValues}

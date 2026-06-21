@@ -4,7 +4,6 @@ import {
     createTour,
     useCoachmark,
 } from "@edwardloopez/react-native-coachmark";
-import { Image as ExpoImage } from "expo-image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Image,
@@ -24,6 +23,7 @@ import { YStack } from "tamagui";
 import { AicTourIntroModal } from "@/components/coachmark/aic-tour-intro-modal";
 import { AicTourOverlay } from "@/components/coachmark/aic-tour-overlay";
 import { AicScanTourTooltip } from "@/components/coachmark/aic-scan-tour-tooltip";
+import { DrugPackageImage } from "@/components/farmaci/drug-package-image";
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
 import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
@@ -110,7 +110,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   const [wantsTherapy, setWantsTherapy] = useState<boolean | null>(null);
   const [scanFormValues, setScanFormValues] =
     useState<ScannedMedicationFormValues | null>(null);
-  const [scanImageUri, setScanImageUri] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState("");
   const [dose, setDose] = useState("1 compressa");
@@ -306,7 +305,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
   const resetScan = () => {
     setScanFormValues(null);
-    setScanImageUri(null);
     setScanError("");
     setDose("1 compressa");
     setReminderSettings(INITIAL_THERAPY_REMINDER_SETTINGS);
@@ -414,7 +412,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
         result.aic,
         result.data,
       );
-      setScanImageUri(result.imageUri);
       setScanFormValues(formValues);
       setDose(therapyDoseFromFormValues(formValues));
       setMedicationPhase("verify");
@@ -932,13 +929,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                   prima di impostare orari e promemoria.
                                 </AppText>
 
-                                {scanImageUri ? (
-                                  <ExpoImage
-                                    source={{ uri: scanImageUri }}
-                                    style={styles.scanPreview}
-                                    contentFit="cover"
-                                  />
-                                ) : null}
+                                <DrugPackageImage values={scanFormValues} />
 
                                 <YStack
                                   style={[
@@ -1273,11 +1264,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     alignItems: "stretch",
     width: "100%",
-  },
-  scanPreview: {
-    width: "100%",
-    height: 160,
-    borderRadius: 12,
   },
   scanResult: {
     gap: 8,
