@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator } from "react-native";
+import { XStack, YStack } from "tamagui";
 import {
   CalendarProvider,
   LocaleConfig,
   WeekCalendar,
 } from "react-native-calendars";
 
-import { ThemedText } from "@/components/themed-text";
+import { AppText } from "@/components/ui/app-text";
 import {
   getDeviceEventsMarkedDates,
   getTherapyMarkedDates,
+  type MarkedDates,
 } from "@/lib/calendar/device-calendar";
 import {
   formatDateKey,
@@ -21,63 +23,24 @@ import {
   type TherapyDayKey,
   type TherapyDayPlan,
 } from "@/lib/therapy/types";
+import { pillappColors } from "@/theme/tokens";
 
 LocaleConfig.locales.it = {
   monthNames: [
-    "Gennaio",
-    "Febbraio",
-    "Marzo",
-    "Aprile",
-    "Maggio",
-    "Giugno",
-    "Luglio",
-    "Agosto",
-    "Settembre",
-    "Ottobre",
-    "Novembre",
-    "Dicembre",
+    "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
   ],
   monthNamesShort: [
-    "Gen",
-    "Feb",
-    "Mar",
-    "Apr",
-    "Mag",
-    "Giu",
-    "Lug",
-    "Ago",
-    "Set",
-    "Ott",
-    "Nov",
-    "Dic",
+    "Gen", "Feb", "Mar", "Apr", "Mag", "Giu",
+    "Lug", "Ago", "Set", "Ott", "Nov", "Dic",
   ],
   dayNames: [
-    "Domenica",
-    "Lunedì",
-    "Martedì",
-    "Mercoledì",
-    "Giovedì",
-    "Venerdì",
-    "Sabato",
+    "Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato",
   ],
   dayNamesShort: ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"],
   today: "Oggi",
 };
 LocaleConfig.defaultLocale = "it";
-
-const calendarTheme = {
-  backgroundColor: "transparent",
-  calendarBackground: "transparent",
-  textSectionTitleColor: "#0F172A",
-  selectedDayBackgroundColor: "#0a7ea4",
-  selectedDayTextColor: "#FFFFFF",
-  todayTextColor: "#0a7ea4",
-  dayTextColor: "#1F2937",
-  textDisabledColor: "#94A3B8",
-  arrowColor: "#0a7ea4",
-  monthTextColor: "#0F172A",
-  indicatorColor: "#0a7ea4",
-};
 
 type TherapyWeekCalendarProps = {
   dayPlan: TherapyDayPlan;
@@ -88,6 +51,22 @@ export function TherapyWeekCalendar({
   dayPlan,
   onToggleDay,
 }: TherapyWeekCalendarProps) {
+  const calendarTheme = useMemo(
+    () => ({
+      backgroundColor: "transparent",
+      calendarBackground: "transparent",
+      textSectionTitleColor: pillappColors.textPrimary,
+      selectedDayBackgroundColor: pillappColors.primary,
+      selectedDayTextColor: pillappColors.onPrimary,
+      todayTextColor: pillappColors.primary,
+      dayTextColor: pillappColors.textPrimary,
+      textDisabledColor: pillappColors.border,
+      arrowColor: pillappColors.primary,
+      monthTextColor: pillappColors.textPrimary,
+      indicatorColor: pillappColors.primary,
+    }),
+    [],
+  );
   const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
   const [deviceMarks, setDeviceMarks] = useState<
     Awaited<ReturnType<typeof getDeviceEventsMarkedDates>>
@@ -106,13 +85,14 @@ export function TherapyWeekCalendar({
   );
 
   const markedDates = useMemo(() => {
-    const merged = { ...deviceMarks };
+    const merged: MarkedDates = { ...deviceMarks };
 
     Object.entries(therapyMarks).forEach(([dateKey, mark]) => {
+      const existing = merged[dateKey];
       merged[dateKey] = {
-        ...(merged[dateKey] ?? {}),
+        ...(existing ?? {}),
         ...mark,
-        marked: Boolean(merged[dateKey]?.marked || mark.marked),
+        marked: Boolean(existing?.marked || mark.marked),
       };
     });
 
@@ -144,11 +124,11 @@ export function TherapyWeekCalendar({
   }, [loadDeviceWeekEvents, selectedDate]);
 
   return (
-    <View style={styles.container}>
-      <ThemedText type="subtitle">Calendario settimanale</ThemedText>
-      <ThemedText style={styles.helper}>
+    <YStack width="100%" gap="$2">
+      <AppText variant="title">Calendario settimanale</AppText>
+      <AppText variant="caption" muted>
         Verde: giorni terapia · Blu: eventi del calendario del telefono
-      </ThemedText>
+      </AppText>
 
       <CalendarProvider
         date={selectedDate}
@@ -172,41 +152,19 @@ export function TherapyWeekCalendar({
       </CalendarProvider>
 
       {isLoadingDeviceEvents ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color="#0a7ea4" />
-          <ThemedText style={styles.loadingText}>
+        <XStack alignItems="center" gap="$2">
+          <ActivityIndicator size="small" color={pillappColors.primary} />
+          <AppText variant="caption" muted>
             Aggiornamento eventi del telefono...
-          </ThemedText>
-        </View>
+          </AppText>
+        </XStack>
       ) : null}
 
       {calendarError ? (
-        <ThemedText style={styles.errorText}>{calendarError}</ThemedText>
+        <AppText variant="caption" color="error">
+          {calendarError}
+        </AppText>
       ) : null}
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 8,
-  },
-  helper: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.85,
-  },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 14,
-    opacity: 0.85,
-  },
-  errorText: {
-    fontSize: 14,
-    color: "#C62828",
-  },
-});

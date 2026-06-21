@@ -1,33 +1,29 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
 
 import { ScreenSafeArea } from "@/components/screen-safe-area";
-import { Colors } from "@/constants/theme";
+import { PillAppColors } from "@/constants/colors";
 
 export function StartupSplash() {
-  const colors = Colors.light;
-
   return (
-    <LinearGradient
-      colors={["#EAF8FF", "#D7F0FF", "#C7E8FF"]}
-      style={styles.gradientBackground}
-    >
+    <View style={styles.background}>
       <ScreenSafeArea includeBottomInset style={styles.safeArea}>
-      <View style={styles.loaderContainer}>
-        <Image
-          source={require("@/assets/images/pillapp-splash.png")}
-          style={styles.loaderImage}
-        />
-        <ActivityIndicator size="large" color={colors.tint} />
-      </View>
+        <View style={styles.loaderContainer}>
+          <Image
+            source={require("@/assets/images/pillapp-logo.png")}
+            style={styles.loaderImage}
+            accessibilityLabel="Logo PillApp"
+          />
+          <ActivityIndicator size="large" color={PillAppColors.primary} />
+        </View>
       </ScreenSafeArea>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradientBackground: {
+  background: {
     flex: 1,
+    backgroundColor: PillAppColors.surface,
   },
   safeArea: {
     flex: 1,
@@ -39,7 +35,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loaderImage: {
-    width: 220,
-    height: 220,
+    width: 440,
+    height: 440,
   },
 });

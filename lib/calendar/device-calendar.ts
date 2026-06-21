@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Calendar from "expo-calendar";
 import { Platform } from "react-native";
-import type { MarkedDates } from "react-native-calendars";
 
 import {
   formatDateKey,
@@ -19,9 +18,18 @@ import {
 
 const PLAN_CALENDAR_EVENT_IDS_KEY = "pillapp:therapyCalendarEventIds";
 
+export type CalendarDayMark = {
+  marked?: boolean;
+  dotColor?: string;
+  selected?: boolean;
+  selectedColor?: string;
+};
+
+export type MarkedDates = Record<string, CalendarDayMark>;
+
 export type TherapyPlanForCalendar = {
   farmacoNome: string;
-  orario: string;
+  orari: string[];
   dose: string;
   dayPlan: TherapyDayPlan;
 };
@@ -148,58 +156,61 @@ export async function syncTherapyPlanToDeviceCalendar(
 
   await clearTherapyCalendarEvents();
 
-  const timeMatch = plan.orario.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
-  if (!timeMatch) {
-    throw new Error("Formato orario non valido per il calendario.");
-  }
-
-  const hour = Number(timeMatch[1]);
-  const minute = Number(timeMatch[2]);
   const activeDays = (Object.keys(plan.dayPlan) as TherapyDayKey[]).filter(
     (day) => plan.dayPlan[day],
   );
 
-  if (activeDays.length === 0) {
+  if (activeDays.length === 0 || plan.orari.length === 0) {
     return 0;
   }
 
   const eventIds: string[] = [];
   const seriesStart = getWeekStart(new Date());
 
-  for (const day of activeDays) {
-    const dayOffset = getDayOffsetFromWeekStart(day);
-    const firstOccurrence = new Date(seriesStart);
-    firstOccurrence.setDate(seriesStart.getDate() + dayOffset);
-
-    const { startDate, endDate } = buildEventWindow(
-      firstOccurrence,
-      hour,
-      minute,
-    );
-
-    const recurrenceRule: Calendar.RecurrenceRule = {
-      frequency: Calendar.Frequency.WEEKLY,
-      interval: 1,
-    };
-
-    if (Platform.OS === "ios") {
-      recurrenceRule.daysOfTheWeek = [
-        {
-          dayOfTheWeek: THERAPY_DAY_TO_WEEKDAY[day],
-        },
-      ];
+  for (const orario of plan.orari) {
+    const timeMatch = orario.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+    if (!timeMatch) {
+      throw new Error(`Formato orario non valido per il calendario: ${orario}`);
     }
 
-    const eventId = await Calendar.createEventAsync(calendarId, {
-      title: `PillApp · ${plan.farmacoNome || "Terapia"}`,
-      notes: plan.dose,
-      startDate,
-      endDate,
-      recurrenceRule,
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    });
+    const hour = Number(timeMatch[1]);
+    const minute = Number(timeMatch[2]);
 
-    eventIds.push(eventId);
+    for (const day of activeDays) {
+      const dayOffset = getDayOffsetFromWeekStart(day);
+      const firstOccurrence = new Date(seriesStart);
+      firstOccurrence.setDate(seriesStart.getDate() + dayOffset);
+
+      const { startDate, endDate } = buildEventWindow(
+        firstOccurrence,
+        hour,
+        minute,
+      );
+
+      const recurrenceRule: Calendar.RecurrenceRule = {
+        frequency: Calendar.Frequency.WEEKLY,
+        interval: 1,
+      };
+
+      if (Platform.OS === "ios") {
+        recurrenceRule.daysOfTheWeek = [
+          {
+            dayOfTheWeek: THERAPY_DAY_TO_WEEKDAY[day],
+          },
+        ];
+      }
+
+      const eventId = await Calendar.createEventAsync(calendarId, {
+        title: `PillApp · ${plan.farmacoNome || "Terapia"}`,
+        notes: plan.dose,
+        startDate,
+        endDate,
+        recurrenceRule,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+
+      eventIds.push(eventId);
+    }
   }
 
   await AsyncStorage.setItem(

@@ -1,62 +1,60 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Colors } from '@/constants/theme';
-import { ThemedText } from '@/components/themed-text';
-import { ScreenSafeArea } from '@/components/screen-safe-area';
-import { TherapyWeekCalendar } from '@/components/therapy-week-calendar';
-import { syncTherapyPlanToDeviceCalendar } from '@/lib/calendar/device-calendar';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState } from "react";
+import { YStack } from "tamagui";
+
+import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
+import { TherapyReminderSettings } from "@/components/therapy/therapy-reminder-settings";
+import { TherapyWeekCalendar } from "@/components/therapy-week-calendar";
 import {
-  INITIAL_THERAPY_DAY_PLAN,
-  THERAPY_DAY_TO_WEEKDAY,
-  THERAPY_DAYS,
-  type TherapyDayKey,
-  type TherapyDayPlan,
-} from '@/lib/therapy/types';
+  AppCard,
+  AppCardContent,
+  AppHeader,
+  AppInputMultiline,
+  AppInput,
+  AppScreen,
+  AppSnackbar,
+  AppText,
+  PrimaryButton,
+} from "@/components/ui";
+import {
+  buildScannedMedicationFormValues,
+  type ScannedMedicationFormValues,
+} from "@/lib/farmaci/form-values";
+import {
+  getTherapyPlan,
+  saveTherapyPlan,
+} from "@/lib/therapy/plan-storage";
+import {
+  INITIAL_THERAPY_REMINDER_SETTINGS,
+  validateReminderSettings,
+  type TherapyReminderSettingsValue,
+} from "@/lib/therapy/reminder-settings";
 
-const LAST_SCANNED_FARMACO_KEY = 'pillapp:lastScannedFarmaco';
-const PLAN_KEY = 'pillapp:weeklyTherapyPlan';
-const PLAN_NOTIFICATION_IDS_KEY = 'pillapp:weeklyTherapyNotificationIds';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+const LAST_SCANNED_FARMACO_KEY = "pillapp:lastScannedFarmaco";
 
 export default function TherapyUserScreen() {
-  const colors = Colors.light;
-  const ui = {
-    mutedBorder: '#B8D4E8',
-    inputBg: '#F8FAFC',
-    placeholder: '#667085',
-    saveButton: '#0B5FFF',
-    success: '#1B8A3E',
-    error: '#C62828',
-  } as const;
-  const [aic, setAic] = useState('');
-  const [farmacoNome, setFarmacoNome] = useState('');
-  const [orario, setOrario] = useState('08:00');
-  const [dose, setDose] = useState('1 compressa');
-  const [note, setNote] = useState('');
-  const [dayPlan, setDayPlan] = useState<TherapyDayPlan>(INITIAL_THERAPY_DAY_PLAN);
-  const [saveMessage, setSaveMessage] = useState('');
+  const [aic, setAic] = useState("");
+  const [farmacoNome, setFarmacoNome] = useState("");
+  const [scanFormValues, setScanFormValues] =
+    useState<ScannedMedicationFormValues | null>(null);
+  const [dose, setDose] = useState("1 compressa");
+  const [note, setNote] = useState("");
+  const [reminderSettings, setReminderSettings] =
+    useState<TherapyReminderSettingsValue>(INITIAL_THERAPY_REMINDER_SETTINGS);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-  const activeDaysCount = useMemo(() => Object.values(dayPlan).filter(Boolean).length, [dayPlan]);
+  const isError = saveMessage.startsWith("Attenzione");
 
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
 
       const hydrateData = async () => {
-        const [scannedRaw, savedPlanRaw] = await Promise.all([
+        const [scannedRaw, savedPlan] = await Promise.all([
           AsyncStorage.getItem(LAST_SCANNED_FARMACO_KEY),
-          AsyncStorage.getItem(PLAN_KEY),
+          getTherapyPlan(),
         ]);
 
         if (!isMounted) return;
@@ -66,32 +64,48 @@ export default function TherapyUserScreen() {
             aic?: string;
             data?: Record<string, unknown>;
           };
-          const nomeDaScansione =
-            (parsed.data?.nome as string | undefined) ||
-            (parsed.data?.denominazione as string | undefined) ||
-            (parsed.data?.nome_commerciale as string | undefined) ||
-            '';
-          setAic(parsed.aic ?? '');
-          setFarmacoNome(nomeDaScansione);
+          if (parsed.aic && parsed.data) {
+            const formValues = buildScannedMedicationFormValues(
+              parsed.aic,
+              parsed.data,
+            );
+            setScanFormValues(formValues);
+            setAic(formValues.aic);
+            setFarmacoNome(formValues.nome);
+          }
         }
 
-        if (savedPlanRaw) {
-          const saved = JSON.parse(savedPlanRaw) as {
-            aic?: string;
-            farmacoNome?: string;
-            orario?: string;
-            dose?: string;
-            note?: string;
-            dayPlan?: Partial<TherapyDayPlan>;
-          };
-          setAic(saved.aic ?? '');
-          setFarmacoNome(saved.farmacoNome ?? '');
-          setOrario(saved.orario ?? '08:00');
-          setDose(saved.dose ?? '1 compressa');
-          setNote(saved.note ?? '');
-          setDayPlan({
-            ...INITIAL_THERAPY_DAY_PLAN,
-            ...(saved.dayPlan ?? {}),
+        if (savedPlan) {
+          setAic(savedPlan.aic);
+          setFarmacoNome(savedPlan.farmacoNome);
+          setDose(savedPlan.dose);
+          setNote(savedPlan.note);
+          setScanFormValues((current) =>
+            current
+              ? {
+                  ...current,
+                  aic: savedPlan.aic,
+                  nome: savedPlan.farmacoNome,
+                  quantita: savedPlan.quantita,
+                  unitaQuantita: savedPlan.unitaQuantita,
+                }
+              : {
+                  aic: savedPlan.aic,
+                  nome: savedPlan.farmacoNome,
+                  marca: "",
+                  principioAttivo: "",
+                  quantita: savedPlan.quantita,
+                  unitaQuantita: savedPlan.unitaQuantita,
+                  dosaggio: "",
+                  note: savedPlan.note,
+                },
+          );
+          setReminderSettings({
+            timesPerDay: savedPlan.timesPerDay,
+            orari: savedPlan.orari,
+            dayPlan: savedPlan.dayPlan,
+            notificationsEnabled: savedPlan.notificationsEnabled,
+            notificationSoundId: savedPlan.notificationSoundId,
           });
         }
       };
@@ -101,247 +115,141 @@ export default function TherapyUserScreen() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, []),
   );
-
-  const toggleDay = (day: TherapyDayKey) => {
-    setDayPlan((prev) => ({ ...prev, [day]: !prev[day] }));
-  };
-
-  const parseTime = (rawTime: string): { hour: number; minute: number } | null => {
-    const match = rawTime.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
-    if (!match) {
-      return null;
-    }
-    return {
-      hour: Number(match[1]),
-      minute: Number(match[2]),
-    };
-  };
-
-  const clearPreviousNotifications = async () => {
-    const existingIdsRaw = await AsyncStorage.getItem(PLAN_NOTIFICATION_IDS_KEY);
-    const existingIds = existingIdsRaw ? (JSON.parse(existingIdsRaw) as string[]) : [];
-    await Promise.all(existingIds.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
-    await AsyncStorage.removeItem(PLAN_NOTIFICATION_IDS_KEY);
-  };
-
-  const scheduleWeeklyNotifications = async (): Promise<number> => {
-    const time = parseTime(orario);
-    if (!time) {
-      throw new Error('Formato orario non valido. Usa HH:mm (es. 08:00).');
-    }
-
-    const activeDays = THERAPY_DAYS.filter((day) => dayPlan[day]);
-    if (activeDays.length === 0) {
-      throw new Error('Seleziona almeno un giorno della settimana per i promemoria.');
-    }
-
-    const { status } = await Notifications.getPermissionsAsync();
-    let finalStatus = status;
-    if (finalStatus !== 'granted') {
-      const request = await Notifications.requestPermissionsAsync();
-      finalStatus = request.status;
-    }
-    if (finalStatus !== 'granted') {
-      throw new Error('Permesso notifiche non concesso.');
-    }
-
-    await clearPreviousNotifications();
-
-    const notificationIds: string[] = [];
-    for (const day of activeDays) {
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Promemoria terapia',
-          body: `${farmacoNome || 'Farmaco'} - ${dose} alle ${orario}`,
-          sound: true,
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-          weekday: THERAPY_DAY_TO_WEEKDAY[day],
-          hour: time.hour,
-          minute: time.minute,
-          repeats: true,
-        },
-      });
-      notificationIds.push(id);
-    }
-
-    await AsyncStorage.setItem(PLAN_NOTIFICATION_IDS_KEY, JSON.stringify(notificationIds));
-    return notificationIds.length;
-  };
 
   const savePlan = async () => {
+    const reminderError = validateReminderSettings(reminderSettings);
+    if (reminderError) {
+      setSaveMessage(`Attenzione: ${reminderError}`);
+      setSnackbarVisible(true);
+      return;
+    }
+
     try {
-      const payload = {
+      const result = await saveTherapyPlan({
         aic,
         farmacoNome,
-        orario,
+        orari: reminderSettings.orari.slice(0, reminderSettings.timesPerDay),
+        timesPerDay: reminderSettings.timesPerDay,
         dose,
         note,
-        dayPlan,
-        updatedAt: new Date().toISOString(),
-      };
-      await AsyncStorage.setItem(PLAN_KEY, JSON.stringify(payload));
-      const reminders = await scheduleWeeklyNotifications();
+        quantita: scanFormValues?.quantita.trim() ?? "",
+        unitaQuantita: scanFormValues?.unitaQuantita ?? "pillole",
+        dayPlan: reminderSettings.dayPlan,
+        notificationsEnabled: reminderSettings.notificationsEnabled,
+        notificationSoundId: reminderSettings.notificationSoundId,
+      });
 
-      let calendarEvents = 0;
-      try {
-        calendarEvents = await syncTherapyPlanToDeviceCalendar({
-          farmacoNome,
-          orario,
-          dose,
-          dayPlan,
-        });
-      } catch (calendarError) {
-        const message =
-          calendarError instanceof Error
-            ? calendarError.message
-            : 'Errore sincronizzazione calendario.';
+      if (result.calendarWarning) {
         setSaveMessage(
-          `Piano salvato. Promemoria: ${reminders}. Calendario: ${message}`,
+          `Piano salvato. Promemoria: ${result.reminders}. Calendario: ${result.calendarWarning}`,
         );
-        return;
+      } else {
+        setSaveMessage(
+          `Piano salvato. Promemoria: ${result.reminders}. Eventi nel calendario del telefono: ${result.calendarEvents}.`,
+        );
       }
-
-      setSaveMessage(
-        `Piano salvato. Promemoria: ${reminders}. Eventi nel calendario del telefono: ${calendarEvents}.`,
-      );
+      setSnackbarVisible(true);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Errore salvataggio terapia.';
+      const message = error instanceof Error ? error.message : "Errore salvataggio terapia.";
       setSaveMessage(`Attenzione: ${message}`);
+      setSnackbarVisible(true);
     }
   };
 
-  return (
-    <ScreenSafeArea style={styles.safeArea}>
-      <ScrollView contentContainerStyle={[styles.container, styles.scrollContent]}>
-        <ThemedText type="title">Terapia Utente</ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Programma la terapia e visualizza la settimana dal calendario reale del telefono.
-        </ThemedText>
+  const activeDays =
+    Object.values(reminderSettings.dayPlan).filter(Boolean).length;
 
-        <View style={styles.section}>
-          <ThemedText type="subtitle">Farmaco</ThemedText>
-          <TextInput
-            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
+  return (
+    <AppScreen>
+      <AppHeader
+        title="Terapia Utente"
+        subtitle="Programma la terapia e visualizza la settimana dal calendario reale del telefono."
+      />
+
+      <AppCard variant="elevated">
+        <AppCardContent>
+          <AppText variant="title">Farmaco</AppText>
+          <AppInput
+            label="Codice AIC"
             value={aic}
             onChangeText={setAic}
-            placeholder="Codice AIC"
-            placeholderTextColor={ui.placeholder}
+            accessibilityLabel="Codice AIC del farmaco"
           />
-          <TextInput
-            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
+          <AppInput
+            label="Nome farmaco"
             value={farmacoNome}
             onChangeText={setFarmacoNome}
-            placeholder="Nome farmaco"
-            placeholderTextColor={ui.placeholder}
+            accessibilityLabel="Nome del farmaco"
           />
-        </View>
+        </AppCardContent>
+      </AppCard>
 
-        <View style={styles.section}>
-          <ThemedText type="subtitle">Programmazione</ThemedText>
-          <TextInput
-            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
-            value={orario}
-            onChangeText={setOrario}
-            placeholder="Orario (es. 08:00)"
-            placeholderTextColor={ui.placeholder}
+      {scanFormValues ? (
+        <AppCard variant="elevated">
+          <AppCardContent>
+            <MedicationQuantitySection
+              values={scanFormValues}
+              onChange={setScanFormValues}
+            />
+          </AppCardContent>
+        </AppCard>
+      ) : null}
+
+      <AppCard variant="elevated">
+        <AppCardContent>
+          <AppText variant="title">Orario e promemoria</AppText>
+          <TherapyReminderSettings
+            value={reminderSettings}
+            onChange={setReminderSettings}
+            dose={dose}
+            onDoseChange={setDose}
           />
-          <TextInput
-            style={[styles.input, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
-            value={dose}
-            onChangeText={setDose}
-            placeholder="Dose (es. 1 compressa)"
-            placeholderTextColor={ui.placeholder}
-          />
-          <TextInput
-            style={[styles.input, styles.notesInput, { borderColor: ui.mutedBorder, color: colors.text, backgroundColor: ui.inputBg }]}
+          <AppInputMultiline
+            label="Note utili (facoltative)"
             value={note}
             onChangeText={setNote}
-            placeholder="Note utili (facoltative)"
-            placeholderTextColor={ui.placeholder}
-            multiline
+            rows={3}
+            accessibilityLabel="Note aggiuntive sulla terapia"
           />
-        </View>
+        </AppCardContent>
+      </AppCard>
 
-        <View style={styles.section}>
-          <TherapyWeekCalendar dayPlan={dayPlan} onToggleDay={toggleDay} />
-          <ThemedText style={styles.helper}>
-            Giorni terapia attivi: {activeDaysCount}/7 · Tocca un giorno per attivarlo o disattivarlo
-          </ThemedText>
-        </View>
+      <AppCard variant="elevated">
+        <AppCardContent>
+          <TherapyWeekCalendar
+            dayPlan={reminderSettings.dayPlan}
+            onToggleDay={(day) =>
+              setReminderSettings((current) => ({
+                ...current,
+                dayPlan: { ...current.dayPlan, [day]: !current.dayPlan[day] },
+              }))
+            }
+          />
+          <AppText variant="caption" muted>
+            Giorni terapia attivi: {activeDays}/7
+          </AppText>
+        </AppCardContent>
+      </AppCard>
 
-        <Pressable
-          style={[styles.saveButton, { backgroundColor: ui.saveButton }]}
-          onPress={() => void savePlan()}>
-          <ThemedText style={styles.saveButtonText}>Salva piano settimanale</ThemedText>
-        </Pressable>
-        {saveMessage ? (
-          <ThemedText
-            style={[
-              styles.feedbackText,
-              { color: saveMessage.startsWith('Attenzione') ? ui.error : ui.success },
-            ]}>
-            {saveMessage}
-          </ThemedText>
-        ) : null}
-      </ScrollView>
-    </ScreenSafeArea>
+      <YStack width="100%" paddingTop="$2">
+        <PrimaryButton
+          icon="content-save"
+          onPress={() => void savePlan()}
+          fullWidth
+          accessibilityLabel="Salva piano settimanale"
+        >
+          Salva piano settimanale
+        </PrimaryButton>
+      </YStack>
+
+      <AppSnackbar
+        visible={snackbarVisible && Boolean(saveMessage)}
+        message={saveMessage}
+        onDismiss={() => setSnackbarVisible(false)}
+        variant={isError ? "error" : "default"}
+      />
+    </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    paddingHorizontal: 16,
-    gap: 14,
-  },
-  scrollContent: {
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
-  subtitle: {
-    fontSize: 17,
-    lineHeight: 24,
-    opacity: 0.9,
-  },
-  section: {
-    gap: 10,
-  },
-  input: {
-    minHeight: 50,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 17,
-  },
-  notesInput: {
-    minHeight: 88,
-    textAlignVertical: 'top',
-  },
-  helper: {
-    fontSize: 14,
-    opacity: 0.85,
-  },
-  saveButton: {
-    minHeight: 52,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  feedbackText: {
-    fontWeight: '600',
-    lineHeight: 22,
-  },
-});

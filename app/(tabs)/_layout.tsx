@@ -1,21 +1,21 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Image, Platform } from "react-native";
+import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { TAB_BAR_BASE_HEIGHT } from "@/constants/layout";
-import { Colors } from "@/constants/theme";
+import { pillappColors } from "@/theme/tokens";
 
 export default function TabLayout() {
-  const colors = Colors.light;
   const insets = useSafeAreaInsets();
   const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "android" ? 8 : 0);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarActiveTintColor: pillappColors.primary,
+        tabBarInactiveTintColor: pillappColors.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarHideOnKeyboard: false,
@@ -23,19 +23,22 @@ export default function TabLayout() {
           position: "relative",
           display: "flex",
           height: TAB_BAR_BASE_HEIGHT + tabBarBottomInset,
-          paddingTop: 8,
+          paddingTop: 10,
           paddingBottom: tabBarBottomInset,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: pillappColors.surface,
           borderTopWidth: 1,
-          borderTopColor: "#B9DDF5",
-          elevation: 8,
-          shadowColor: "#0F172A",
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: -2 },
+          borderTopColor: pillappColors.border,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+          fontFamily: Platform.OS === "ios" ? "InterSemiBold" : "InterSemiBold",
+          marginTop: 2,
         },
         sceneStyle: {
-          backgroundColor: "transparent",
+          backgroundColor: pillappColors.background,
         },
       }}
     >
@@ -43,10 +46,59 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <Image
-              source={require("@/assets/icons/home-icons8.png")}
-              style={{ width: 24, height: 24, tintColor: color }}
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "home" : "home-outline"}
+              color={color}
+              size={size ?? 24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="medications"
+        options={{
+          title: "Farmaci",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="pill" color={color} size={size ?? 24} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          title: "Scansione",
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "barcode-scan" : "barcode-scan"}
+              color={color}
+              size={size ?? 24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="journal"
+        options={{
+          title: "Diario",
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "notebook" : "notebook-outline"}
+              color={color}
+              size={size ?? 24}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profilo",
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "account" : "account-outline"}
+              color={color}
+              size={size ?? 24}
             />
           ),
         }}
@@ -54,13 +106,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Terapia Utente",
-          tabBarIcon: ({ color }) => (
-            <Image
-              source={require("@/assets/icons/therapy-icons8.png")}
-              style={{ width: 24, height: 24, tintColor: color }}
-            />
-          ),
+          href: null,
         }}
       />
     </Tabs>
