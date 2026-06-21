@@ -15,22 +15,19 @@ import {
   getWeekStart,
   parseDateKey,
 } from "@/lib/calendar/week-utils";
+import type { TherapyDayPlan } from "@/lib/therapy/types";
 import {
-  dateToTherapyDayKey,
-  type TherapyDayKey,
-  type TherapyDayPlan,
-} from "@/lib/therapy/types";
+  formatItalianDate,
+  formatItalianTime,
+} from "@/lib/time/datetime-labels";
+import { useNow } from "@/hooks/use-now";
 import { pillappColors } from "@/theme/tokens";
 
-type TherapyWeekCalendarProps = {
+type HomeWeekCalendarProps = {
   dayPlan: TherapyDayPlan;
-  onToggleDay: (day: TherapyDayKey) => void;
 };
 
-export function TherapyWeekCalendar({
-  dayPlan,
-  onToggleDay,
-}: TherapyWeekCalendarProps) {
+export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
   const calendarTheme = useMemo(
     () => ({
       backgroundColor: "transparent",
@@ -47,6 +44,7 @@ export function TherapyWeekCalendar({
     }),
     [],
   );
+
   const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
   const [deviceMarks, setDeviceMarks] = useState<
     Awaited<ReturnType<typeof getDeviceEventsMarkedDates>>
@@ -103,11 +101,36 @@ export function TherapyWeekCalendar({
     void loadDeviceWeekEvents(selectedDate);
   }, [loadDeviceWeekEvents, selectedDate]);
 
+  const now = useNow();
+
+  const selectedLabel = useMemo(
+    () => formatItalianDate(parseDateKey(selectedDate)),
+    [selectedDate],
+  );
+
+  const hasTherapyDays = useMemo(
+    () => Object.values(dayPlan).some(Boolean),
+    [dayPlan],
+  );
+
   return (
     <YStack width="100%" gap="$2">
-      <AppText variant="title">Calendario settimanale</AppText>
+      <XStack width="100%" justifyContent="space-between" alignItems="flex-start" gap="$2">
+        <AppText variant="title">Calendario</AppText>
+        <YStack alignItems="flex-end" flexShrink={1} gap="$0.5">
+          <AppText variant="caption" muted textAlign="right">
+            {selectedLabel}
+          </AppText>
+          <AppText variant="label" color="primary" textAlign="right">
+            {formatItalianTime(now)}
+          </AppText>
+        </YStack>
+      </XStack>
+
       <AppText variant="caption" muted>
-        Verde: giorni terapia · Blu: eventi del calendario del telefono
+        {hasTherapyDays
+          ? "Verde: giorni terapia · Blu: eventi del calendario del telefono"
+          : "Blu: eventi del calendario del telefono"}
       </AppText>
 
       <CalendarProvider
@@ -126,7 +149,7 @@ export function TherapyWeekCalendar({
           theme={calendarTheme}
           onDayPress={(day) => {
             setSelectedDate(day.dateString);
-            onToggleDay(dateToTherapyDayKey(parseDateKey(day.dateString)));
+            void loadDeviceWeekEvents(day.dateString);
           }}
         />
       </CalendarProvider>

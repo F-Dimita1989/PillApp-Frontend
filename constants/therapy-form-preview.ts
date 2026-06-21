@@ -20,6 +20,7 @@ export const THERAPY_REMINDER_PREVIEW: TherapyReminderSettingsValue = {
   dayPlan: INITIAL_THERAPY_DAY_PLAN,
   notificationsEnabled: true,
   notificationSoundId: "default",
+  notificationLeadId: "15",
 };
 
 export const THERAPY_DOSE_PREVIEW = "1 compressa";

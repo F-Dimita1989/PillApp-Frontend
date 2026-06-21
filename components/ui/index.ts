@@ -15,6 +15,8 @@ export { AppSnackbar } from "@/components/ui/app-snackbar";
 export { AppSegmentedControl, type SegmentedOption } from "@/components/ui/app-segmented-control";
 export { AppChip } from "@/components/ui/app-chip";
 export { AppDivider } from "@/components/ui/app-divider";
+export { AppSelect, type SelectOption } from "@/components/ui/app-select";
+export { AppMultiSelect } from "@/components/ui/app-multi-select";
 export { AppProgress } from "@/components/ui/app-progress";
 export { SectionHeader, SectionTitle } from "@/components/ui/section-header";
 export { StatusChip, StatusBadge } from "@/components/ui/status-chip";

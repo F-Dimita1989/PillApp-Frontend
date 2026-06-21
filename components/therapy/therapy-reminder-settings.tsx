@@ -1,23 +1,38 @@
+import { useMemo } from "react";
 import { XStack, YStack } from "tamagui";
 
-import { AppChip } from "@/components/ui/app-chip";
 import { AppDivider } from "@/components/ui/app-divider";
-import { AppInput } from "@/components/ui/app-input";
+import { AppMultiSelect } from "@/components/ui/app-multi-select";
 import { AppSegmentedControl } from "@/components/ui/app-segmented-control";
+import { AppSelect } from "@/components/ui/app-select";
 import { AppSwitch } from "@/components/ui/app-switch";
 import { AppText } from "@/components/ui/app-text";
+import {
+  THERAPY_NOTIFICATION_LEAD_OPTIONS,
+  type TherapyNotificationLeadId,
+} from "@/constants/therapy-notification-lead";
 import { THERAPY_REMINDER_SOUNDS } from "@/constants/therapy-reminder-sounds";
+import {
+  nearestTherapyDoseOption,
+  therapyDoseOptionsForUnit,
+} from "@/lib/therapy/dose-options";
 import {
   normalizeOrariForTimesPerDay,
   type TherapyReminderSettingsValue,
 } from "@/lib/therapy/reminder-settings";
+import {
+  nearestTherapyTimeOption,
+  THERAPY_TIME_OPTIONS,
+} from "@/lib/therapy/time-options";
 import { THERAPY_DAYS, type TherapyDayKey } from "@/lib/therapy/types";
+import type { QuantitaUnit } from "@/types/domain";
 
 type TherapyReminderSettingsProps = {
   value: TherapyReminderSettingsValue;
   onChange: (value: TherapyReminderSettingsValue) => void;
   dose: string;
   onDoseChange: (dose: string) => void;
+  unitaQuantita?: QuantitaUnit;
   readOnly?: boolean;
 };
 
@@ -28,14 +43,40 @@ const TIMES_PER_DAY_OPTIONS = [
   { value: "4", label: "4×" },
 ] as const;
 
+const DAY_OPTIONS = THERAPY_DAYS.map((day) => ({
+  value: day,
+  label: day,
+}));
+
+function therapyDayPlanToValues(dayPlan: TherapyReminderSettingsValue["dayPlan"]) {
+  return THERAPY_DAYS.filter((day) => dayPlan[day]);
+}
+
+function therapyValuesToDayPlan(values: string[]): TherapyReminderSettingsValue["dayPlan"] {
+  const set = new Set(values);
+  return THERAPY_DAYS.reduce(
+    (plan, day) => ({
+      ...plan,
+      [day]: set.has(day),
+    }),
+    {} as TherapyReminderSettingsValue["dayPlan"],
+  );
+}
+
 export function TherapyReminderSettings({
   value,
   onChange,
   dose,
   onDoseChange,
+  unitaQuantita = "pillole",
   readOnly = false,
 }: TherapyReminderSettingsProps) {
-  const activeDaysCount = Object.values(value.dayPlan).filter(Boolean).length;
+  const doseOptions = useMemo(
+    () => therapyDoseOptionsForUnit(unitaQuantita),
+    [unitaQuantita],
+  );
+  const selectedDose = nearestTherapyDoseOption(dose, unitaQuantita);
+  const selectedDays = therapyDayPlanToValues(value.dayPlan);
 
   const setTimesPerDay = (timesPerDay: number) => {
     if (readOnly) return;
@@ -49,15 +90,15 @@ export function TherapyReminderSettings({
   const setOrario = (index: number, orario: string) => {
     if (readOnly) return;
     const orari = [...value.orari];
-    orari[index] = orario;
+    orari[index] = nearestTherapyTimeOption(orario);
     onChange({ ...value, orari });
   };
 
-  const toggleDay = (day: TherapyDayKey) => {
+  const setDayValues = (days: string[]) => {
     if (readOnly) return;
     onChange({
       ...value,
-      dayPlan: { ...value.dayPlan, [day]: !value.dayPlan[day] },
+      dayPlan: therapyValuesToDayPlan(days as TherapyDayKey[]),
     });
   };
 
@@ -68,9 +109,19 @@ export function TherapyReminderSettings({
           Orario e promemoria
         </AppText>
         <AppText variant="body" muted textAlign="center">
-          Imposta quante volte al giorno assumere il farmaco, a che ora e in quali giorni.
+          Scegli dosaggio, orari e giorni. Puoi attivare le notifiche e personalizzare
+          suoneria e anticipo.
         </AppText>
       </YStack>
+
+      <AppSelect
+        label="Dosaggio per assunzione"
+        value={selectedDose}
+        options={doseOptions}
+        onValueChange={onDoseChange}
+        disabled={readOnly}
+        accessibilityLabel="Dosaggio per ogni assunzione"
+      />
 
       <AppText variant="label">Assunzioni al giorno</AppText>
       <AppSegmentedControl
@@ -84,47 +135,31 @@ export function TherapyReminderSettings({
         }))}
       />
 
-      <AppText variant="label">Orari</AppText>
       <YStack width="100%" gap="$3">
         {value.orari.slice(0, value.timesPerDay).map((orario, index) => (
-          <AppInput
+          <AppSelect
             key={`orario-${index}`}
-            label={`Orario ${index + 1} (HH:mm)`}
-            value={orario}
-            onChangeText={(text) => setOrario(index, text)}
-            placeholder={index === 0 ? "08:00" : "20:00"}
-            keyboardType="numbers-and-punctuation"
-            editable={!readOnly}
+            label={`Orario ${index + 1}`}
+            value={nearestTherapyTimeOption(orario)}
+            options={THERAPY_TIME_OPTIONS}
+            onValueChange={(next) => setOrario(index, next)}
+            disabled={readOnly}
             accessibilityLabel={`Orario assunzione ${index + 1}`}
           />
         ))}
       </YStack>
 
-      <AppInput
-        label="Dose per assunzione"
-        value={dose}
-        onChangeText={onDoseChange}
-        placeholder="1 compressa"
-        editable={!readOnly}
-        accessibilityLabel="Dose per ogni assunzione"
+      <AppMultiSelect
+        label="Giorni della settimana"
+        values={selectedDays}
+        options={DAY_OPTIONS}
+        onValuesChange={setDayValues}
+        placeholder="Seleziona i giorni"
+        disabled={readOnly}
+        accessibilityLabel="Giorni della settimana per il promemoria"
       />
-
-      <AppDivider />
-
-      <AppText variant="label">Giorni della settimana</AppText>
-      <XStack width="100%" flexWrap="wrap" gap="$2" justifyContent="center">
-        {THERAPY_DAYS.map((day) => (
-          <AppChip
-            key={day}
-            label={day}
-            selected={value.dayPlan[day]}
-            disabled={readOnly}
-            onPress={() => toggleDay(day)}
-          />
-        ))}
-      </XStack>
       <AppText variant="caption" muted>
-        Giorni attivi: {activeDaysCount}/7
+        Giorni attivi: {selectedDays.length}/7
       </AppText>
 
       <AppDivider />
@@ -142,26 +177,41 @@ export function TherapyReminderSettings({
 
       {value.notificationsEnabled ? (
         <>
-          <AppText variant="label">Suoneria notifica</AppText>
-          <XStack width="100%" flexWrap="wrap" gap="$2">
-            {THERAPY_REMINDER_SOUNDS.map((sound) => (
-              <AppChip
-                key={sound.id}
-                label={sound.label}
-                selected={value.notificationSoundId === sound.id}
-                disabled={readOnly}
-                onPress={() => onChange({ ...value, notificationSoundId: sound.id })}
-                accessibilityLabel={`Suoneria ${sound.label}`}
-              />
-            ))}
-          </XStack>
-          <AppText variant="caption" muted>
-            {
-              THERAPY_REMINDER_SOUNDS.find(
-                (sound) => sound.id === value.notificationSoundId,
-              )?.description
+          <AppSelect
+            label="Anticipo notifica"
+            value={value.notificationLeadId}
+            options={THERAPY_NOTIFICATION_LEAD_OPTIONS.map((option) => ({
+              value: option.id,
+              label: option.label,
+            }))}
+            onValueChange={(notificationLeadId) =>
+              onChange({
+                ...value,
+                notificationLeadId: notificationLeadId as TherapyNotificationLeadId,
+              })
             }
-          </AppText>
+            disabled={readOnly}
+            accessibilityLabel="Quanto tempo prima ricevere la notifica"
+          />
+
+          <AppSelect
+            label="Suoneria notifica"
+            value={value.notificationSoundId}
+            options={THERAPY_REMINDER_SOUNDS.map((sound) => ({
+              value: sound.id,
+              label: sound.label,
+              description: sound.description,
+            }))}
+            onValueChange={(notificationSoundId) =>
+              onChange({
+                ...value,
+                notificationSoundId:
+                  notificationSoundId as TherapyReminderSettingsValue["notificationSoundId"],
+              })
+            }
+            disabled={readOnly}
+            accessibilityLabel="Suoneria del promemoria"
+          />
         </>
       ) : null}
     </YStack>

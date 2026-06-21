@@ -15,6 +15,7 @@ import {
   type TherapyDayKey,
   type TherapyDayPlan,
 } from "@/lib/therapy/types";
+import { pillappColors } from "@/theme/tokens";
 
 const PLAN_CALENDAR_EVENT_IDS_KEY = "pillapp:therapyCalendarEventIds";
 
@@ -86,7 +87,7 @@ export async function getDeviceEventsMarkedDates(
       marks[key] = {
         ...(marks[key] ?? {}),
         marked: true,
-        dotColor: "#1565C0",
+        dotColor: pillappColors.primary,
       };
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -111,14 +112,14 @@ export function getTherapyMarkedDates(
     marks[dateKey] = {
       ...(marks[dateKey] ?? {}),
       marked: true,
-      dotColor: "#2E7D32",
+      dotColor: pillappColors.success,
     };
   });
 
   marks[selectedDate] = {
     ...(marks[selectedDate] ?? {}),
     selected: true,
-    selectedColor: "#0a7ea4",
+    selectedColor: pillappColors.primary,
   };
 
   return marks;

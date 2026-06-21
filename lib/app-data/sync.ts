@@ -100,3 +100,37 @@ export function mergeMedicationsWithTherapy(
   );
   return [therapyMed, ...withoutDuplicate];
 }
+
+const WEEKDAY_TO_THERAPY_DAY: TherapyDayKey[] = [
+  "Dom",
+  "Lun",
+  "Mar",
+  "Mer",
+  "Gio",
+  "Ven",
+  "Sab",
+];
+
+/** Unisce i giorni attivi di tutti i farmaci in un unico piano settimanale. */
+export function medicationsToCombinedDayPlan(
+  medications: Medication[],
+): TherapyDayPlan {
+  const plan = THERAPY_DAY_KEYS.reduce(
+    (acc, day) => ({ ...acc, [day]: false }),
+    {} as TherapyDayPlan,
+  );
+
+  for (const med of medications) {
+    if (!med.active) continue;
+
+    med.schedule.daysActive.forEach((active, index) => {
+      if (!active) return;
+      const dayKey = WEEKDAY_TO_THERAPY_DAY[index];
+      if (dayKey) {
+        plan[dayKey] = true;
+      }
+    });
+  }
+
+  return plan;
+}

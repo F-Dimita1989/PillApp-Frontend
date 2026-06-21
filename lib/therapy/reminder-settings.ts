@@ -1,6 +1,10 @@
 import type { TherapyDayPlan } from "@/lib/therapy/types";
 import { INITIAL_THERAPY_DAY_PLAN } from "@/lib/therapy/types";
 import type { TherapyReminderSoundId } from "@/constants/therapy-reminder-sounds";
+import {
+  DEFAULT_NOTIFICATION_LEAD_ID,
+  type TherapyNotificationLeadId,
+} from "@/constants/therapy-notification-lead";
 
 export type TherapyReminderSettingsValue = {
   timesPerDay: number;
@@ -8,6 +12,7 @@ export type TherapyReminderSettingsValue = {
   dayPlan: TherapyDayPlan;
   notificationsEnabled: boolean;
   notificationSoundId: TherapyReminderSoundId;
+  notificationLeadId: TherapyNotificationLeadId;
 };
 
 export const DEFAULT_ORARI_BY_TIMES_PER_DAY: readonly string[][] = [
@@ -23,6 +28,7 @@ export const INITIAL_THERAPY_REMINDER_SETTINGS: TherapyReminderSettingsValue = {
   dayPlan: INITIAL_THERAPY_DAY_PLAN,
   notificationsEnabled: true,
   notificationSoundId: "default",
+  notificationLeadId: DEFAULT_NOTIFICATION_LEAD_ID,
 };
 
 export function defaultOrariForTimesPerDay(timesPerDay: number): string[] {

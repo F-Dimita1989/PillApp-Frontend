@@ -2,6 +2,8 @@ import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { XStack, YStack } from "tamagui";
 
+import { HomeWeekCalendar } from "@/components/home/home-week-calendar";
+import { useNow } from "@/hooks/use-now";
 import {
   AppCard,
   AppCardActions,
@@ -19,15 +21,8 @@ import {
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
 import { AppRoutes } from "@/features/navigation/routes";
-
-function formatTodayLabel(date: Date): string {
-  const label = date.toLocaleDateString("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
+import { medicationsToCombinedDayPlan } from "@/lib/app-data/sync";
+import { formatItalianDate, formatItalianTime } from "@/lib/time/datetime-labels";
 
 function heroMessage(status: string): string {
   switch (status) {
@@ -66,19 +61,32 @@ export function HomeScreen() {
     snoozeDose,
   } = useAppData();
 
-  const todayLabel = useMemo(() => formatTodayLabel(new Date()), []);
+  const now = useNow();
+  const therapyDayPlan = useMemo(
+    () => medicationsToCombinedDayPlan(medications),
+    [medications],
+  );
   const greeting = profile.name ? `Ciao, ${profile.name}` : "Ciao";
   const hasMedications = medications.some((m) => m.active);
   const hasDosesToday = dosesToday.length > 0;
 
   return (
     <AppScreen>
-      <YStack width="100%" gap="$2" paddingBottom="$1">
+      <YStack width="100%" gap="$1" paddingBottom="$1">
         <AppText variant="headline">{greeting}</AppText>
         <AppText variant="body" muted>
-          {todayLabel}
+          {formatItalianDate(now)}
+        </AppText>
+        <AppText variant="title" color="primary">
+          {formatItalianTime(now)}
         </AppText>
       </YStack>
+
+      <AppCard>
+        <AppCardContent>
+          <HomeWeekCalendar dayPlan={therapyDayPlan} />
+        </AppCardContent>
+      </AppCard>
 
       {nextDose ? (
         <AppCard>

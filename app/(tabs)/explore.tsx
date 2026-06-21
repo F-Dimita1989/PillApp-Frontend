@@ -106,6 +106,7 @@ export default function TherapyUserScreen() {
             dayPlan: savedPlan.dayPlan,
             notificationsEnabled: savedPlan.notificationsEnabled,
             notificationSoundId: savedPlan.notificationSoundId,
+            notificationLeadId: INITIAL_THERAPY_REMINDER_SETTINGS.notificationLeadId,
           });
         }
       };
