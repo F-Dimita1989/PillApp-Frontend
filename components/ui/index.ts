@@ -1,4 +1,5 @@
 export { AppScreen } from "@/components/ui/app-screen";
+export { IntroHeroArc, onboardingHeroEmblemLayout } from "@/components/ui/intro-hero-arc";
 export { AppText, type AppTextVariant } from "@/components/ui/app-text";
 export {
   AppButton,
@@ -27,8 +28,15 @@ export {
   SuccessState,
 } from "@/components/ui/empty-state";
 export { AppHeader } from "@/components/ui/app-header";
+export { AppTopBar } from "@/components/ui/app-top-bar";
+export { ChoiceCard } from "@/components/ui/choice-card";
+export { InfoRow } from "@/components/ui/info-row";
+export { SearchInput } from "@/components/ui/search-input";
 export {
+  MedicationScheduleCard,
   ReminderCard,
+} from "@/components/ui/medication-schedule-card";
+export {
   MedicationCard,
   MeasurementCard,
   QuickActionButton,

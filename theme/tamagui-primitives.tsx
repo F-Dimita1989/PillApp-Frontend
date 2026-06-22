@@ -1,6 +1,7 @@
 import { styled, Text, XStack, YStack } from "tamagui";
 
 import { fullWidthRowProps, fullWidthStackProps } from "@/theme/tamagui-layout";
+import { pillappShadows } from "@/theme/tokens";
 
 /** Stack a larghezza piena — base per schermate e card. */
 export const FullWidthStack = styled(YStack, {
@@ -25,19 +26,21 @@ export const HealthcareText = styled(Text, {
         fontSize: 28,
         lineHeight: 36,
         fontWeight: "700",
+        letterSpacing: -0.3,
       },
       headline: {
         fontFamily: "$heading",
         fontSize: 24,
-        lineHeight: 34,
+        lineHeight: 32,
         fontWeight: "700",
+        letterSpacing: -0.2,
         paddingVertical: 2,
       },
       title: {
         fontFamily: "$heading",
         fontSize: 20,
         lineHeight: 28,
-        fontWeight: "700",
+        fontWeight: "600",
         paddingVertical: 1,
       },
       body: {
@@ -54,11 +57,19 @@ export const HealthcareText = styled(Text, {
         fontSize: 14,
         lineHeight: 20,
         fontWeight: "600",
+        letterSpacing: 0.1,
       },
       caption: {
         fontSize: 13,
         lineHeight: 18,
         fontWeight: "500",
+      },
+      overline: {
+        fontSize: 12,
+        lineHeight: 16,
+        fontWeight: "600",
+        letterSpacing: 0.6,
+        textTransform: "uppercase",
       },
       button: {
         fontSize: 16,
@@ -88,29 +99,41 @@ export const HealthcareText = styled(Text, {
 
 export const HealthcareCard = styled(FullWidthStack, {
   name: "HealthcareCard",
-  borderRadius: "$4",
-  padding: "$5",
-  gap: "$4",
+  borderRadius: "$3",
+  padding: "$4",
+  gap: "$3",
   variants: {
     variant: {
       elevated: {
         backgroundColor: "$surface",
         borderWidth: 1,
         borderColor: "$border",
-        shadowColor: "$shadow",
-        shadowOpacity: 0.06,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 2,
+        ...pillappShadows.md,
       },
       outlined: {
         backgroundColor: "$surface",
         borderWidth: 1,
         borderColor: "$border",
+        ...pillappShadows.none,
       },
       muted: {
         backgroundColor: "$surfaceMuted",
         borderWidth: 0,
+        ...pillappShadows.none,
+      },
+      highlight: {
+        backgroundColor: "$primarySoft",
+        borderWidth: 1,
+        borderColor: "$borderStrong",
+        ...pillappShadows.sm,
+      },
+    },
+    pressable: {
+      true: {
+        pressStyle: {
+          opacity: 0.96,
+          scale: 0.995,
+        },
       },
     },
   } as const,
@@ -119,7 +142,7 @@ export const HealthcareCard = styled(FullWidthStack, {
   },
 });
 
-/** Frame bottone — centratura esplicita icona + testo, niente stretch. */
+/** Frame bottone — touch target accessibile, feedback morbido. */
 export const HealthcareButtonFrame = styled(XStack, {
   name: "HealthcareButton",
   alignItems: "center",
@@ -127,12 +150,12 @@ export const HealthcareButtonFrame = styled(XStack, {
   flexDirection: "row",
   flexWrap: "nowrap",
   flexShrink: 0,
-  gap: 8,
-  borderRadius: "$3",
+  gap: "$2",
+  borderRadius: "$2",
   overflow: "hidden",
   pressStyle: {
     opacity: 0.92,
-    scale: 0.985,
+    scale: 0.98,
   },
   variants: {
     variant: {
@@ -142,7 +165,7 @@ export const HealthcareButtonFrame = styled(XStack, {
       },
       secondary: {
         backgroundColor: "$surface",
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: "$primary",
       },
       ghost: {
@@ -161,12 +184,17 @@ export const HealthcareButtonFrame = styled(XStack, {
     size: {
       lg: {
         minHeight: 52,
-        paddingHorizontal: 20,
+        paddingHorizontal: "$5",
         paddingVertical: 0,
       },
       md: {
         minHeight: 48,
-        paddingHorizontal: 16,
+        paddingHorizontal: "$4",
+        paddingVertical: 0,
+      },
+      sm: {
+        minHeight: 40,
+        paddingHorizontal: "$3",
         paddingVertical: 0,
       },
     },
@@ -189,5 +217,48 @@ export const HealthcareButtonFrame = styled(XStack, {
     variant: "primary",
     size: "lg",
     fullWidth: false,
+  },
+});
+
+/** Badge stato — pill soft con bordo delicato */
+export const HealthcareBadgeFrame = styled(XStack, {
+  name: "HealthcareBadge",
+  alignSelf: "flex-start",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "$pill",
+  paddingHorizontal: "$3",
+  paddingVertical: "$1",
+  borderWidth: 1,
+  variants: {
+    tone: {
+      primary: {
+        backgroundColor: "$primarySoft",
+        borderColor: "$borderStrong",
+      },
+      secondary: {
+        backgroundColor: "$secondarySoft",
+        borderColor: "$secondary",
+      },
+      success: {
+        backgroundColor: "$successSoft",
+        borderColor: "$success",
+      },
+      neutral: {
+        backgroundColor: "$surfaceMuted",
+        borderColor: "$border",
+      },
+      warning: {
+        backgroundColor: "$warningSoft",
+        borderColor: "$warning",
+      },
+      error: {
+        backgroundColor: "$errorSoft",
+        borderColor: "$error",
+      },
+    },
+  } as const,
+  defaultVariants: {
+    tone: "neutral",
   },
 });

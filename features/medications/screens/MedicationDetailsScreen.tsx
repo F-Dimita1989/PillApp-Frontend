@@ -6,12 +6,12 @@ import {
   AppBadge,
   AppCard,
   AppCardContent,
-  AppHeader,
   AppScreen,
-  AppText,
+  AppTopBar,
   EmptyState,
+  InfoRow,
+  MedicationScheduleCard,
   PrimaryButton,
-  ReminderCard,
   SecondaryButton,
   SectionHeader,
 } from "@/components/ui";
@@ -53,43 +53,64 @@ export function MedicationDetailsScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
+      <AppTopBar
         title={medication.name}
         subtitle={medication.dose}
-        eyebrow={medication.source === "aic_scan" ? "Aggiunto da scansione AIC" : "Inserimento manuale"}
+        eyebrow={medication.source === "aic_scan" ? "Da scansione AIC" : "Inserimento manuale"}
         onBack={() => router.back()}
       />
 
-      <AppCard>
+      <AppCard variant="outlined">
         <AppCardContent>
-          <AppText variant="title">Informazioni</AppText>
+          <SectionHeader title="Informazioni" />
           <InfoRow label="Forma" value={MEDICATION_FORM_LABELS[medication.form]} />
-          {medication.aic ? <InfoRow label="Codice AIC" value={medication.aic} /> : null}
-          <InfoRow label="Orari" value={medication.schedule.times.join(" · ")} />
+          {medication.aic ? (
+            <InfoRow label="Codice AIC" value={medication.aic} emphasized />
+          ) : null}
+          <InfoRow
+            label="Orari"
+            value={medication.schedule.times.join(" · ")}
+            emphasized
+          />
           <InfoRow label="Giorni attivi" value={activeDays || "Nessuno"} />
           {medication.notes ? <InfoRow label="Note" value={medication.notes} /> : null}
-          <XStack width="100%" flexWrap="wrap" gap="$2">
+          <XStack width="100%" flexWrap="wrap" gap="$2" paddingTop="$1">
             <AppBadge
               label={medication.active ? "Terapia attiva" : "Sospesa"}
               tone={medication.active ? "success" : "neutral"}
             />
-            {medication.source === "aic_scan" ? <AppBadge label="Da AIC" tone="primary" /> : null}
+            {medication.source === "aic_scan" ? (
+              <AppBadge label="Da AIC" tone="primary" />
+            ) : null}
           </XStack>
         </AppCardContent>
       </AppCard>
 
       <YStack width="100%" gap="$3">
-        <SectionHeader title="Assunzioni di oggi" />
+        <SectionHeader
+          title="Assunzioni di oggi"
+          description={
+            todayDoses.length > 0
+              ? `${todayDoses.length} dose${todayDoses.length === 1 ? "" : "i"} programmate`
+              : undefined
+          }
+        />
         {todayDoses.length === 0 ? (
-          <AppText variant="body" muted>
-            Nessuna dose programmata per oggi.
-          </AppText>
+          <EmptyState
+            title="Nessuna dose oggi"
+            description="Questo farmaco non ha assunzioni previste per oggi."
+          />
         ) : (
           todayDoses.map((dose) => (
-            <ReminderCard
+            <MedicationScheduleCard
               key={dose.id}
               dose={dose}
-              onMarkTaken={() => markDoseTaken(dose.id)}
+              compact={dose.status === "taken" || dose.status === "skipped"}
+              onMarkTaken={
+                dose.status !== "taken" && dose.status !== "skipped"
+                  ? () => markDoseTaken(dose.id)
+                  : undefined
+              }
             />
           ))
         )}
@@ -104,16 +125,5 @@ export function MedicationDetailsScreen() {
         </SecondaryButton>
       </YStack>
     </AppScreen>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <YStack width="100%" gap="$1">
-      <AppText variant="label" muted>
-        {label}
-      </AppText>
-      <AppText variant="body">{value}</AppText>
-    </YStack>
   );
 }

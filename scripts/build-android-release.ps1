@@ -11,6 +11,13 @@ $env:JAVA_HOME = $javaHome
 $env:ANDROID_HOME = $androidHome
 $env:Path = "$javaHome\bin;$androidHome\platform-tools;$env:Path"
 
+# Percorso Gradle breve per evitare il limite di 260 caratteri di Windows
+$gradleHome = "C:\gradle"
+if (-not (Test-Path $gradleHome)) {
+  New-Item -ItemType Directory -Path $gradleHome | Out-Null
+}
+$env:GRADLE_USER_HOME = $gradleHome
+
 Set-Location $projectRoot
 
 if (-not (Test-Path (Join-Path $projectRoot "android"))) {

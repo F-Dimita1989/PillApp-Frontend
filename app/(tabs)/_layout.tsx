@@ -1,42 +1,36 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
-import { TAB_BAR_BASE_HEIGHT } from "@/constants/layout";
+import { tabBarTheme } from "@/theme/tab-bar";
 import { pillappColors } from "@/theme/tokens";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === "android" ? 8 : 0);
+  const tabBarBottomInset = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: pillappColors.primary,
-        tabBarInactiveTintColor: pillappColors.textMuted,
+        tabBarActiveTintColor: tabBarTheme.activeTintColor,
+        tabBarInactiveTintColor: tabBarTheme.inactiveTintColor,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarHideOnKeyboard: false,
         tabBarStyle: {
           position: "relative",
           display: "flex",
-          height: TAB_BAR_BASE_HEIGHT + tabBarBottomInset,
-          paddingTop: 10,
+          height: tabBarTheme.height + tabBarBottomInset,
+          paddingTop: tabBarTheme.paddingTop,
           paddingBottom: tabBarBottomInset,
-          backgroundColor: pillappColors.surface,
-          borderTopWidth: 1,
-          borderTopColor: pillappColors.border,
-          elevation: 0,
-          shadowOpacity: 0,
+          backgroundColor: tabBarTheme.backgroundColor,
+          borderTopWidth: tabBarTheme.borderTopWidth,
+          borderTopColor: tabBarTheme.borderTopColor,
+          elevation: tabBarTheme.elevation,
+          shadowOpacity: tabBarTheme.shadowOpacity,
         },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
-          fontFamily: Platform.OS === "ios" ? "InterSemiBold" : "InterSemiBold",
-          marginTop: 2,
-        },
+        tabBarLabelStyle: tabBarTheme.labelStyle,
         sceneStyle: {
           backgroundColor: pillappColors.background,
         },

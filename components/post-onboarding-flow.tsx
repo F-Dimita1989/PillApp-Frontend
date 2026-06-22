@@ -9,24 +9,22 @@ import {
     Image,
     KeyboardAvoidingView,
     Platform,
-    Pressable,
     ScrollView,
-    StyleSheet,
     View,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
     type ScrollView as ScrollViewType,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 
 import { AicTourIntroModal } from "@/components/coachmark/aic-tour-intro-modal";
 import { AicTourOverlay } from "@/components/coachmark/aic-tour-overlay";
 import { AicScanTourTooltip } from "@/components/coachmark/aic-scan-tour-tooltip";
-import { DrugPackageImage } from "@/components/farmaci/drug-package-image";
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
 import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
+import { SetupStepHeader } from "@/components/setup/setup-step-header";
 import { TherapyReminderSettings } from "@/components/therapy/therapy-reminder-settings";
 import { ScreenSafeArea } from "@/components/screen-safe-area";
 import {
@@ -39,6 +37,8 @@ import {
     AppInput,
     AppProgress,
     AppText,
+    ChoiceCard,
+    IntroHeroArc,
     PrimaryButton,
     SecondaryButton,
 } from "@/components/ui";
@@ -55,9 +55,17 @@ import {
     MIN_GUEST_AGE,
     type GuestSex,
 } from "@/constants/profile";
-import { layout, spacing } from "@/constants/spacing";
-import { pillappColors } from "@/theme/tokens";
-import { ensureVisibleInScroll } from "@/lib/coachmark/scroll-anchor-into-view";
+import { pillappColors, pillappLayout } from "@/theme/tokens";
+import {
+  setupScrollShort,
+  setupScrollTherapy,
+  setupScrollTourFraming,
+  setupScrollTourResult,
+} from "@/theme/setup-layout";
+import {
+  ensureVisibleInScroll,
+  TOUR_TOOLTIP_BOTTOM_RESERVE,
+} from "@/lib/coachmark/scroll-anchor-into-view";
 import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
 import {
     buildScannedMedicationFormValues,
@@ -127,6 +135,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
   const therapyScrollRef = useRef<ScrollViewType>(null);
   const framingBoxRef = useRef<View>(null);
+  const resultCardRef = useRef<View>(null);
   const scrollYRef = useRef(0);
   const tourStartedRef = useRef(false);
   const tourCallbacksRef = useRef({
@@ -199,10 +208,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
             shape: "rect",
             radius: 16,
             padding: 12,
-            autoFocus: "always",
-            scrollBehavior: "smooth",
-            scrollPadding: 160,
-            scrollDelay: 400,
           },
         ],
         {
@@ -258,31 +263,35 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   }, [isActive, step, stop]);
 
   useEffect(() => {
-    if (
-      !isActive ||
-      step !== "therapy" ||
-      activeStep?.id !== AIC_TOUR_ANCHORS.framingBox
-    ) {
+    if (!isActive || step !== "therapy") {
       return;
     }
 
-    const scrollFramingBox = () => {
-      void ensureVisibleInScroll(
-        therapyScrollRef,
-        framingBoxRef,
-        () => scrollYRef.current,
-        insets,
-        300,
-      );
-    };
+    if (activeStep?.id === AIC_TOUR_ANCHORS.framingBox) {
+      const timer = setTimeout(() => {
+        void ensureVisibleInScroll(
+          therapyScrollRef,
+          framingBoxRef,
+          () => scrollYRef.current,
+          insets,
+          TOUR_TOOLTIP_BOTTOM_RESERVE,
+        );
+      }, 150);
+      return () => clearTimeout(timer);
+    }
 
-    const firstScroll = setTimeout(scrollFramingBox, 100);
-    const secondScroll = setTimeout(scrollFramingBox, 550);
-
-    return () => {
-      clearTimeout(firstScroll);
-      clearTimeout(secondScroll);
-    };
+    if (activeStep?.id === AIC_TOUR_ANCHORS.resultCard) {
+      const timer = setTimeout(() => {
+        void ensureVisibleInScroll(
+          therapyScrollRef,
+          resultCardRef,
+          () => scrollYRef.current,
+          insets,
+          TOUR_TOOLTIP_BOTTOM_RESERVE,
+        );
+      }, 200);
+      return () => clearTimeout(timer);
+    }
   }, [isActive, step, activeStep?.id, tourIndex, insets]);
 
   const handleTherapyScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -493,32 +502,41 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   const greetingName = guestName.trim() || "amico";
 
   return (
-    <View style={styles.surface}>
-      <ScreenSafeArea includeBottomInset style={styles.screen}>
+    <YStack flex={1} backgroundColor="$background">
+      <ScreenSafeArea includeBottomInset style={{ flex: 1 }}>
         <KeyboardAvoidingView
-          style={styles.keyboardAvoid}
+          style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView
             ref={therapyScrollRef}
             contentContainerStyle={[
-              styles.container,
-              step === "therapy"
-                ? styles.therapyScrollContent
-                : styles.shortStepContent,
+              step === "therapy" ? setupScrollTherapy : setupScrollShort,
+              step === "welcome" && { paddingTop: 0, justifyContent: "flex-start" },
               isActive &&
                 activeStep?.id === AIC_TOUR_ANCHORS.framingBox &&
-                styles.therapyTourFramingScroll,
+                setupScrollTourFraming(),
+              isActive &&
+                activeStep?.id === AIC_TOUR_ANCHORS.resultCard &&
+                setupScrollTourResult(),
             ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
             onScroll={handleTherapyScroll}
           >
-            <Image
-              source={require("@/assets/images/pillapp-logo.png")}
-              style={styles.logo}
-            />
+            {step === "welcome" ? (
+              <IntroHeroArc
+                title="Ciao, benvenuto in PillApp!"
+                subtitle="Ti guiderò passo passo. Useremo la modalità ospite: niente account, niente password — le informazioni restano solo sul tuo telefono."
+                parentPaddingX={pillappLayout.screenPaddingX}
+              />
+            ) : (
+              <Image
+                source={require("@/assets/images/pillapp-logo.png")}
+                style={{ width: 200, height: 200, alignSelf: "center" }}
+              />
+            )}
 
             <AppProgress
               progress={(stepIndex + 1) / STEPS.length}
@@ -529,16 +547,8 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "welcome" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  Ciao, benvenuto in PillApp!
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  Ti guiderò passo passo. Useremo la modalità ospite: niente
-                  account, niente password — le informazioni restano solo sul
-                  tuo telefono.
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
                     <AppText variant="body">
                       In pochi minuti ti chiederò nome o nickname, età e sesso,
                       poi scansioneremo insieme la confezione del farmaco per
@@ -552,15 +562,12 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "name" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  Come posso chiamarti?
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  Puoi usare il tuo nome oppure un nickname che ti fa sentire a
-                  tuo agio.
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
+                <SetupStepHeader
+                  title="Come posso chiamarti?"
+                  subtitle="Puoi usare il tuo nome oppure un nickname che ti fa sentire a tuo agio."
+                />
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
                     <AppInput
                       label="Nome o nickname"
                       value={guestName}
@@ -585,15 +592,12 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "age" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  Quanti anni hai, {guestName.trim()}?
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  Ci aiuta a proporti un&apos;esperienza più chiara e adatta a
-                  te.
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
+                <SetupStepHeader
+                  title={`Quanti anni hai, ${guestName.trim()}?`}
+                  subtitle="Ci aiuta a proporti un'esperienza più chiara e adatta a te."
+                />
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
                     <AppInput
                       label="Età"
                       value={guestAge}
@@ -629,45 +633,21 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "sex" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  Come ti identifichi?
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  Serve solo per personalizzare i messaggi. Puoi anche non
-                  rispondere, se preferisci.
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
-                    {GUEST_SEX_OPTIONS.map((option) => {
-                      const isSelected = guestSex === option.value;
-                      return (
-                        <Pressable
-                          key={option.value}
-                          style={[
-                            styles.choiceButton,
-                            {
-                              borderColor: isSelected
-                                ? pillappColors.primary
-                                : pillappColors.border,
-                              backgroundColor: isSelected
-                                ? pillappColors.primarySoft
-                                : pillappColors.surfaceMuted,
-                            },
-                          ]}
-                          onPress={() => setGuestSex(option.value)}
-                        >
-                          <AppText
-                            variant="title"
-                            color={isSelected ? "primary" : undefined}
-                          >
-                            {option.label}
-                          </AppText>
-                          <AppText variant="caption" style={{ opacity: 0.85 }}>
-                            {option.description}
-                          </AppText>
-                        </Pressable>
-                      );
-                    })}
+                <SetupStepHeader
+                  title="Come ti identifichi?"
+                  subtitle="Serve solo per personalizzare i messaggi. Puoi anche non rispondere, se preferisci."
+                />
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
+                    {GUEST_SEX_OPTIONS.map((option) => (
+                      <ChoiceCard
+                        key={option.value}
+                        label={option.label}
+                        description={option.description}
+                        selected={guestSex === option.value}
+                        onPress={() => setGuestSex(option.value)}
+                      />
+                    ))}
                     <AppButtonRow>
                       <SecondaryButton onPress={goBack}>Indietro</SecondaryButton>
                       <PrimaryButton
@@ -684,15 +664,12 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "privacy" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  La tua privacy, spiegata semplice
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  PillApp è pensata per chi vuole tranquillità e rispetto dei
-                  dati personali.
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
+                <SetupStepHeader
+                  title="La tua privacy, spiegata semplice"
+                  subtitle="PillApp è pensata per chi vuole tranquillità e rispetto dei dati personali."
+                />
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
                     <AppText variant="body">
                       • Nessuna registrazione con email o password{"\n"}• Nome,
                       età e sesso restano solo sul telefono{"\n"}• Nessun
@@ -718,19 +695,19 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                   padding={12}
                   scrollRef={therapyScrollRef}
                 >
-                  <View style={styles.therapyIntro}>
-                    <AppText variant="title" style={styles.therapyHeadline}>
+                  <YStack width="100%" gap="$2" alignItems="center">
+                    <AppText variant="title" textAlign="center">
                       Configuriamo la tua terapia
                     </AppText>
-                    <AppText variant="body" muted style={styles.therapySubtitle}>
+                    <AppText variant="body" muted textAlign="center">
                       Hai farmaci da prendere con regolarità? Scansiona le
                       confezioni una alla volta: puoi aggiungerne più di uno.
                     </AppText>
-                  </View>
+                  </YStack>
                 </CoachmarkAnchor>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
-                    <View style={styles.therapyChoiceRow}>
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
+                    <YStack width="100%" gap="$2">
                       <AppChip
                         label="Sì, impostiamola"
                         selected={wantsTherapy === true}
@@ -738,7 +715,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                           setWantsTherapy(true);
                           setErrorMessage("");
                         }}
-                        style={styles.therapyChip}
+                        style={{ alignSelf: "stretch", width: "100%" }}
                       />
                       <AppChip
                         label="Per ora no"
@@ -749,50 +726,55 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                           setConfiguredMedications([]);
                           setErrorMessage("");
                         }}
-                        style={styles.therapyChip}
+                        style={{ alignSelf: "stretch", width: "100%" }}
                       />
-                    </View>
+                    </YStack>
 
                     {wantsTherapy ? (
-                      <View style={styles.therapyForm}>
-                        <AppDivider style={styles.sectionDivider} />
+                      <YStack width="100%" gap="$4">
+                        <AppDivider marginVertical="$1" />
 
                         {configuredMedications.length > 0 ? (
-                          <View style={styles.configuredMedsBlock}>
-                            <AppText variant="title" style={styles.sectionTitle}>
+                          <YStack width="100%" gap="$2">
+                            <AppText variant="title" textAlign="center">
                               Farmaci aggiunti ({configuredMedications.length})
                             </AppText>
-                            <View style={styles.configuredMedsList}>
+                            <XStack flexWrap="wrap" gap="$2" justifyContent="center">
                               {configuredMedications.map((item, index) => (
                                 <AppChip
                                   key={`${item.scanFormValues.aic}-${index}`}
                                   label={item.scanFormValues.nome.trim()}
                                   icon="pill"
                                   onClose={() => removeConfiguredMedication(index)}
-                                  style={styles.configuredMedChip}
+                                  style={{ maxWidth: "100%" }}
                                 />
                               ))}
-                            </View>
-                            <AppText variant="caption" muted>
+                            </XStack>
+                            <AppText variant="caption" muted textAlign="center">
                               Puoi aggiungerne altri dopo aver completato il farmaco
                               corrente.
                             </AppText>
-                          </View>
+                          </YStack>
                         ) : null}
 
                         {medicationPhase === "scan" ? (
                           <>
-                            <View style={styles.sectionHeader}>
+                            <XStack
+                              width="100%"
+                              alignItems="center"
+                              justifyContent="center"
+                              gap="$2"
+                            >
                               <MaterialCommunityIcons
                                 name="camera"
                                 size={24}
                                 color={pillappColors.primary}
                               />
-                              <AppText variant="title" style={styles.sectionTitle}>
+                              <AppText variant="title" textAlign="center">
                                 Scansiona la confezione
                               </AppText>
-                            </View>
-                            <AppText variant="body" style={styles.sectionBody}>
+                            </XStack>
+                            <AppText variant="body" textAlign="center">
                               Scatta una foto nitida del codice AIC stampato sulla
                               scatola.
                             </AppText>
@@ -840,18 +822,20 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                               padding={8}
                               scrollRef={therapyScrollRef}
                             >
-                              <View
-                                ref={framingBoxRef}
-                                collapsable={false}
-                                style={[
-                                  styles.framingBox,
-                                  {
-                                    borderColor: pillappColors.primary,
-                                    backgroundColor: pillappColors.surface,
-                                  },
-                                ]}
-                              >
-                                <View style={styles.framingExample}>
+                              <View ref={framingBoxRef} collapsable={false}>
+                                <YStack
+                                  width="100%"
+                                  borderRadius="$3"
+                                  borderWidth={2}
+                                  borderStyle="dashed"
+                                  borderColor="$primary"
+                                  backgroundColor="$surface"
+                                  alignItems="stretch"
+                                  justifyContent="center"
+                                  padding="$3"
+                                  gap="$3"
+                                >
+                                  <YStack gap="$3" width="100%">
                                   <AppText
                                     variant="label"
                                     color="primary"
@@ -867,7 +851,8 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                   >
                                     Dopo la foto, qui comparirà l&apos;anteprima scattata
                                   </AppText>
-                                </View>
+                                </YStack>
+                              </YStack>
                               </View>
                             </CoachmarkAnchor>
 
@@ -884,12 +869,16 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                               padding={10}
                               scrollRef={therapyScrollRef}
                             >
-                              <View style={styles.scanResultBlock}>
+                              <View ref={resultCardRef} collapsable={false}>
+                                <YStack width="100%" gap="$4">
                                 <YStack
-                                  style={[
-                                    styles.scanResult,
-                                    { borderLeftColor: pillappColors.primary },
-                                  ]}
+                                  width="100%"
+                                  gap="$2"
+                                  padding="$4"
+                                  borderRadius="$3"
+                                  borderLeftWidth={4}
+                                  borderLeftColor="$primary"
+                                  backgroundColor="$surfaceMuted"
                                 >
                                   <ScannedMedicationForm
                                     key="scan-form-preview"
@@ -906,6 +895,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                     dati e impostare orari e promemoria.
                                   </AppText>
                                 </YStack>
+                                </YStack>
                               </View>
                             </CoachmarkAnchor>
                           </>
@@ -919,23 +909,24 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                             padding={10}
                             scrollRef={therapyScrollRef}
                           >
-                            <View style={styles.scanResultBlock}>
+                            <YStack width="100%" gap="$4">
                               <YStack gap="$3" width="100%">
-                                <AppText variant="title" style={styles.sectionTitle}>
+                                <AppText variant="title" textAlign="center">
                                   Verifica i dati del farmaco
                                 </AppText>
-                                <AppText variant="body" muted style={styles.sectionBody}>
+                                <AppText variant="body" muted textAlign="center">
                                   Controlla che nome, codice AIC e quantità siano corretti
                                   prima di impostare orari e promemoria.
                                 </AppText>
 
-                                <DrugPackageImage values={scanFormValues} />
-
                                 <YStack
-                                  style={[
-                                    styles.scanResult,
-                                    { borderLeftColor: pillappColors.primary },
-                                  ]}
+                                  width="100%"
+                                  gap="$2"
+                                  padding="$4"
+                                  borderRadius="$3"
+                                  borderLeftWidth={4}
+                                  borderLeftColor="$primary"
+                                  backgroundColor="$surfaceMuted"
                                 >
                                   <ScannedMedicationForm
                                     key={`scan-form-${scanFormValues.aic}`}
@@ -967,17 +958,17 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                   </SecondaryButton>
                                 </YStack>
                               </YStack>
-                            </View>
+                            </YStack>
                           </CoachmarkAnchor>
                         ) : null}
 
                         {medicationPhase === "schedule" && scanFormValues ? (
-                          <View style={styles.scanResultBlock}>
+                          <YStack width="100%" gap="$4">
                             <YStack gap="$3" width="100%">
-                              <AppText variant="title" style={styles.sectionTitle}>
+                              <AppText variant="title" textAlign="center">
                                 {scanFormValues.nome.trim()}
                               </AppText>
-                              <AppText variant="caption" muted style={styles.sectionBody}>
+                              <AppText variant="caption" muted textAlign="center">
                                 Ultimo passo: scegli dosaggio, orari e promemoria per questo
                                 farmaco.
                               </AppText>
@@ -1014,9 +1005,9 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                 </AppButton>
                               </YStack>
                             </YStack>
-                          </View>
+                          </YStack>
                         ) : null}
-                      </View>
+                      </YStack>
                     ) : null}
 
                     {errorMessage ? (
@@ -1053,18 +1044,18 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
             {step === "done" ? (
               <>
-                <AppText variant="headline" style={styles.title}>
-                  Tutto pronto, {greetingName}!
-                </AppText>
-                <AppText variant="body" muted style={styles.subtitle}>
-                  {wantsTherapy
-                    ? configuredCount === 1
-                      ? `Ho salvato il promemoria per ${configuredMedications[0]?.scanFormValues.nome.trim() || farmacoNome}.`
-                      : `Ho salvato ${configuredCount} farmaci con i rispettivi promemoria.`
-                    : "Quando vorrai, potrai scansionare una confezione in Home e impostare i promemoria dalla scheda Terapia."}
-                </AppText>
-                <AppCard variant="elevated" style={styles.card}>
-                  <AppCardContent style={styles.cardContent}>
+                <SetupStepHeader
+                  title={`Tutto pronto, ${greetingName}!`}
+                  subtitle={
+                    wantsTherapy
+                      ? configuredCount === 1
+                        ? `Ho salvato il promemoria per ${configuredMedications[0]?.scanFormValues.nome.trim() || farmacoNome}.`
+                        : `Ho salvato ${configuredCount} farmaci con i rispettivi promemoria.`
+                      : "Quando vorrai, potrai scansionare una confezione in Home e impostare i promemoria dalla tab Farmaci."
+                  }
+                />
+                <AppCard variant="elevated">
+                  <AppCardContent gap="$4">
                     <AppText variant="body">
                       Ricorda: tieni il telefono fermo durante la scansione del
                       codice AIC e inquadra bene la confezione.
@@ -1104,181 +1095,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
         onSkip={() => setTourSkipped(true)}
       />
       {step === "therapy" ? <AicTourOverlay /> : null}
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  surface: {
-    flex: 1,
-    backgroundColor: pillappColors.background,
-  },
-  screen: {
-    flex: 1,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
-  container: {
-    flexGrow: 1,
-    paddingHorizontal: layout.screenPaddingHorizontal,
-    paddingVertical: spacing.lg,
-    gap: spacing.md,
-  },
-  shortStepContent: {
-    justifyContent: "center",
-  },
-  therapyScrollContent: {
-    justifyContent: "flex-start",
-    paddingBottom: spacing.xxl + spacing.lg,
-  },
-  therapyTourFramingScroll: {
-    paddingBottom: spacing.xxl * 2 + spacing.lg,
-  },
-  logo: {
-    width: 216,
-    height: 216,
-    alignSelf: "center",
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 4,
-  },
-  title: {
-    textAlign: "center",
-    fontWeight: "700",
-    lineHeight: 30,
-    flexShrink: 1,
-    paddingHorizontal: spacing.xs,
-  },
-  subtitle: {
-    textAlign: "center",
-    opacity: 0.9,
-    lineHeight: 24,
-    flexShrink: 1,
-    paddingHorizontal: spacing.xs,
-  },
-  card: {
-    borderRadius: 16,
-  },
-  cardContent: {
-    gap: 16,
-  },
-  choiceButton: {
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 14,
-    gap: 4,
-    alignItems: "center",
-  },
-  therapyChoiceRow: {
-    flexDirection: "column",
-    gap: spacing.sm,
-    width: "100%",
-  },
-  therapyChip: {
-    alignSelf: "stretch",
-    width: "100%",
-  },
-  therapyForm: {
-    gap: spacing.md,
-    width: "100%",
-  },
-  configuredMedsBlock: {
-    gap: spacing.sm,
-    width: "100%",
-  },
-  configuredMedsList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-  configuredMedChip: {
-    maxWidth: "100%",
-  },
-  therapyIntro: {
-    gap: spacing.sm,
-    width: "100%",
-    alignItems: "center",
-    alignSelf: "stretch",
-    paddingHorizontal: spacing.xxs,
-  },
-  therapyHeadline: {
-    width: "100%",
-    textAlign: "center",
-    fontWeight: "700",
-    lineHeight: 28,
-    flexShrink: 1,
-  },
-  therapySubtitle: {
-    width: "100%",
-    textAlign: "center",
-    lineHeight: 22,
-    opacity: 0.92,
-    flexShrink: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    width: "100%",
-  },
-  sectionTitle: {
-    fontWeight: "700",
-    flexShrink: 1,
-    textAlign: "center",
-  },
-  sectionBody: {
-    lineHeight: 24,
-    opacity: 0.9,
-    textAlign: "center",
-    width: "100%",
-  },
-  sectionDivider: {
-    marginVertical: 4,
-  },
-  restartTourButton: {
-    alignSelf: "stretch",
-    borderRadius: 14,
-  },
-  scanPrimaryButton: {
-    borderRadius: 14,
-    alignSelf: "stretch",
-  },
-  largeButtonContent: {
-    minHeight: 52,
-    paddingVertical: 8,
-  },
-  framingBox: {
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    alignItems: "stretch",
-    justifyContent: "center",
-    padding: spacing.sm,
-    gap: spacing.sm,
-  },
-  framingExample: {
-    gap: spacing.sm,
-    alignItems: "stretch",
-    width: "100%",
-  },
-  scanResult: {
-    gap: 8,
-    padding: 16,
-    borderRadius: 16,
-    borderLeftWidth: 4,
-  },
-  scanResultBlock: {
-    gap: spacing.md,
-    width: "100%",
-  },
-  dayRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    justifyContent: "center",
-  },
-});

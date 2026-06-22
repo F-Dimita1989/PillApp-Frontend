@@ -36,7 +36,9 @@ export function MedicationQuantitySection({
       borderRadius="$3"
       padding="$4"
     >
-      <AppText variant="title">Quantità</AppText>
+      <AppText variant="overline" color="primary">
+        Quantità in confezione
+      </AppText>
       <AppText variant="body" muted>
         {values.quantita.trim()
           ? `In confezione: ${values.quantita.trim()} ${unitLabel} (dal database). Puoi aggiornare il valore man mano che usi il farmaco.`

@@ -1,34 +1,79 @@
 import { useCallback, useRef, useState } from "react";
 import {
-  FlatList,
-  View,
   useWindowDimensions,
   type ListRenderItemInfo,
   type ViewToken,
 } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
+} from "react-native-reanimated";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 
+import { OnboardingGradientButton } from "@/components/onboarding/onboarding-gradient-button";
+import { OnboardingHeroEmblem } from "@/components/onboarding/onboarding-hero-emblem";
 import { OnboardingSlideView } from "@/components/onboarding/onboarding-slide-view";
-import { PrimaryButton, SecondaryButton } from "@/components/ui";
+import { AppText } from "@/components/ui/app-text";
+import { IntroHeroArc, onboardingHeroEmblemLayout } from "@/components/ui";
 import {
   ONBOARDING_SLIDE_COUNT,
   onboardingSlides,
   type OnboardingSlide,
 } from "@/constants/onboarding-slides";
-import { layout, spacing } from "@/constants/spacing";
 import { markOnboardingAsSeen } from "@/lib/onboarding/storage";
-import { pillappColors } from "@/theme/tokens";
+import { pillappLayout } from "@/theme/tokens";
 
 type OnboardingScreenProps = {
   onComplete: () => void;
 };
 
+type OnboardingAnimatedSlideProps = {
+  slide: OnboardingSlide;
+  index: number;
+  width: number;
+  scrollX: SharedValue<number>;
+};
+
+function OnboardingAnimatedSlide({
+  slide,
+  index,
+  width,
+  scrollX,
+}: OnboardingAnimatedSlideProps) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollX.value,
+      [(index - 1) * width, index * width, (index + 1) * width],
+      [0, 1, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
+
+  return (
+    <Animated.View style={[{ width }, animatedStyle]}>
+      <OnboardingSlideView slide={slide} width={width} />
+    </Animated.View>
+  );
+}
+
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const listRef = useRef<FlatList<OnboardingSlide>>(null);
+  const listRef = useRef<Animated.FlatList<OnboardingSlide>>(null);
+  const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+    },
+  });
 
   const isLastSlide = currentIndex === ONBOARDING_SLIDE_COUNT - 1;
   const isFirstSlide = currentIndex === 0;
@@ -56,15 +101,35 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   ).current;
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
-      <OnboardingSlideView slide={item} width={width} />
+    ({ item, index }: ListRenderItemInfo<OnboardingSlide>) => (
+      <OnboardingAnimatedSlide
+        slide={item}
+        index={index}
+        width={width}
+        scrollX={scrollX}
+      />
     ),
-    [width],
+    [scrollX, width],
   );
 
   return (
     <YStack flex={1} backgroundColor="$background">
-      <FlatList
+      <IntroHeroArc
+        title=""
+        showCopy={false}
+        showLogo={false}
+        parentPaddingX={0}
+        emblemSize={onboardingHeroEmblemLayout.size}
+        emblem={
+          <OnboardingHeroEmblem
+            scrollX={scrollX}
+            width={width}
+            emblemSize={onboardingHeroEmblemLayout.size}
+          />
+        }
+      />
+
+      <Animated.FlatList
         ref={listRef}
         data={onboardingSlides}
         keyExtractor={(item) => item.id}
@@ -73,6 +138,8 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         pagingEnabled
         bounces={false}
         showsHorizontalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ viewAreaCoveragePercentThreshold: 60 }}
         getItemLayout={(_, index) => ({
@@ -84,45 +151,56 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       />
 
       <YStack
-        paddingHorizontal={layout.screenPaddingHorizontal}
-        paddingBottom={insets.bottom + spacing.md}
-        paddingTop={spacing.md}
-        gap="$3"
+        paddingHorizontal={pillappLayout.screenPaddingX}
+        paddingBottom={insets.bottom + 16}
+        paddingTop="$4"
+        gap="$4"
         backgroundColor="$background"
       >
         <XStack justifyContent="center" gap="$2">
           {onboardingSlides.map((slide, index) => (
-            <View
+            <YStack
               key={slide.id}
-              style={{
-                width: index === currentIndex ? 24 : 8,
-                height: 8,
-                borderRadius: 999,
-                backgroundColor:
-                  index === currentIndex ? pillappColors.primary : pillappColors.border,
-              }}
+              width={index === currentIndex ? 24 : 8}
+              height={8}
+              borderRadius="$pill"
+              backgroundColor={index === currentIndex ? "$primary" : "$border"}
             />
           ))}
         </XStack>
 
-        <PrimaryButton fullWidth onPress={goNext}>
-          {isLastSlide ? "Inizia" : "Continua"}
-        </PrimaryButton>
+        <XStack justifyContent="space-between" alignItems="center" minHeight={48}>
+          {isFirstSlide ? (
+            <Pressable
+              onPress={() => void finishOnboarding()}
+              accessibilityRole="button"
+              accessibilityLabel="Salta introduzione"
+              hitSlop={8}
+            >
+              <AppText variant="body" color="primary" fontWeight="600">
+                Salta
+              </AppText>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() =>
+                listRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true })
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Torna alla slide precedente"
+              hitSlop={8}
+            >
+              <AppText variant="body" color="primary" fontWeight="600">
+                Indietro
+              </AppText>
+            </Pressable>
+          )}
 
-        {!isFirstSlide ? (
-          <SecondaryButton
-            fullWidth
-            onPress={() =>
-              listRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true })
-            }
-          >
-            Indietro
-          </SecondaryButton>
-        ) : (
-          <SecondaryButton fullWidth onPress={() => void finishOnboarding()}>
-            Salta
-          </SecondaryButton>
-        )}
+          <OnboardingGradientButton
+            label={isLastSlide ? "Inizia" : "Continua"}
+            onPress={goNext}
+          />
+        </XStack>
       </YStack>
     </YStack>
   );

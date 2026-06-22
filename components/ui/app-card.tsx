@@ -5,18 +5,24 @@ import { HealthcareCard, FullWidthStack } from "@/theme/tamagui-primitives";
 
 type AppCardProps = YStackProps & {
   children: ReactNode;
-  variant?: "elevated" | "outlined" | "muted";
+  variant?: "elevated" | "outlined" | "muted" | "highlight";
+  pressable?: boolean;
   /** @deprecated Usa variant */
   mode?: "elevated" | "outlined" | "contained";
 };
 
-export function AppCard({ children, variant, mode, ...rest }: AppCardProps) {
+export function AppCard({ children, variant, mode, pressable, ...rest }: AppCardProps) {
   const resolvedVariant =
     variant ??
     (mode === "outlined" ? "outlined" : mode === "contained" ? "muted" : "elevated");
 
   return (
-    <HealthcareCard variant={resolvedVariant} overflow="visible" {...rest}>
+    <HealthcareCard
+      variant={resolvedVariant}
+      pressable={pressable}
+      overflow="visible"
+      {...rest}
+    >
       {children}
     </HealthcareCard>
   );

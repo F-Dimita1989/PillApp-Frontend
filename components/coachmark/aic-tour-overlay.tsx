@@ -6,7 +6,7 @@ import {
   useTourMeasurement,
   isReduceMotionEnabled,
 } from "@edwardloopez/react-native-coachmark";
-import type { Placement, SpotlightShape, TooltipRenderProps, TourStep } from "@edwardloopez/react-native-coachmark";
+import type { SpotlightShape, TooltipRenderProps, TourStep } from "@edwardloopez/react-native-coachmark";
 import { useCallback, useEffect, useMemo, useState, memo, Fragment } from "react";
 import {
   Dimensions,
@@ -21,8 +21,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AIC_TOUR_ANCHORS } from "@/constants/aic-scanner-tour";
 import { pillappCoachmarkSpotlight } from "@/constants/coachmark-theme";
+import { layout, spacing } from "@/constants/spacing";
 
 type CustomTooltipWrapperProps = {
   renderer: ((props: TooltipRenderProps) => React.ReactElement) | undefined;
@@ -44,88 +47,6 @@ function resolveNextOnBackdropPress(
   tour: { nextOnBackdropPress?: boolean } | null | undefined,
 ) {
   return step?.nextOnBackdropPress ?? tour?.nextOnBackdropPress ?? true;
-}
-
-function useTourTooltipPosition({
-  targetRect,
-  tooltipSize,
-  activeStep,
-}: {
-  targetRect: { x: number; y: number; width: number; height: number } | null;
-  tooltipSize: { width: number; height: number } | null;
-  activeStep: TourStep | undefined;
-}) {
-  const [tooltipPos, setTooltipPos] = useState({ x: -9999, y: -9999 });
-  const { width: W, height: H } = Dimensions.get("window");
-
-  useEffect(() => {
-    if (!targetRect || !tooltipSize || !activeStep) return;
-    const placement = activeStep.placement ?? "auto";
-    const pos = computeTooltipPosition(
-      W,
-      H,
-      targetRect,
-      placement,
-      { w: tooltipSize.width, h: tooltipSize.height },
-      20,
-    );
-    setTooltipPos({ x: pos.x, y: pos.y });
-  }, [targetRect, tooltipSize, W, H, activeStep]);
-
-  return tooltipPos;
-}
-
-function computeTooltipPosition(
-  screenW: number,
-  screenH: number,
-  target: { x: number; y: number; width: number; height: number },
-  placement: Placement,
-  tooltipSize: { w: number; h: number },
-  gap = 12,
-) {
-  const cx = target.x + target.width / 2;
-  const cy = target.y + target.height / 2;
-  const pref =
-    placement === "auto"
-      ? (["bottom", "top", "right", "left"] as const)
-      : ([placement] as const);
-
-  for (const p of pref) {
-    if (p === "bottom" && target.y + target.height + gap + tooltipSize.h <= screenH) {
-      return {
-        x: Math.min(Math.max(cx - tooltipSize.w / 2, 12), screenW - tooltipSize.w - 12),
-        y: target.y + target.height + gap,
-        placement: "bottom" as const,
-      };
-    }
-    if (p === "top" && target.y - gap - tooltipSize.h >= 0) {
-      return {
-        x: Math.min(Math.max(cx - tooltipSize.w / 2, 12), screenW - tooltipSize.w - 12),
-        y: Math.max(target.y - gap - tooltipSize.h, 12),
-        placement: "top" as const,
-      };
-    }
-    if (p === "right" && target.x + target.width + gap + tooltipSize.w <= screenW) {
-      return {
-        x: target.x + target.width + gap,
-        y: Math.min(Math.max(cy - tooltipSize.h / 2, 12), screenH - tooltipSize.h - 12),
-        placement: "right" as const,
-      };
-    }
-    if (p === "left" && target.x - gap - tooltipSize.w >= 0) {
-      return {
-        x: target.x - gap - tooltipSize.w,
-        y: Math.min(Math.max(cy - tooltipSize.h / 2, 12), screenH - tooltipSize.h - 12),
-        placement: "left" as const,
-      };
-    }
-  }
-
-  return {
-    x: Math.min(Math.max(cx - tooltipSize.w / 2, 12), screenW - tooltipSize.w - 12),
-    y: Math.min(target.y + target.height + gap, screenH - tooltipSize.h - 12),
-    placement: "bottom" as const,
-  };
 }
 
 function spotlightBorderRadius(
@@ -200,10 +121,7 @@ function SpotlightRing({
 export function AicTourOverlay() {
   const { state, getAnchor, setMeasured, next, back, stop, theme } =
     useCoachmarkContext();
-  const [tooltipSize, setTooltipSize] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
+  const insets = useSafeAreaInsets();
   const [reduceMotion, setReduceMotion] = useState(false);
   const opacity = useSharedValue(0);
   const holeX = useSharedValue(0);
@@ -242,29 +160,31 @@ export function AicTourOverlay() {
     holeHeight,
   });
 
-  const tooltipPos = useTourTooltipPosition({
-    targetRect,
-    tooltipSize,
-    activeStep,
-  });
-
   const handleOrientationChange = useCallback(() => {
     remeasure();
   }, [remeasure]);
 
   useOrientationChange(state.isActive, handleOrientationChange);
 
+  // Dopo lo scroll manuale sul passo 4, riallinea il buco senza rilanciare autoFocus.
+  useEffect(() => {
+    if (
+      !state.isActive ||
+      activeStep?.id !== AIC_TOUR_ANCHORS.resultCard
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      void remeasure();
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [state.isActive, state.index, activeStep?.id, remeasure]);
+
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }));
-
-  const handleTooltipLayout = useCallback(
-    (e: { nativeEvent: { layout: { width: number; height: number } } }) => {
-      const { width, height } = e.nativeEvent.layout;
-      setTooltipSize({ width, height });
-    },
-    [],
-  );
 
   const handleSkip = useCallback(() => stop("skipped"), [stop]);
 
@@ -337,9 +257,12 @@ export function AicTourOverlay() {
         <Animated.View
           style={[
             styles.tooltipContainer,
-            { left: tooltipPos.x, top: tooltipPos.y },
+            {
+              left: layout.screenPaddingHorizontal,
+              right: layout.screenPaddingHorizontal,
+              bottom: insets.bottom + spacing.sm,
+            },
           ]}
-          onLayout={handleTooltipLayout}
         >
           <CoachmarkErrorBoundary
             onError={(error) => {

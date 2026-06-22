@@ -5,13 +5,13 @@ import { YStack } from "tamagui";
 import {
   AppCard,
   AppCardContent,
-  AppHeader,
   AppListItem,
   AppScreen,
   AppSnackbar,
   AppSwitch,
   AppText,
-  SectionTitle,
+  AppTopBar,
+  SectionHeader,
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
 import {
@@ -79,14 +79,17 @@ export function ProfileScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
+      <AppTopBar
         title="Profilo"
         subtitle="Impostazioni personali, notifiche e accessibilità."
       />
 
-      <AppCard variant="elevated">
+      <AppCard variant="highlight">
         <AppCardContent>
-          <YStack gap="$1">
+          <YStack gap="$2">
+            <AppText variant="overline" color="primary">
+              Il tuo profilo
+            </AppText>
             <AppText variant="headline">
               {profile.name || "Utente PillApp"}
             </AppText>
@@ -95,7 +98,7 @@ export function ProfileScreen() {
                 Nato/a nel {profile.birthYear}
               </AppText>
             ) : null}
-            <AppText variant="body" color="primary">
+            <AppText variant="title" color="primary">
               Aderenza oggi: {adherenceToday.percentage}%
             </AppText>
           </YStack>
@@ -103,9 +106,9 @@ export function ProfileScreen() {
       </AppCard>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle title="Notifiche e promemoria" />
+        <SectionHeader title="Notifiche e promemoria" />
         <AppCard variant="outlined">
-          <AppCardContent>
+          <AppCardContent gap="$0">
             <AppListItem
               title="Promemoria farmaci"
               description="Ricevi avvisi per le assunzioni programmate"
@@ -148,7 +151,7 @@ export function ProfileScreen() {
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle title="Accessibilità" />
+        <SectionHeader title="Accessibilità" />
         <AppCard variant="outlined">
           <AppCardContent>
             <AppListItem
@@ -167,9 +170,9 @@ export function ProfileScreen() {
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle title="Privacy e informazioni" />
+        <SectionHeader title="Privacy e informazioni" />
         <AppCard variant="outlined">
-          <AppCardContent>
+          <AppCardContent gap="$0">
             <AppListItem
               title="Dati salvati sul telefono"
               description="Le informazioni restano sul dispositivo finché non attivi un backup cloud."

@@ -1,21 +1,22 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { YStack } from "tamagui";
 
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
-import { DrugPackageImage } from "@/components/farmaci/drug-package-image";
 import {
   AppCard,
   AppCardContent,
-  AppHeader,
   AppInput,
   AppScreen,
   AppText,
   BottomActionBar,
   ErrorState,
+  IntroHeroArc,
   PrimaryButton,
   SecondaryButton,
+  SectionHeader,
   SuccessState,
 } from "@/components/ui";
 import { AppRoutes } from "@/features/navigation/routes";
@@ -54,7 +55,10 @@ export function AicScannerScreen() {
         return;
       }
 
-      const formValues = buildScannedMedicationFormValues(result.aic, result.data);
+      const formValues = buildScannedMedicationFormValues(
+        result.aic,
+        result.data,
+      );
       setScanFormValues(formValues);
       setDose(therapyDoseFromFormValues(formValues));
       setPhase("confirm");
@@ -111,66 +115,92 @@ export function AicScannerScreen() {
 
   return (
     <YStack flex={1} backgroundColor="$background">
+      <IntroHeroArc
+        eyebrow="Funzione esclusiva"
+        title="Scansione AIC"
+        subtitle="Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
+        emblem={
+          <MaterialCommunityIcons
+            name="barcode-scan"
+            size={40}
+            color={pillappColors.primary}
+          />
+        }
+        showLogo={false}
+      />
+
       <AppScreen
         scroll={phase !== "loading"}
         contentStyle={phase === "confirm" ? { paddingBottom: 120 } : undefined}
       >
-        <AppHeader
-          title="Scansione AIC"
-          subtitle="Punta la fotocamera sul codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
-          eyebrow="Funzione esclusiva PillApp"
-        />
-
-        <AppCard variant="outlined">
-          <AppCardContent alignItems="center">
-            <YStack
-              width="100%"
-              minHeight={220}
-              borderRadius="$4"
-              borderWidth={2}
-              borderStyle="dashed"
-              borderColor="$primary"
-              backgroundColor="$primarySoft"
-              alignItems="center"
-              justifyContent="center"
-              padding="$5"
-              gap="$3"
-              accessibilityLabel="Area di scansione codice AIC"
-            >
-              {phase === "loading" ? (
-                <>
-                  <ActivityIndicator size="large" color={pillappColors.primary} />
-                  <AppText variant="body" textAlign="center">
-                    Lettura in corso…
-                  </AppText>
-                </>
-              ) : (
-                <>
-                  <AppText variant="display" color="primary">
-                    AIC
-                  </AppText>
-                  <AppText variant="body" muted textAlign="center">
-                    Inquadra il codice a 9 cifre sulla confezione
-                  </AppText>
-                </>
-              )}
-            </YStack>
-          </AppCardContent>
-        </AppCard>
+        <YStack width="100%" gap="$3">
+          <SectionHeader title="Area di scansione" />
+          <AppCard variant="outlined">
+            <AppCardContent alignItems="center">
+              <YStack
+                width="100%"
+                minHeight={220}
+                borderRadius="$3"
+                borderWidth={2}
+                borderStyle="dashed"
+                borderColor="$primary"
+                backgroundColor="$primarySoft"
+                alignItems="center"
+                justifyContent="center"
+                padding="$5"
+                gap="$3"
+                accessibilityLabel="Area di scansione codice AIC"
+              >
+                {phase === "loading" ? (
+                  <>
+                    <ActivityIndicator
+                      size="large"
+                      color={pillappColors.primary}
+                    />
+                    <AppText variant="body" textAlign="center">
+                      Lettura in corso…
+                    </AppText>
+                  </>
+                ) : (
+                  <>
+                    <MaterialCommunityIcons
+                      name="barcode-scan"
+                      size={48}
+                      color={pillappColors.primary}
+                    />
+                    <AppText variant="title" color="primary">
+                      Codice AIC
+                    </AppText>
+                    <AppText variant="body" muted textAlign="center">
+                      Cerca «AIC N.» e le 9 cifre stampate sulla confezione
+                    </AppText>
+                  </>
+                )}
+              </YStack>
+            </AppCardContent>
+          </AppCard>
+        </YStack>
 
         {phase === "confirm" && scanFormValues ? (
           <AppCard>
             <AppCardContent>
-              <AppText variant="title">Conferma dati</AppText>
-              <DrugPackageImage values={scanFormValues} />
+              <SectionHeader
+                title="Conferma dati"
+                description="Verifica le informazioni prima di aggiungere il farmaco."
+              />
               <ScannedMedicationForm
                 key={`scan-form-${scanFormValues.aic}`}
                 values={scanFormValues}
                 onChange={setScanFormValues}
+                showHeading={false}
               />
-              <AppInput label="Dose giornaliera" value={dose} onChangeText={setDose} />
+              <AppInput
+                label="Dose giornaliera"
+                value={dose}
+                onChangeText={setDose}
+              />
               <AppText variant="caption" muted>
-                Puoi modificare orari e promemoria dalla scheda del farmaco.
+                Potrai modificare orari e promemoria dalla scheda del farmaco.
               </AppText>
             </AppCardContent>
           </AppCard>
@@ -193,11 +223,26 @@ export function AicScannerScreen() {
 
         {phase === "idle" ? (
           <YStack width="100%" gap="$3">
-            <PrimaryButton icon="camera" fullWidth onPress={() => void runScan("camera")}>
+            <PrimaryButton
+              icon="camera"
+              fullWidth
+              onPress={() => void runScan("camera")}
+            >
               Apri fotocamera
             </PrimaryButton>
-            <SecondaryButton icon="image" fullWidth onPress={() => void runScan("gallery")}>
+            <SecondaryButton
+              icon="image"
+              fullWidth
+              onPress={() => void runScan("gallery")}
+            >
               Scegli da galleria
+            </SecondaryButton>
+            <SecondaryButton
+              icon="pencil-outline"
+              fullWidth
+              onPress={startManualEntry}
+            >
+              Inserisci manualmente
             </SecondaryButton>
           </YStack>
         ) : null}

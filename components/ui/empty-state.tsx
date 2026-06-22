@@ -28,21 +28,25 @@ export function EmptyState({
     <YStack
       width="100%"
       backgroundColor={backgroundColor}
-      borderRadius="$4"
-      padding="$5"
+      borderRadius="$3"
+      borderWidth={1}
+      borderColor="$border"
+      padding="$6"
       alignItems="center"
       gap="$3"
       accessibilityRole="text"
     >
       {icon}
-      <AppText variant="title" textAlign="center">
-        {title}
-      </AppText>
-      <AppText variant="body" muted textAlign="center">
-        {description}
-      </AppText>
+      <YStack gap="$2" alignItems="center" maxWidth={320}>
+        <AppText variant="title" textAlign="center">
+          {title}
+        </AppText>
+        <AppText variant="body" muted textAlign="center">
+          {description}
+        </AppText>
+      </YStack>
       {actionLabel && onAction ? (
-        <AppButton fullWidth onPress={onAction} marginTop="$1">
+        <AppButton fullWidth onPress={onAction} marginTop="$2">
           {actionLabel}
         </AppButton>
       ) : null}

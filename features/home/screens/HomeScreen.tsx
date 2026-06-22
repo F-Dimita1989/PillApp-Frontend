@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
 import { XStack, YStack } from "tamagui";
@@ -6,45 +7,143 @@ import { HomeWeekCalendar } from "@/components/home/home-week-calendar";
 import { useNow } from "@/hooks/use-now";
 import {
   AppCard,
-  AppCardActions,
   AppCardContent,
   AppScreen,
   AppText,
+  AppTopBar,
   EmptyState,
   MeasurementCard,
-  PrimaryButton,
+  MedicationScheduleCard,
   QuickActionButton,
-  ReminderCard,
-  SecondaryButton,
   SectionHeader,
-  StatusChip,
+  SuccessState,
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
 import { AppRoutes } from "@/features/navigation/routes";
 import { medicationsToCombinedDayPlan } from "@/lib/app-data/sync";
 import { formatItalianDate, formatItalianTime } from "@/lib/time/datetime-labels";
+import { pillappColors } from "@/theme/tokens";
+import type { DoseEvent } from "@/types/domain";
 
-function heroMessage(status: string): string {
-  switch (status) {
-    case "due_soon":
-      return "Da prendere tra poco";
-    case "overdue":
-      return "Orario superato: conviene prenderlo adesso";
-    case "snoozed":
-      return "Promemoria posticipato";
-    default:
-      return "In programma per oggi";
-  }
+function TimeBadge({ time }: { time: string }) {
+  return (
+    <YStack
+      backgroundColor="$primarySoft"
+      borderRadius="$2"
+      paddingHorizontal="$3"
+      paddingVertical="$2"
+      alignItems="center"
+      justifyContent="center"
+      borderWidth={1}
+      borderColor="$border"
+      flexShrink={0}
+      accessibilityLabel={`Ora attuale: ${time}`}
+    >
+      <AppText variant="title" color="primary">
+        {time}
+      </AppText>
+    </YStack>
+  );
 }
 
 function AdherenceBar({ taken, total }: { taken: number; total: number }) {
   const progress = total ? taken / total : 0;
 
   return (
-    <XStack width="100%" height={10} backgroundColor="$surfaceMuted" borderRadius={999} overflow="hidden">
-      <XStack flex={Math.max(progress, 0.001)} backgroundColor="$secondary" borderRadius={999} />
-      <XStack flex={Math.max(1 - progress, 0.001)} />
-    </XStack>
+    <YStack width="100%" gap="$2">
+      <XStack
+        width="100%"
+        height={8}
+        backgroundColor="$surfaceMuted"
+        borderRadius="$pill"
+        overflow="hidden"
+      >
+        <XStack
+          flex={Math.max(progress, 0.001)}
+          backgroundColor="$success"
+          borderRadius="$pill"
+        />
+        <XStack flex={Math.max(1 - progress, 0.001)} />
+      </XStack>
+      <XStack width="100%" justifyContent="space-between">
+        <AppText variant="caption" muted>
+          {taken} completate
+        </AppText>
+        <AppText variant="caption" muted>
+          {total} totali
+        </AppText>
+      </XStack>
+    </YStack>
+  );
+}
+
+function FeaturedDoseSection({
+  hasMedications,
+  hasDosesToday,
+  nextDose,
+  onMarkTaken,
+  onSnooze,
+  onScan,
+}: {
+  hasMedications: boolean;
+  hasDosesToday: boolean;
+  nextDose: DoseEvent | null | undefined;
+  onMarkTaken: (id: string) => void;
+  onSnooze: (id: string) => void;
+  onScan: () => void;
+}) {
+  if (nextDose) {
+    return (
+      <YStack width="100%" gap="$3">
+        <SectionHeader title="Prossima assunzione" />
+        <MedicationScheduleCard
+          dose={nextDose}
+          onMarkTaken={() => onMarkTaken(nextDose.id)}
+          onSnooze={() => onSnooze(nextDose.id)}
+        />
+      </YStack>
+    );
+  }
+
+  if (!hasMedications) {
+    return (
+      <EmptyState
+        title="Benvenuto in PillApp"
+        description="Aggiungi il tuo primo farmaco scansionando il codice AIC sulla confezione. Riceverai promemoria puntuali per ogni assunzione."
+        actionLabel="Scansiona codice AIC"
+        onAction={onScan}
+        icon={
+          <MaterialCommunityIcons
+            name="barcode-scan"
+            size={32}
+            color={pillappColors.primary}
+          />
+        }
+      />
+    );
+  }
+
+  if (!hasDosesToday) {
+    return (
+      <EmptyState
+        title="Nessuna assunzione oggi"
+        description="I tuoi farmaci non sono programmati per oggi. Consulta la tab Farmaci per l'agenda settimanale."
+        icon={
+          <MaterialCommunityIcons
+            name="calendar-blank-outline"
+            size={32}
+            color={pillappColors.textMuted}
+          />
+        }
+      />
+    );
+  }
+
+  return (
+    <SuccessState
+      title="Terapia completata"
+      description="Hai confermato tutte le assunzioni previste per oggi. Ottimo lavoro nel seguire la tua terapia."
+    />
   );
 }
 
@@ -70,125 +169,110 @@ export function HomeScreen() {
   const hasMedications = medications.some((m) => m.active);
   const hasDosesToday = dosesToday.length > 0;
 
+  const heroSubtitle = hasDosesToday
+    ? `${adherenceToday.taken} di ${adherenceToday.total} assunzioni completate oggi`
+    : hasMedications
+      ? "Nessuna assunzione in programma per oggi"
+      : "Inizia aggiungendo il tuo primo farmaco";
+
+  const dosesForList = useMemo(
+    () => (nextDose ? dosesToday.filter((d) => d.id !== nextDose.id) : dosesToday),
+    [dosesToday, nextDose],
+  );
+
   return (
     <AppScreen>
-      <YStack width="100%" gap="$1" paddingBottom="$1">
-        <AppText variant="headline">{greeting}</AppText>
-        <AppText variant="body" muted>
-          {formatItalianDate(now)}
-        </AppText>
-        <AppText variant="title" color="primary">
-          {formatItalianTime(now)}
-        </AppText>
-      </YStack>
-
-      <AppCard>
-        <AppCardContent>
-          <HomeWeekCalendar dayPlan={therapyDayPlan} />
-        </AppCardContent>
-      </AppCard>
-
-      {nextDose ? (
-        <AppCard>
-          <AppCardContent>
-            <XStack width="100%" justifyContent="space-between" alignItems="center">
-              <AppText variant="label" color="primary">
-                Prossimo farmaco
-              </AppText>
-              <StatusChip status={nextDose.status} />
-            </XStack>
-            <YStack width="100%" gap="$2">
-              <AppText variant="bodyStrong">{nextDose.medicationName}</AppText>
-              <AppText variant="body" muted>
-                {nextDose.dose}
-              </AppText>
-              <AppText variant="title">Orario: {nextDose.scheduledTime}</AppText>
-              <AppText variant="body" muted>
-                {heroMessage(nextDose.status)}
-              </AppText>
-            </YStack>
-          </AppCardContent>
-          <AppCardActions>
-            <PrimaryButton
-              icon="check-circle-outline"
-              fullWidth
-              onPress={() => markDoseTaken(nextDose.id)}
-            >
-              Segna come preso
-            </PrimaryButton>
-            <SecondaryButton icon="bell-outline" fullWidth onPress={() => snoozeDose(nextDose.id)}>
-              Ricordamelo dopo
-            </SecondaryButton>
-          </AppCardActions>
-        </AppCard>
-      ) : hasMedications && !hasDosesToday ? (
-        <AppCard>
-          <AppCardContent>
-            <AppText variant="headline">Nessuna assunzione oggi</AppText>
-            <AppText variant="body" muted>
-              I tuoi farmaci non sono programmati per oggi. Controlla la tab Farmaci per
-              l&apos;agenda settimanale.
-            </AppText>
-          </AppCardContent>
-        </AppCard>
-      ) : hasMedications ? (
-        <AppCard variant="muted">
-          <AppCardContent>
-            <AppText variant="headline">Ottimo lavoro!</AppText>
-            <AppText variant="body" muted>
-              Hai completato tutte le assunzioni programmate per oggi.
-            </AppText>
-          </AppCardContent>
-        </AppCard>
-      ) : (
-        <AppCard>
-          <AppCardContent>
-            <AppText variant="headline">Benvenuto in PillApp</AppText>
-            <AppText variant="body" muted>
-              Scansiona il codice AIC sulla confezione per aggiungere il tuo primo farmaco e
-              ricevere i promemoria.
-            </AppText>
-          </AppCardContent>
-          <AppCardActions>
-            <PrimaryButton icon="barcode-scan" fullWidth onPress={() => router.push(AppRoutes.scan)}>
-              Scansiona codice AIC
-            </PrimaryButton>
-          </AppCardActions>
-        </AppCard>
-      )}
+      <AppTopBar
+        variant="hero"
+        eyebrow={formatItalianDate(now)}
+        title={greeting}
+        subtitle={heroSubtitle}
+        trailing={<TimeBadge time={formatItalianTime(now)} />}
+      />
 
       <YStack width="100%" gap="$3">
         <SectionHeader
-          title="Oggi"
+          title="La tua settimana"
+          description="Terapia e impegni in calendario"
+        />
+        <AppCard variant="outlined">
+          <AppCardContent>
+            <HomeWeekCalendar dayPlan={therapyDayPlan} />
+          </AppCardContent>
+        </AppCard>
+      </YStack>
+
+      <FeaturedDoseSection
+        hasMedications={hasMedications}
+        hasDosesToday={hasDosesToday}
+        nextDose={nextDose}
+        onMarkTaken={markDoseTaken}
+        onSnooze={snoozeDose}
+        onScan={() => router.push(AppRoutes.scan)}
+      />
+
+      <YStack width="100%" gap="$3">
+        <SectionHeader
+          title="Agenda di oggi"
           description={
             hasDosesToday
-              ? `${adherenceToday.taken} di ${adherenceToday.total} assunzioni completate`
-              : "Nessuna assunzione in programma"
+              ? `${dosesToday.length} assunzion${dosesToday.length === 1 ? "e" : "i"} in programma`
+              : undefined
           }
         />
         {hasDosesToday ? (
           <YStack width="100%" gap="$3">
-            {dosesToday.map((dose) => (
-              <ReminderCard
+            {dosesForList.map((dose) => (
+              <MedicationScheduleCard
                 key={dose.id}
                 dose={dose}
-                onMarkTaken={() => markDoseTaken(dose.id)}
+                compact={dose.status === "taken" || dose.status === "skipped"}
+                onMarkTaken={
+                  dose.status !== "taken" && dose.status !== "skipped"
+                    ? () => markDoseTaken(dose.id)
+                    : undefined
+                }
               />
             ))}
+            {dosesForList.length === 0 && nextDose ? (
+              <AppText variant="body" muted>
+                La prossima assunzione è evidenziata sopra.
+              </AppText>
+            ) : null}
           </YStack>
         ) : (
           <EmptyState
             title="Agenda vuota"
             description={
               hasMedications
-                ? "Oggi non ci sono assunzioni previste per i tuoi farmaci."
-                : "Aggiungi un farmaco scansionando il codice AIC o dalla configurazione iniziale."
+                ? "Oggi non ci sono altre assunzioni previste per i tuoi farmaci."
+                : "Aggiungi un farmaco per iniziare a ricevere promemoria personalizzati."
             }
             actionLabel={hasMedications ? undefined : "Scansiona codice AIC"}
             onAction={hasMedications ? undefined : () => router.push(AppRoutes.scan)}
           />
         )}
       </YStack>
+
+      {hasDosesToday ? (
+        <AppCard variant="muted">
+          <AppCardContent>
+            <SectionHeader
+              title="Aderenza di oggi"
+              description="Ogni conferma aiuta te e il medico a monitorare la terapia"
+            />
+            <XStack width="100%" justifyContent="space-between" alignItems="baseline">
+              <AppText variant="display" color="primary">
+                {adherenceToday.percentage}%
+              </AppText>
+              <AppText variant="bodyStrong" muted>
+                {adherenceToday.taken}/{adherenceToday.total}
+              </AppText>
+            </XStack>
+            <AdherenceBar taken={adherenceToday.taken} total={adherenceToday.total} />
+          </AppCardContent>
+        </AppCard>
+      ) : null}
 
       {measurements.length > 0 ? (
         <YStack width="100%" gap="$3">
@@ -212,43 +296,30 @@ export function HomeScreen() {
 
       <YStack width="100%" gap="$3">
         <SectionHeader title="Azioni rapide" />
-        <YStack width="100%" gap="$2">
-          <QuickActionButton
-            label="Scansiona codice AIC"
-            icon="barcode-scan"
-            highlight
-            onPress={() => router.push(AppRoutes.scan)}
-            accessibilityHint="Apre la scansione del codice AIC sulla confezione"
-          />
-          <QuickActionButton
-            label="I miei farmaci"
-            icon="pill"
-            onPress={() => router.push(AppRoutes.medications)}
-            accessibilityHint="Apre l'elenco dei farmaci attivi"
-          />
-          <QuickActionButton
-            label="Diario salute"
-            icon="notebook-outline"
-            onPress={() => router.push(AppRoutes.journal)}
-            accessibilityHint="Registra misurazioni, sintomi e note"
-          />
-        </YStack>
+        <AppCard variant="outlined">
+          <AppCardContent gap="$2">
+            <QuickActionButton
+              label="Scansiona codice AIC"
+              icon="barcode-scan"
+              highlight
+              onPress={() => router.push(AppRoutes.scan)}
+              accessibilityHint="Apre la scansione del codice AIC sulla confezione"
+            />
+            <QuickActionButton
+              label="I miei farmaci"
+              icon="pill"
+              onPress={() => router.push(AppRoutes.medications)}
+              accessibilityHint="Apre l'elenco dei farmaci attivi"
+            />
+            <QuickActionButton
+              label="Diario salute"
+              icon="notebook-outline"
+              onPress={() => router.push(AppRoutes.journal)}
+              accessibilityHint="Registra misurazioni, sintomi e note"
+            />
+          </AppCardContent>
+        </AppCard>
       </YStack>
-
-      <AppCard>
-        <AppCardContent>
-          <XStack width="100%" justifyContent="space-between" alignItems="center">
-            <AppText variant="title">Aderenza di oggi</AppText>
-            <AppText variant="title" color="primary">
-              {adherenceToday.percentage}%
-            </AppText>
-          </XStack>
-          <AdherenceBar taken={adherenceToday.taken} total={adherenceToday.total} />
-          <AppText variant="body" muted>
-            Ogni dose confermata aiuta te e il tuo medico a monitorare la terapia.
-          </AppText>
-        </AppCardContent>
-      </AppCard>
     </AppScreen>
   );
 }

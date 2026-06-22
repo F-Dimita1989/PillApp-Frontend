@@ -3,6 +3,9 @@ import { Dimensions, type ScrollView, type View } from "react-native";
 
 import { spacing } from "@/constants/spacing";
 
+/** Spazio riservato in basso per il pannello guida del tour. */
+export const TOUR_TOOLTIP_BOTTOM_RESERVE = 340;
+
 type SafeInsets = {
   top: number;
   bottom: number;
@@ -14,7 +17,7 @@ export function ensureVisibleInScroll(
   elementRef: RefObject<View | null>,
   getScrollY: () => number,
   insets: SafeInsets,
-  bottomReserve = 280,
+  bottomReserve = TOUR_TOOLTIP_BOTTOM_RESERVE,
 ): Promise<void> {
   return new Promise((resolve) => {
     const element = elementRef.current;
@@ -28,20 +31,25 @@ export function ensureVisibleInScroll(
       const windowH = Dimensions.get("window").height;
       const visibleTop = insets.top + spacing.md;
       const visibleBottom = windowH - insets.bottom - bottomReserve;
-      let delta = 0;
+      const availableHeight = visibleBottom - visibleTop;
+      const currentScrollY = getScrollY();
+      let targetScrollY = currentScrollY;
 
-      if (elemY + elemH > visibleBottom) {
-        delta = elemY + elemH - visibleBottom + spacing.sm;
+      if (elemH > availableHeight) {
+        targetScrollY = currentScrollY + elemY - visibleTop - spacing.sm;
+      } else if (elemY + elemH > visibleBottom) {
+        targetScrollY =
+          currentScrollY + elemY + elemH - visibleBottom + spacing.sm;
       } else if (elemY < visibleTop) {
-        delta = elemY - visibleTop - spacing.sm;
+        targetScrollY = currentScrollY + elemY - visibleTop - spacing.sm;
       }
 
-      if (delta !== 0) {
+      if (targetScrollY !== currentScrollY) {
         scroll.scrollTo({
-          y: Math.max(0, getScrollY() + delta),
+          y: Math.max(0, targetScrollY),
           animated: true,
         });
-        setTimeout(resolve, 420);
+        setTimeout(resolve, 450);
         return;
       }
 

@@ -1,29 +1,19 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { useRouter } from "expo-router";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { AppScreen, AppText, AppTopBar, SecondaryButton } from "@/components/ui";
 
 export default function ModalScreen() {
+  const router = useRouter();
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
-      </Link>
-    </ThemedView>
+    <AppScreen scroll={false}>
+      <AppTopBar title="Informazioni" onBack={() => router.back()} />
+      <AppText variant="body" muted>
+        Questa schermata modale è un placeholder. Puoi chiuderla per tornare all&apos;app.
+      </AppText>
+      <SecondaryButton fullWidth onPress={() => router.back()}>
+        Chiudi
+      </SecondaryButton>
+    </AppScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});

@@ -17,13 +17,15 @@ export function SectionHeader({ title, description, subtitle, action }: SectionH
   return (
     <XStack
       width="100%"
-      alignItems="flex-start"
+      alignItems="flex-end"
       justifyContent="space-between"
       gap="$3"
       paddingBottom="$1"
     >
-      <YStack flex={1} gap="$2" minWidth={0}>
-        <AppText variant="title">{title}</AppText>
+      <YStack flex={1} gap="$1" minWidth={0}>
+        <AppText variant="overline" muted>
+          {title}
+        </AppText>
         {resolvedDescription ? (
           <AppText variant="body" muted>
             {resolvedDescription}

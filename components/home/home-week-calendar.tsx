@@ -21,6 +21,7 @@ import {
   formatItalianTime,
 } from "@/lib/time/datetime-labels";
 import { useNow } from "@/hooks/use-now";
+import { pillappCalendarTheme } from "@/lib/calendar/calendar-theme";
 import { pillappColors } from "@/theme/tokens";
 
 type HomeWeekCalendarProps = {
@@ -28,22 +29,7 @@ type HomeWeekCalendarProps = {
 };
 
 export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
-  const calendarTheme = useMemo(
-    () => ({
-      backgroundColor: "transparent",
-      calendarBackground: "transparent",
-      textSectionTitleColor: pillappColors.textPrimary,
-      selectedDayBackgroundColor: pillappColors.primary,
-      selectedDayTextColor: pillappColors.onPrimary,
-      todayTextColor: pillappColors.primary,
-      dayTextColor: pillappColors.textPrimary,
-      textDisabledColor: pillappColors.border,
-      arrowColor: pillappColors.primary,
-      monthTextColor: pillappColors.textPrimary,
-      indicatorColor: pillappColors.primary,
-    }),
-    [],
-  );
+  const calendarTheme = useMemo(() => pillappCalendarTheme, []);
 
   const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
   const [deviceMarks, setDeviceMarks] = useState<

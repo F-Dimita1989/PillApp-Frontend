@@ -1,65 +1,72 @@
 /**
- * PillApp design tokens — palette dal logo (blu + menta/teal).
- * Fonte unica per Tamagui e costanti legacy.
+ * PillApp design tokens — healthcare consumer moderno.
+ * Fonte unica per Tamagui, StyleSheet legacy e componenti UI.
  */
+
 export const pillappColors = {
-  /** Sfondo app — bianco con leggera tinta azzurra */
-  background: "#F4FAFF",
-  backgroundSoft: "#EAF4FF",
+  /** Sfondo app — off-white azzurrato, calmo */
+  background: "#F7FAFC",
+  backgroundSoft: "#EEF4FA",
   surface: "#FFFFFF",
-  surfaceMuted: "#F0F7FD",
+  surfaceMuted: "#F2F6FA",
   surfaceElevated: "#FFFFFF",
 
-  /** Blu vibrante — metà inferiore della pillola nel logo */
-  primary: "#1A8CFF",
-  primarySoft: "#E8F4FF",
-  primaryDark: "#0F6FD6",
+  /** Blu medicale — CTA primari, link, focus */
+  primary: "#2B7FD4",
+  primarySoft: "#E8F2FB",
+  primaryDark: "#1E5F9E",
   onPrimary: "#FFFFFF",
 
-  /** Teal/menta — metà superiore della pillola nel logo */
-  secondary: "#2ECFB8",
-  secondarySoft: "#E6FAF6",
-  secondaryDark: "#1AAB95",
+  /** Teal clinico — progressi, conferme secondarie, brand accent */
+  secondary: "#2AABA0",
+  secondarySoft: "#E6F6F4",
+  secondaryDark: "#1F8A82",
   onSecondary: "#FFFFFF",
 
-  /** Verde menta — accento successo dal logo */
-  success: "#4ADE80",
-  successSoft: "#ECFDF5",
-  successDark: "#22A06B",
+  /** Verde soft — assunzione confermata, successo */
+  success: "#2EAD7A",
+  successSoft: "#EAF7F0",
+  successDark: "#1F7A55",
   onSuccess: "#FFFFFF",
 
-  /** Testo — nero profondo come la croce nel logo */
+  /** Testo — alto contrasto WCAG AA+ */
   textPrimary: "#0F172A",
   textSecondary: "#475569",
   textMuted: "#64748B",
   textInverse: "#FFFFFF",
 
-  border: "#B8D4F0",
-  borderStrong: "#7EB8E8",
+  /** Bordi delicati — separazione senza rumore */
+  border: "#E2EBF3",
+  borderStrong: "#C5D6E8",
   shadow: "#0F172A",
 
   error: "#DC2626",
   errorSoft: "#FEF2F2",
   onError: "#FFFFFF",
 
-  warning: "#D97706",
+  warning: "#C27803",
   warningSoft: "#FFFBEB",
 
+  /** Stati assunzione — tinte soft, mai aggressive */
   status: {
-    taken: { bg: "#ECFDF5", text: "#22A06B", border: "#4ADE80" },
-    pending: { bg: "#F0F7FD", text: "#475569", border: "#B8D4F0" },
-    dueSoon: { bg: "#E8F4FF", text: "#0F6FD6", border: "#1A8CFF" },
-    overdue: { bg: "#FEF2F2", text: "#B91C1C", border: "#DC2626" },
-    snoozed: { bg: "#E6FAF6", text: "#1AAB95", border: "#2ECFB8" },
-    skipped: { bg: "#F0F7FD", text: "#64748B", border: "#B8D4F0" },
+    taken: { bg: "#EAF7F0", text: "#1F7A55", border: "#A8DFC4" },
+    pending: { bg: "#F2F6FA", text: "#475569", border: "#E2EBF3" },
+    dueSoon: { bg: "#E8F2FB", text: "#1E5F9E", border: "#9DC5EB" },
+    overdue: { bg: "#FEF2F2", text: "#B91C1C", border: "#F5B4B4" },
+    snoozed: { bg: "#E6F6F4", text: "#1F8A82", border: "#9DD9D2" },
+    skipped: { bg: "#F2F6FA", text: "#64748B", border: "#E2EBF3" },
   },
 } as const;
 
+/** Scala 4pt — mobile-first, coerente con Tamagui $N */
 export const pillappSpace = {
   true: 16,
   0: 0,
+  0.5: 2,
   1: 4,
+  1.5: 6,
   2: 8,
+  2.5: 10,
   3: 12,
   4: 16,
   5: 20,
@@ -67,8 +74,10 @@ export const pillappSpace = {
   7: 32,
   8: 40,
   9: 48,
+  10: 56,
 } as const;
 
+/** Radius moderni — card 16–20, chip 8–12, pill per badge */
 export const pillappRadius = {
   true: 16,
   0: 0,
@@ -78,6 +87,19 @@ export const pillappRadius = {
   4: 20,
   5: 24,
   pill: 999,
+} as const;
+
+/** Dimensioni touch e icone */
+export const pillappSize = {
+  true: 16,
+  iconSm: 20,
+  iconMd: 24,
+  iconLg: 28,
+  touchMin: 48,
+  touchComfortable: 52,
+  inputHeight: 52,
+  topBarHeight: 56,
+  tabBarHeight: 56,
 } as const;
 
 export const pillappFontSize = {
@@ -106,16 +128,49 @@ export const pillappLineHeight = {
   9: 40,
 } as const;
 
+/** Ombre leggere — niente glow o profondità pesante */
+export const pillappShadows = {
+  none: {
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+  },
+  sm: {
+    shadowColor: pillappColors.shadow,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  md: {
+    shadowColor: pillappColors.shadow,
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  lg: {
+    shadowColor: pillappColors.shadow,
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+} as const;
+
 export const pillappTouch = {
-  min: 48,
-  comfortable: 52,
+  min: pillappSize.touchMin,
+  comfortable: pillappSize.touchComfortable,
 } as const;
 
 export const pillappLayout = {
   screenPaddingX: 16,
-  screenPaddingY: 12,
-  sectionGap: 20,
+  screenPaddingY: 16,
+  sectionGap: 24,
   cardGap: 12,
+  contentMaxWidth: 480,
 } as const;
 
 export type PillappStatusToken = keyof typeof pillappColors.status;

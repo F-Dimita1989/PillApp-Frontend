@@ -20,6 +20,7 @@ import {
   type TherapyDayKey,
   type TherapyDayPlan,
 } from "@/lib/therapy/types";
+import { pillappCalendarTheme } from "@/lib/calendar/calendar-theme";
 import { pillappColors } from "@/theme/tokens";
 
 type TherapyWeekCalendarProps = {
@@ -31,22 +32,7 @@ export function TherapyWeekCalendar({
   dayPlan,
   onToggleDay,
 }: TherapyWeekCalendarProps) {
-  const calendarTheme = useMemo(
-    () => ({
-      backgroundColor: "transparent",
-      calendarBackground: "transparent",
-      textSectionTitleColor: pillappColors.textPrimary,
-      selectedDayBackgroundColor: pillappColors.primary,
-      selectedDayTextColor: pillappColors.onPrimary,
-      todayTextColor: pillappColors.primary,
-      dayTextColor: pillappColors.textPrimary,
-      textDisabledColor: pillappColors.border,
-      arrowColor: pillappColors.primary,
-      monthTextColor: pillappColors.textPrimary,
-      indicatorColor: pillappColors.primary,
-    }),
-    [],
-  );
+  const calendarTheme = useMemo(() => pillappCalendarTheme, []);
   const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
   const [deviceMarks, setDeviceMarks] = useState<
     Awaited<ReturnType<typeof getDeviceEventsMarkedDates>>

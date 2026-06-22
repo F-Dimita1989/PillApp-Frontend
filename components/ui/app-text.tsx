@@ -10,7 +10,8 @@ export type AppTextVariant =
   | "body"
   | "bodyStrong"
   | "label"
-  | "caption";
+  | "caption"
+  | "overline";
 
 type HealthcareTextProps = GetProps<typeof HealthcareText>;
 

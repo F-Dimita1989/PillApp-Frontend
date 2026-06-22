@@ -5,10 +5,11 @@ import { createTamagui, createTokens } from "tamagui";
 import {
   pillappColors,
   pillappRadius,
+  pillappSize,
   pillappSpace,
 } from "./theme/tokens";
 
-/** Scala tipografica healthcare — numeri fissi, niente token astratti nel testo. */
+/** Scala tipografica healthcare — leggibilità mobile-first */
 const healthcareFontSizes = {
   1: 13,
   2: 14,
@@ -82,6 +83,7 @@ const tokens = createTokens({
     backgroundSoft: pillappColors.backgroundSoft,
     surface: pillappColors.surface,
     surfaceMuted: pillappColors.surfaceMuted,
+    surfaceElevated: pillappColors.surfaceElevated,
     primary: pillappColors.primary,
     primarySoft: pillappColors.primarySoft,
     primaryDark: pillappColors.primaryDark,
@@ -103,10 +105,21 @@ const tokens = createTokens({
     warningSoft: pillappColors.warningSoft,
     onPrimary: pillappColors.onPrimary,
     onSecondary: pillappColors.onSecondary,
+    onSuccess: pillappColors.onSuccess,
     textInverse: pillappColors.textInverse,
   },
   space: pillappSpace,
-  size: pillappSpace,
+  size: {
+    ...pillappSpace,
+    iconSm: pillappSize.iconSm,
+    iconMd: pillappSize.iconMd,
+    iconLg: pillappSize.iconLg,
+    touchMin: pillappSize.touchMin,
+    touchComfortable: pillappSize.touchComfortable,
+    inputHeight: pillappSize.inputHeight,
+    topBarHeight: pillappSize.topBarHeight,
+    tabBarHeight: pillappSize.tabBarHeight,
+  },
   radius: pillappRadius,
   zIndex: defaultConfig.tokens.zIndex,
 });

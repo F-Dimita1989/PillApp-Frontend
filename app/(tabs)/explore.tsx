@@ -9,13 +9,13 @@ import { TherapyWeekCalendar } from "@/components/therapy-week-calendar";
 import {
   AppCard,
   AppCardContent,
-  AppHeader,
-  AppInputMultiline,
   AppInput,
+  AppInputMultiline,
   AppScreen,
   AppSnackbar,
-  AppText,
+  AppTopBar,
   PrimaryButton,
+  SectionHeader,
 } from "@/components/ui";
 import {
   buildScannedMedicationFormValues,
@@ -164,14 +164,14 @@ export default function TherapyUserScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title="Terapia Utente"
-        subtitle="Programma la terapia e visualizza la settimana dal calendario reale del telefono."
+      <AppTopBar
+        title="Terapia"
+        subtitle="Programma orari, promemoria e giorni attivi della terapia."
       />
 
-      <AppCard variant="elevated">
+      <AppCard variant="outlined">
         <AppCardContent>
-          <AppText variant="title">Farmaco</AppText>
+          <SectionHeader title="Farmaco" />
           <AppInput
             label="Codice AIC"
             value={aic}
@@ -188,7 +188,7 @@ export default function TherapyUserScreen() {
       </AppCard>
 
       {scanFormValues ? (
-        <AppCard variant="elevated">
+        <AppCard variant="outlined">
           <AppCardContent>
             <MedicationQuantitySection
               values={scanFormValues}
@@ -198,9 +198,9 @@ export default function TherapyUserScreen() {
         </AppCard>
       ) : null}
 
-      <AppCard variant="elevated">
+      <AppCard variant="outlined">
         <AppCardContent>
-          <AppText variant="title">Orario e promemoria</AppText>
+          <SectionHeader title="Orari e promemoria" />
           <TherapyReminderSettings
             value={reminderSettings}
             onChange={setReminderSettings}
@@ -217,7 +217,7 @@ export default function TherapyUserScreen() {
         </AppCardContent>
       </AppCard>
 
-      <AppCard variant="elevated">
+      <AppCard variant="outlined">
         <AppCardContent>
           <TherapyWeekCalendar
             dayPlan={reminderSettings.dayPlan}
@@ -228,9 +228,10 @@ export default function TherapyUserScreen() {
               }))
             }
           />
-          <AppText variant="caption" muted>
-            Giorni terapia attivi: {activeDays}/7
-          </AppText>
+          <SectionHeader
+            title={`Giorni attivi: ${activeDays}/7`}
+            description="Tocca un giorno nel calendario per attivarlo o disattivarlo."
+          />
         </AppCardContent>
       </AppCard>
 

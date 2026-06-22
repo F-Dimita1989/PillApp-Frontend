@@ -13,13 +13,11 @@ type AppThemeProviderProps = {
 export function AppThemeProvider({ children }: AppThemeProviderProps) {
   const [fontsLoaded] = useFonts(healthcareFontAssets);
 
-  if (!fontsLoaded) {
-    return <StartupSplash />;
-  }
-
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme="healthcare">
-      <Theme name="healthcare">{children}</Theme>
+      <Theme name="healthcare">
+        {fontsLoaded ? children : <StartupSplash />}
+      </Theme>
     </TamaguiProvider>
   );
 }

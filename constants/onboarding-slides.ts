@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
+import type { ImageSourcePropType } from "react-native";
 
 import { PillAppColors } from "@/constants/colors";
 
@@ -16,6 +17,9 @@ export type OnboardingSlide = {
   cardBackground: string;
   badge?: string;
   showLogo?: boolean;
+  image?: ImageSourcePropType;
+  /** Zoom per riempire il cerchio quando image è impostata (default 1) */
+  imageCoverScale?: number;
 };
 
 /** Contenuti intro PillApp — testi originali, tono semplice e rassicurante. */
@@ -38,6 +42,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "shield-check-outline",
     iconColor: PillAppColors.secondary,
     cardBackground: PillAppColors.secondaryContainer,
+    image: require("@/assets/onboarding/privacy-policy.png"),
+    imageCoverScale: 1.28,
   },
   {
     id: "reminders",
@@ -47,6 +53,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "bell-ring-outline",
     iconColor: PillAppColors.primary,
     cardBackground: PillAppColors.primaryContainer,
+    image: require("@/assets/onboarding/push-notifications.png"),
+    imageCoverScale: 1.28,
   },
   {
     id: "therapy",
@@ -56,6 +64,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "pill",
     iconColor: PillAppColors.secondary,
     cardBackground: PillAppColors.secondaryContainer,
+    image: require("@/assets/onboarding/medical-prescription.png"),
+    imageCoverScale: 1.28,
   },
   {
     id: "aic-scan",
@@ -66,6 +76,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     iconColor: PillAppColors.primary,
     cardBackground: PillAppColors.primaryContainer,
     badge: "Esclusivo PillApp",
+    image: require("@/assets/onboarding/aic-search.png"),
+    imageCoverScale: 1.28,
   },
   {
     id: "journal",
@@ -75,6 +87,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "notebook-heart-outline",
     iconColor: PillAppColors.onTertiaryContainer,
     cardBackground: PillAppColors.tertiaryContainer,
+    image: require("@/assets/onboarding/diary.png"),
+    imageCoverScale: 1.28,
   },
 ];
 

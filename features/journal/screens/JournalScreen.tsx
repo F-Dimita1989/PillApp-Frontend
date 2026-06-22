@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { XStack, YStack } from "tamagui";
 
@@ -5,19 +6,21 @@ import {
   AppCard,
   AppCardActions,
   AppCardContent,
-  AppHeader,
   AppInputMultiline,
   AppScreen,
   AppSegmentedControl,
   AppSnackbar,
   AppText,
   AppTextField,
+  AppTopBar,
+  EmptyState,
   MeasurementCard,
   PrimaryButton,
   SecondaryButton,
-  SectionTitle,
+  SectionHeader,
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
+import { pillappColors } from "@/theme/tokens";
 import type { MeasurementKind, MoodLevel } from "@/types/domain";
 import { MEASUREMENT_LABELS } from "@/types/domain";
 
@@ -80,14 +83,14 @@ export function JournalScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
+      <AppTopBar
         title="Diario salute"
-        subtitle="Registra pressione, glicemia, peso, sintomi e come ti senti oggi."
+        subtitle="Registra misurazioni, sintomi e come ti senti oggi."
       />
 
-      <AppCard variant="elevated">
+      <AppCard variant="outlined">
         <AppCardContent>
-          <AppText variant="title">Nuova misurazione</AppText>
+          <SectionHeader title="Nuova misurazione" />
           <AppSegmentedControl
             value={kind}
             onValueChange={(v) => setKind(v as MeasurementKind)}
@@ -113,9 +116,9 @@ export function JournalScreen() {
         </AppCardActions>
       </AppCard>
 
-      <AppCard variant="elevated">
+      <AppCard variant="outlined">
         <AppCardContent>
-          <AppText variant="title">Sintomi e umore</AppText>
+          <SectionHeader title="Sintomi e umore" />
           <AppTextField
             label="Sintomo (es. stanchezza)"
             value={symptomLabel}
@@ -145,55 +148,90 @@ export function JournalScreen() {
       </AppCard>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle title="Misurazioni recenti" />
-        <XStack width="100%" flexWrap="wrap" gap="$3">
-          {measurements.slice(0, 4).map((m) => (
-            <MeasurementCard
-              key={m.id}
-              label={m.label}
-              value={m.value}
-              unit={m.unit}
-              hint={new Date(m.recordedAt).toLocaleDateString("it-IT")}
-            />
-          ))}
-        </XStack>
+        <SectionHeader title="Misurazioni recenti" />
+        {measurements.length === 0 ? (
+          <EmptyState
+            title="Nessuna misurazione"
+            description="Le misurazioni che registri compariranno qui."
+            icon={
+              <MaterialCommunityIcons
+                name="heart-pulse"
+                size={28}
+                color={pillappColors.textMuted}
+              />
+            }
+          />
+        ) : (
+          <XStack width="100%" flexWrap="wrap" gap="$3">
+            {measurements.slice(0, 4).map((m) => (
+              <MeasurementCard
+                key={m.id}
+                label={m.label}
+                value={m.value}
+                unit={m.unit}
+                hint={new Date(m.recordedAt).toLocaleDateString("it-IT")}
+              />
+            ))}
+          </XStack>
+        )}
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle title="Sintomi recenti" />
+        <SectionHeader title="Sintomi recenti" />
         {symptoms.length === 0 ? (
           <AppText variant="body" muted>
             Nessun sintomo registrato.
           </AppText>
         ) : (
-          symptoms.slice(0, 5).map((s) => (
-            <AppText key={s.id} variant="body">
-              · {s.label} — {new Date(s.recordedAt).toLocaleDateString("it-IT")}
-            </AppText>
-          ))
+          <AppCard variant="muted">
+            <AppCardContent gap="$2">
+              {symptoms.slice(0, 5).map((s) => (
+                <XStack key={s.id} gap="$2" alignItems="center">
+                  <MaterialCommunityIcons
+                    name="circle-small"
+                    size={20}
+                    color={pillappColors.secondary}
+                  />
+                  <AppText variant="body" flex={1}>
+                    {s.label}
+                  </AppText>
+                  <AppText variant="caption" muted>
+                    {new Date(s.recordedAt).toLocaleDateString("it-IT")}
+                  </AppText>
+                </XStack>
+              ))}
+            </AppCardContent>
+          </AppCard>
         )}
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionTitle
+        <SectionHeader
           title="Note diario"
-          description="Predisposto per futuri grafici e report PDF."
+          description="Storico delle tue annotazioni giornaliere."
         />
-        {journalNotes.map((n) => (
-          <AppCard key={n.id} variant="outlined">
-            <AppCardContent>
-              <YStack gap="$2">
-                <AppText variant="label" color="primary">
-                  {n.mood ? `Umore: ${n.mood.replace("_", " ")}` : "Nota"}
-                </AppText>
-                <AppText variant="body">{n.text}</AppText>
-                <AppText variant="caption" muted>
-                  {new Date(n.recordedAt).toLocaleString("it-IT")}
-                </AppText>
-              </YStack>
-            </AppCardContent>
-          </AppCard>
-        ))}
+        {journalNotes.length === 0 ? (
+          <EmptyState
+            title="Nessuna nota"
+            description="Scrivi come ti senti oggi per tenerne traccia nel tempo."
+          />
+        ) : (
+          journalNotes.map((n) => (
+            <AppCard key={n.id} variant="outlined">
+              <AppCardContent>
+                <YStack gap="$2">
+                  <AppText variant="overline" color="primary">
+                    {n.mood ? `Umore: ${n.mood.replace("_", " ")}` : "Nota"}
+                  </AppText>
+                  <AppText variant="body">{n.text}</AppText>
+                  <AppText variant="caption" muted>
+                    {new Date(n.recordedAt).toLocaleString("it-IT")}
+                  </AppText>
+                </YStack>
+              </AppCardContent>
+            </AppCard>
+          ))
+        )}
       </YStack>
 
       <AppSnackbar
