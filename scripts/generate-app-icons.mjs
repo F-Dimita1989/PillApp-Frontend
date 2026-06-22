@@ -14,24 +14,66 @@ const outDir = path.join(root, "assets/images");
 
 const ICON_SIZE = 1024;
 const LOGO_SCALE = 0.88;
+/** Più piccolo dell'icona: la splash Android 12+ maschera l'immagine in cerchio. */
+const SPLASH_LOGO_SCALE = 0.68;
 const BG = { r: 255, g: 255, b: 255, alpha: 1 };
 
 /** Logo senza banda nera esterna (trim + canvas bianco). */
-async function prepareLogoBuffer() {
-  return sharp(logoPath)
+async function prepareLogo() {
+  const { data, info } = await sharp(logoPath)
+    .trim({ background: { r: 0, g: 0, b: 0 }, threshold: 20 })
+    .flatten({ background: "#FFFFFF" })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height, channels } = info;
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * channels;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r < 250 || g < 250 || b < 250) {
+        sumX += x;
+        sumY += y;
+        count++;
+      }
+    }
+  }
+
+  const centroidX = sumX / count;
+  const centroidY = sumY / count;
+
+  const buffer = await sharp(logoPath)
     .trim({ background: { r: 0, g: 0, b: 0 }, threshold: 20 })
     .flatten({ background: "#FFFFFF" })
     .png()
     .toBuffer();
+
+  return {
+    buffer,
+    width,
+    height,
+    offsetX: width / 2 - centroidX,
+    offsetY: height / 2 - centroidY,
+  };
 }
 
 async function logoOnBackground(size, logoScale) {
-  const logoBuffer = await prepareLogoBuffer();
+  const logo = await prepareLogo();
   const logoSize = Math.round(size * logoScale);
-  const resized = await sharp(logoBuffer)
+  const resized = await sharp(logo.buffer)
     .resize(logoSize, logoSize, { fit: "contain", background: BG })
     .png()
     .toBuffer();
+
+  const scale = logoSize / logo.width;
+  const left = Math.round((size - logoSize) / 2 + logo.offsetX * scale);
+  const top = Math.round((size - logoSize) / 2 + logo.offsetY * scale);
 
   return sharp({
     create: {
@@ -40,7 +82,7 @@ async function logoOnBackground(size, logoScale) {
       channels: 4,
       background: BG,
     },
-  }).composite([{ input: resized, gravity: "center" }]);
+  }).composite([{ input: resized, left, top }]);
 }
 
 async function solidBackground(size, hex) {
@@ -73,15 +115,24 @@ async function main() {
     path.join(outDir, "favicon.png"),
   );
 
-  const logoBuffer = await prepareLogoBuffer();
-  const mono = await sharp(logoBuffer)
-    .resize(Math.round(ICON_SIZE * LOGO_SCALE), Math.round(ICON_SIZE * LOGO_SCALE), {
+  await (await logoOnBackground(ICON_SIZE, SPLASH_LOGO_SCALE)).png().toFile(
+    path.join(outDir, "pillapp-splash.png"),
+  );
+
+  const logo = await prepareLogo();
+  const monoSize = Math.round(ICON_SIZE * LOGO_SCALE);
+  const mono = await sharp(logo.buffer)
+    .resize(monoSize, monoSize, {
       fit: "contain",
       background: { r: 255, g: 255, b: 255, alpha: 1 },
     })
     .greyscale()
     .png()
     .toBuffer();
+
+  const monoScale = monoSize / logo.width;
+  const monoLeft = Math.round((ICON_SIZE - monoSize) / 2 + logo.offsetX * monoScale);
+  const monoTop = Math.round((ICON_SIZE - monoSize) / 2 + logo.offsetY * monoScale);
 
   await sharp({
     create: {
@@ -91,7 +142,7 @@ async function main() {
       background: BG,
     },
   })
-    .composite([{ input: mono, gravity: "center" }])
+    .composite([{ input: mono, left: monoLeft, top: monoTop }])
     .png()
     .toFile(path.join(outDir, "android-icon-monochrome.png"));
 

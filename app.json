@@ -61,8 +61,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/pillapp-logo.png",
-          "imageWidth": 460,
+          "image": "./assets/images/pillapp-splash.png",
+          "imageWidth": 300,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }

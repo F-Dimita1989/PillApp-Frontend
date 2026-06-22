@@ -1,5 +1,10 @@
 export { AppScreen } from "@/components/ui/app-screen";
-export { IntroHeroArc, onboardingHeroEmblemLayout } from "@/components/ui/intro-hero-arc";
+export {
+  IntroHeroArc,
+  getOnboardingArcLayout,
+  getOnboardingHeroZoneHeight,
+  onboardingHeroEmblemLayout,
+} from "@/components/ui/intro-hero-arc";
 export { AppText, type AppTextVariant } from "@/components/ui/app-text";
 export {
   AppButton,

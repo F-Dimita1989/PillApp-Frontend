@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -20,45 +20,57 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 
+import { AccessSetupSlideView } from "@/components/access-setup/access-setup-slide-view";
 import { OnboardingArcCarousel } from "@/components/onboarding/onboarding-arc-carousel";
 import { OnboardingGradientButton } from "@/components/onboarding/onboarding-gradient-button";
-import { OnboardingSlideView } from "@/components/onboarding/onboarding-slide-view";
 import { AppText } from "@/components/ui/app-text";
 import {
   IntroHeroArc,
   getOnboardingArcLayout,
   getOnboardingHeroZoneHeight,
-  onboardingHeroEmblemLayout,
 } from "@/components/ui";
 import {
-  ONBOARDING_SLIDE_COUNT,
-  onboardingSlides,
-  type OnboardingSlide,
-} from "@/constants/onboarding-slides";
-import { markOnboardingAsSeen } from "@/lib/onboarding/storage";
+  ACCESS_SETUP_SLIDE_COUNT,
+  accessSetupEmblemSize,
+  accessSetupSlides,
+} from "@/constants/access-setup-slides";
+import type { OnboardingSlide } from "@/constants/onboarding-slides";
+import {
+  allPermissionsGranted,
+  getAppPermissionStates,
+  requestAllAppPermissions,
+  type AppPermissionState,
+} from "@/lib/access-setup/permissions";
+import { markAccessSetupComplete } from "@/lib/access-setup/storage";
 import { pillappLayout } from "@/theme/tokens";
 
-type OnboardingScreenProps = {
+type AccessSetupFlowProps = {
   onComplete: () => void;
 };
 
-type OnboardingSlidePageProps = {
+type AccessSetupSlidePageProps = {
   slide: OnboardingSlide;
   index: number;
   width: number;
   scrollX: SharedValue<number>;
   heroZoneHeight: number;
-  bottomInset: number;
+  permissionStates: AppPermissionState[];
+  isLoadingPermissions: boolean;
+  hasRequestedPermissions: boolean;
+  permissionsGranted: boolean;
 };
 
-function OnboardingSlidePage({
+function AccessSetupSlidePage({
   slide,
   index,
   width,
   scrollX,
   heroZoneHeight,
-  bottomInset,
-}: OnboardingSlidePageProps) {
+  permissionStates,
+  isLoadingPermissions,
+  hasRequestedPermissions,
+  permissionsGranted,
+}: AccessSetupSlidePageProps) {
   const textStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       scrollX.value,
@@ -82,33 +94,58 @@ function OnboardingSlidePage({
     <View style={[styles.page, { width }]}>
       <View style={{ height: heroZoneHeight }} />
       <Animated.View style={[styles.slideBody, textStyle]}>
-        <OnboardingSlideView slide={slide} width={width} bottomInset={bottomInset} />
+        <AccessSetupSlideView
+          slide={slide}
+          width={width}
+          permissionStates={permissionStates}
+          isLoadingPermissions={isLoadingPermissions}
+          hasRequestedPermissions={hasRequestedPermissions}
+          permissionsGranted={permissionsGranted}
+        />
       </Animated.View>
     </View>
   );
 }
 
-export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const listRef = useRef<Animated.FlatList<OnboardingSlide>>(null);
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [permissionStates, setPermissionStates] = useState<AppPermissionState[]>([]);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+  const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
+  const [hasRequestedPermissions, setHasRequestedPermissions] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const arcLayout = useMemo(
-    () => getOnboardingArcLayout(width, onboardingHeroEmblemLayout.size),
+    () => getOnboardingArcLayout(width, accessSetupEmblemSize),
     [width],
   );
 
   const heroZoneHeight = useMemo(
-    () => getOnboardingHeroZoneHeight(width, onboardingHeroEmblemLayout.size, insets.top),
+    () => getOnboardingHeroZoneHeight(width, accessSetupEmblemSize, insets.top),
     [insets.top, width],
   );
 
-  const slideBottomInset = useMemo(
-    () => insets.bottom + 16,
-    [insets.bottom],
-  );
+  const isFirstSlide = currentIndex === 0;
+  const isLastSlide = currentIndex === ACCESS_SETUP_SLIDE_COUNT - 1;
+
+  const permissionsGranted = allPermissionsGranted(permissionStates);
+
+  const refreshPermissions = useCallback(async () => {
+    setIsLoadingPermissions(true);
+    try {
+      setPermissionStates(await getAppPermissionStates());
+    } finally {
+      setIsLoadingPermissions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshPermissions();
+  }, [refreshPermissions]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -116,26 +153,28 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     },
   });
 
-  const isLastSlide = currentIndex === ONBOARDING_SLIDE_COUNT - 1;
-  const isFirstSlide = currentIndex === 0;
-
-  const finishOnboarding = useCallback(async () => {
-    await markOnboardingAsSeen();
-    onComplete();
-  }, [onComplete]);
+  const handleRequestPermissions = useCallback(async () => {
+    setIsRequestingPermissions(true);
+    setHasRequestedPermissions(true);
+    try {
+      setPermissionStates(await requestAllAppPermissions());
+    } finally {
+      setIsRequestingPermissions(false);
+    }
+  }, []);
 
   const goNext = useCallback(() => {
     if (isLastSlide) {
-      void finishOnboarding();
       return;
     }
+
     const nextIndex = currentIndex + 1;
     listRef.current?.scrollToOffset({
       offset: nextIndex * width,
       animated: true,
     });
     setCurrentIndex(nextIndex);
-  }, [currentIndex, finishOnboarding, isLastSlide, width]);
+  }, [currentIndex, isLastSlide, width]);
 
   const goPrevious = useCallback(() => {
     const prevIndex = currentIndex - 1;
@@ -149,23 +188,73 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(event.nativeEvent.contentOffset.x / width);
-      setCurrentIndex(Math.max(0, Math.min(ONBOARDING_SLIDE_COUNT - 1, index)));
+      setCurrentIndex(Math.max(0, Math.min(ACCESS_SETUP_SLIDE_COUNT - 1, index)));
     },
     [width],
   );
 
+  const handleFinish = useCallback(async () => {
+    if (isFinishing) {
+      return;
+    }
+
+    setIsFinishing(true);
+    try {
+      await markAccessSetupComplete();
+      onComplete();
+    } finally {
+      setIsFinishing(false);
+    }
+  }, [isFinishing, onComplete]);
+
+  const handlePrimaryPress = useCallback(() => {
+    if (isFirstSlide) {
+      if (!permissionsGranted) {
+        void handleRequestPermissions();
+        return;
+      }
+      goNext();
+      return;
+    }
+
+    void handleFinish();
+  }, [goNext, handleFinish, handleRequestPermissions, isFirstSlide, permissionsGranted]);
+
+  const primaryLabel = useMemo(() => {
+    if (isFirstSlide) {
+      if (isRequestingPermissions) {
+        return "Attendi...";
+      }
+      return permissionsGranted ? "Continua" : "Consenti gli accessi";
+    }
+    return isFinishing ? "Attendi..." : "Ho capito";
+  }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsGranted]);
+
+  const primaryDisabled = isRequestingPermissions || isFinishing;
+
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<OnboardingSlide>) => (
-      <OnboardingSlidePage
+      <AccessSetupSlidePage
         slide={item}
         index={index}
         width={width}
         scrollX={scrollX}
         heroZoneHeight={heroZoneHeight}
-        bottomInset={slideBottomInset}
+        permissionStates={permissionStates}
+        isLoadingPermissions={isLoadingPermissions}
+        hasRequestedPermissions={hasRequestedPermissions}
+        permissionsGranted={permissionsGranted}
       />
     ),
-    [heroZoneHeight, scrollX, slideBottomInset, width],
+    [
+      hasRequestedPermissions,
+      heroZoneHeight,
+      isLoadingPermissions,
+      permissionStates,
+      permissionsGranted,
+      scrollX,
+      width,
+    ],
   );
 
   return (
@@ -174,7 +263,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       <View style={styles.pagerHost}>
         <Animated.FlatList
           ref={listRef}
-          data={onboardingSlides}
+          data={accessSetupSlides}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           horizontal
@@ -190,6 +279,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           scrollEventThrottle={1}
           onMomentumScrollEnd={handleScrollEnd}
           onScrollEndDrag={handleScrollEnd}
+          scrollEnabled={currentIndex !== 0 || permissionsGranted}
           getItemLayout={(_, index) => ({
             length: width,
             offset: width * index,
@@ -205,14 +295,15 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             showCopy={false}
             showLogo={false}
             parentPaddingX={0}
-            emblemSize={onboardingHeroEmblemLayout.size}
+            emblemSize={accessSetupEmblemSize}
             emblemVariant="carousel"
             carouselStageHeight={arcLayout.carouselStageHeight}
             emblem={
               <OnboardingArcCarousel
+                slides={accessSetupSlides}
                 scrollX={scrollX}
                 slideWidth={width}
-                emblemSize={onboardingHeroEmblemLayout.size}
+                emblemSize={accessSetupEmblemSize}
               />
             }
           />
@@ -227,7 +318,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         backgroundColor="$background"
       >
         <XStack justifyContent="center" gap="$2">
-          {onboardingSlides.map((slide, index) => (
+          {accessSetupSlides.map((slide, index) => (
             <YStack
               key={slide.id}
               width={index === currentIndex ? 24 : 8}
@@ -240,16 +331,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
         <XStack justifyContent="space-between" alignItems="center" minHeight={48}>
           {isFirstSlide ? (
-            <Pressable
-              onPress={() => void finishOnboarding()}
-              accessibilityRole="button"
-              accessibilityLabel="Salta introduzione"
-              hitSlop={8}
-            >
-              <AppText variant="body" color="primary" fontWeight="600">
-                Salta
-              </AppText>
-            </Pressable>
+            <View style={styles.sideSlot} />
           ) : (
             <Pressable
               onPress={goPrevious}
@@ -263,10 +345,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             </Pressable>
           )}
 
-          <OnboardingGradientButton
-            label={isLastSlide ? "Inizia" : "Continua"}
-            onPress={goNext}
-          />
+          <View style={primaryDisabled ? styles.disabledButton : undefined}>
+            <OnboardingGradientButton
+              label={primaryLabel}
+              onPress={primaryDisabled ? () => {} : handlePrimaryPress}
+            />
+          </View>
         </XStack>
       </YStack>
     </YStack>
@@ -294,5 +378,11 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
+  },
+  sideSlot: {
+    minWidth: 72,
+  },
+  disabledButton: {
+    opacity: 0.55,
   },
 });

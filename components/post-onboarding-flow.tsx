@@ -93,7 +93,6 @@ type SetupStep =
   | "name"
   | "age"
   | "sex"
-  | "privacy"
   | "therapy"
   | "done";
 
@@ -104,7 +103,6 @@ const STEPS: SetupStep[] = [
   "name",
   "age",
   "sex",
-  "privacy",
   "therapy",
   "done",
 ];
@@ -656,30 +654,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                       >
                         Continua
                       </PrimaryButton>
-                    </AppButtonRow>
-                  </AppCardContent>
-                </AppCard>
-              </>
-            ) : null}
-
-            {step === "privacy" ? (
-              <>
-                <SetupStepHeader
-                  title="La tua privacy, spiegata semplice"
-                  subtitle="PillApp è pensata per chi vuole tranquillità e rispetto dei dati personali."
-                />
-                <AppCard variant="elevated">
-                  <AppCardContent gap="$4">
-                    <AppText variant="body">
-                      • Nessuna registrazione con email o password{"\n"}• Nome,
-                      età e sesso restano solo sul telefono{"\n"}• Nessun
-                      profilo utente salvato su server esterni{"\n"}• Le
-                      scansioni servono solo a mostrarti le informazioni utili
-                      in app
-                    </AppText>
-                    <AppButtonRow>
-                      <SecondaryButton onPress={goBack}>Indietro</SecondaryButton>
-                      <PrimaryButton onPress={goNext}>Ho capito</PrimaryButton>
                     </AppButtonRow>
                   </AppCardContent>
                 </AppCard>

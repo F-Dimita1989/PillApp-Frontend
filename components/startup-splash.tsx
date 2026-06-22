@@ -9,7 +9,7 @@ export function StartupSplash() {
       <ScreenSafeArea includeBottomInset style={styles.safeArea}>
         <View style={styles.content}>
           <Image
-            source={require("@/assets/images/pillapp-logo.png")}
+            source={require("@/assets/images/pillapp-splash.png")}
             style={styles.logo}
             resizeMode="contain"
             accessibilityLabel="Logo PillApp"
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   logo: {
-    width: 280,
-    height: 280,
+    width: 300,
+    height: 300,
   },
 });

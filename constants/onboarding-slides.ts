@@ -75,7 +75,6 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "barcode-scan",
     iconColor: PillAppColors.primary,
     cardBackground: PillAppColors.primaryContainer,
-    badge: "Esclusivo PillApp",
     image: require("@/assets/onboarding/aic-search.png"),
     imageCoverScale: 1.28,
   },

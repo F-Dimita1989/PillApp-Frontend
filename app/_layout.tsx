@@ -3,16 +3,16 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { OnboardingScreen } from "@/components/onboarding-screen";
+import { OnboardingFlow } from "@/components/onboarding-flow";
 import { PostOnboardingFlow } from "@/components/post-onboarding-flow";
-import { ScreenSafeArea } from "@/components/screen-safe-area";
 import { StartupSplash } from "@/components/startup-splash";
 import { pillappColors } from "@/theme/tokens";
+import { getHasCompletedAccessSetup } from "@/lib/access-setup/storage";
 import { getHasSeenOnboarding } from "@/lib/onboarding/storage";
 import { initializeNotifications } from "@/lib/notifications/setup";
 import { hasCompletedSetup } from "@/lib/profile/storage";
@@ -44,17 +44,20 @@ const navigationTheme = {
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [needsAccessSetup, setNeedsAccessSetup] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
 
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const [seenOnboarding, setupDone] = await Promise.all([
+        const [seenOnboarding, accessSetupDone, setupDone] = await Promise.all([
           getHasSeenOnboarding(),
+          getHasCompletedAccessSetup(),
           hasCompletedSetup(),
         ]);
 
         setHasSeenOnboarding(seenOnboarding);
+        setNeedsAccessSetup(seenOnboarding && !accessSetupDone);
         setNeedsSetup(!setupDone);
       } finally {
         setIsLoading(false);
@@ -63,6 +66,16 @@ export default function RootLayout() {
     };
 
     void bootstrap();
+  }, []);
+
+  const handleAccessSetupComplete = useCallback(() => {
+    setHasSeenOnboarding(true);
+    setNeedsAccessSetup(false);
+  }, []);
+
+  const handleSkipProfileSetup = useCallback(() => {
+    setHasSeenOnboarding(true);
+    setNeedsSetup(false);
   }, []);
 
   if (isLoading) {
@@ -77,16 +90,17 @@ export default function RootLayout() {
     );
   }
 
-  if (!hasSeenOnboarding) {
+  if (!hasSeenOnboarding || needsAccessSetup) {
     return (
       <AppThemeProvider>
         <PillAppCoachmarkProvider>
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
-              <ScreenSafeArea includeBottomInset>
-                <OnboardingScreen onComplete={() => setHasSeenOnboarding(true)} />
-              </ScreenSafeArea>
-              <StatusBar style="dark" />
+              <OnboardingFlow
+                startAtAccessSetup={hasSeenOnboarding && needsAccessSetup}
+                onComplete={handleAccessSetupComplete}
+                onSkipProfileSetup={handleSkipProfileSetup}
+              />
             </ThemeProvider>
           </SafeAreaProvider>
         </PillAppCoachmarkProvider>

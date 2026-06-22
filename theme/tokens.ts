@@ -165,6 +165,19 @@ export const pillappTouch = {
   comfortable: pillappSize.touchComfortable,
 } as const;
 
+/** Gradiente brand (cupola intro, CTA onboarding, welcome) */
+export const pillappBrandGradient = {
+  colors: [
+    pillappColors.secondary,
+    "#4EC4B5",
+    pillappColors.primary,
+    pillappColors.primaryDark,
+  ] as const,
+  locations: [0, 0.35, 0.7, 1] as const,
+  start: { x: 0, y: 0 } as const,
+  end: { x: 1, y: 1 } as const,
+};
+
 export const pillappLayout = {
   screenPaddingX: 16,
   screenPaddingY: 16,

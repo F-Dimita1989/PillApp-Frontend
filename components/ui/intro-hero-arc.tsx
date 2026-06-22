@@ -5,8 +5,8 @@ import Svg, {
   Defs,
   Ellipse,
   G,
-  LinearGradient as SvgLinearGradient,
   Stop,
+  LinearGradient as SvgLinearGradient,
 } from "react-native-svg";
 import { YStack } from "tamagui";
 
@@ -18,6 +18,10 @@ export const introHeroEmblemLayout = {
   logoSize: 102,
   lift: 4,
   shiftUp: 44,
+  /** Raggio orizzontale ellisse cupola (frazione larghezza schermo) */
+  arcEllipseRxRatio: 0.6,
+  /** Raggio verticale ellisse cupola */
+  arcEllipseRyRatio: 0.58,
 } as const;
 
 /** Cerchio hero più ampio per l'onboarding (illustrazioni e icone) */
@@ -25,7 +29,73 @@ export const onboardingHeroEmblemLayout = {
   size: 220,
   /** Logo prima slide: più grande del cerchio, senza ingrandire il cerchio */
   logoSize: 208,
+  /** Pixel visibili del cerchio adiacente (solo la punta) */
+  carouselPeekWidth: 3,
+  /** Solleva l'area del carosello rispetto all'arco */
+  carouselRaiseUp: 36,
 } as const;
+
+export type OnboardingArcLayout = {
+  fullWidth: number;
+  arcHeight: number;
+  heroShiftUp: number;
+  ellipseRx: number;
+  ellipseRy: number;
+  ellipseCx: number;
+  emblemCenterY: number;
+  emblemSize: number;
+  carouselStageHeight: number;
+  emblemLift: number;
+  emblemOverlap: number;
+};
+
+export function getOnboardingArcLayout(
+  screenWidth: number,
+  emblemSize: number,
+  arcHeight = 300,
+  parentPaddingX = 0,
+): OnboardingArcLayout {
+  const fullWidth = screenWidth + parentPaddingX * 2;
+  const heroShiftUp = introHeroEmblemLayout.shiftUp;
+  const emblemLift = introHeroEmblemLayout.lift;
+  const emblemOverlap = emblemSize / 2;
+  const ellipseRx = fullWidth * introHeroEmblemLayout.arcEllipseRxRatio;
+  const ellipseRy = fullWidth * introHeroEmblemLayout.arcEllipseRyRatio;
+  const ellipseCx = fullWidth / 2;
+  /** Bordo arco = centro cerchio: metà dentro l'ellisse, metà fuori */
+  const emblemCenterY = emblemOverlap + emblemLift;
+  const carouselStageHeight = emblemCenterY + emblemSize / 2;
+
+  return {
+    fullWidth,
+    arcHeight,
+    heroShiftUp,
+    ellipseRx,
+    ellipseRy,
+    ellipseCx,
+    emblemCenterY,
+    emblemSize,
+    carouselStageHeight,
+    emblemLift,
+    emblemOverlap,
+  };
+}
+
+/** Altezza riservata in cima a ogni pagina per l'hero sovrapposto. */
+export function getOnboardingHeroZoneHeight(
+  screenWidth: number,
+  emblemSize: number,
+  insetTop: number,
+): number {
+  const layout = getOnboardingArcLayout(screenWidth, emblemSize);
+  const arcBottom =
+    insetTop +
+    layout.arcHeight -
+    layout.heroShiftUp -
+    onboardingHeroEmblemLayout.carouselRaiseUp;
+  /** Bordo arco al centro cerchio + metà cerchio sotto l'arco + piccolo respiro */
+  return arcBottom + layout.emblemSize / 2 + 12;
+}
 
 function emblemLogoSize(emblemSize: number): number {
   return Math.round(
@@ -73,6 +143,9 @@ type IntroHeroArcProps = {
   parentPaddingX?: number;
   /** Diametro del cerchio emblem (default: introHeroEmblemLayout.size) */
   emblemSize?: number;
+  /** `carousel`: card assolute sull'arco; `framed`: singolo cerchio centrato */
+  emblemVariant?: "framed" | "carousel";
+  carouselStageHeight?: number;
 };
 
 export function IntroHeroArc({
@@ -85,6 +158,8 @@ export function IntroHeroArc({
   arcHeight = 300,
   parentPaddingX = 0,
   emblemSize: emblemSizeProp,
+  emblemVariant = "framed",
+  carouselStageHeight: carouselStageHeightProp,
 }: IntroHeroArcProps) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -103,12 +178,14 @@ export function IntroHeroArc({
 
   // Larghezza reale edge-to-edge (compensa padding genitore)
   const fullWidth = screenWidth + parentPaddingX * 2;
+  const carouselStageHeight =
+    carouselStageHeightProp ?? emblemOverlap + emblemLift + emblemSize / 2;
   const bleedOffset = -parentPaddingX;
 
   // Ellisse: il bordo inferiore della cupola coincide con il centro del logo.
   // Con flip Y, cy = ry posiziona il punto (cx, 0) dell'ellisse su y = arcHeight.
-  const ellipseRx = fullWidth * 0.52;
-  const ellipseRy = fullWidth * 0.58;
+  const ellipseRx = fullWidth * introHeroEmblemLayout.arcEllipseRxRatio;
+  const ellipseRy = fullWidth * introHeroEmblemLayout.arcEllipseRyRatio;
   const ellipseCx = fullWidth / 2;
   const ellipseCy = ellipseRy;
 
@@ -131,9 +208,19 @@ export function IntroHeroArc({
           { width: fullWidth, height: arcHeight, marginTop: -heroShiftUp },
         ]}
       >
-        <Svg width={fullWidth} height={arcHeight} style={StyleSheet.absoluteFill}>
+        <Svg
+          width={fullWidth}
+          height={arcHeight}
+          style={StyleSheet.absoluteFill}
+        >
           <Defs>
-            <SvgLinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <SvgLinearGradient
+              id={gradientId}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <Stop offset="0%" stopColor={pillappColors.secondary} />
               <Stop offset="35%" stopColor="#4EC4B5" />
               <Stop offset="70%" stopColor={pillappColors.primary} />
@@ -152,19 +239,40 @@ export function IntroHeroArc({
         </Svg>
       </View>
 
-      <View style={[styles.emblemWrap, { marginTop: -(emblemOverlap + emblemLift) }]}>
-        <HeroEmblemFrame size={emblemSize}>
-          {emblem ? (
-            emblem
-          ) : showLogo ? (
-            <Image
-              source={require("@/assets/images/pillapp-logo.png")}
-              style={{ width: logoSize, height: logoSize }}
-              resizeMode="contain"
-              accessibilityLabel="Logo PillApp"
-            />
-          ) : null}
-        </HeroEmblemFrame>
+      <View
+        style={[
+          emblemVariant === "carousel"
+            ? styles.carouselStage
+            : styles.emblemWrap,
+          emblemVariant === "carousel"
+            ? {
+                width: fullWidth,
+                height: carouselStageHeight,
+                marginTop: -(
+                  emblemOverlap +
+                  emblemLift +
+                  onboardingHeroEmblemLayout.carouselRaiseUp
+                ),
+              }
+            : { marginTop: -(emblemOverlap + emblemLift) },
+        ]}
+      >
+        {emblemVariant === "carousel" ? (
+          emblem
+        ) : (
+          <HeroEmblemFrame size={emblemSize}>
+            {emblem ? (
+              emblem
+            ) : showLogo ? (
+              <Image
+                source={require("@/assets/images/pillapp-logo.png")}
+                style={{ width: logoSize, height: logoSize }}
+                resizeMode="contain"
+                accessibilityLabel="Logo PillApp"
+              />
+            ) : null}
+          </HeroEmblemFrame>
+        )}
       </View>
 
       {showCopy ? (
@@ -201,6 +309,10 @@ const styles = StyleSheet.create({
   emblemWrap: {
     zIndex: 2,
     alignItems: "center",
+  },
+  carouselStage: {
+    zIndex: 2,
+    overflow: "visible",
   },
   emblem: {
     backgroundColor: pillappColors.surface,

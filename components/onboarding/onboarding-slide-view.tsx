@@ -1,4 +1,4 @@
-import { ScrollView, useWindowDimensions } from "react-native";
+import { Platform, ScrollView, useWindowDimensions } from "react-native";
 import { YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
@@ -8,9 +8,14 @@ import { pillappLayout } from "@/theme/tokens";
 type OnboardingSlideViewProps = {
   slide: OnboardingSlide;
   width: number;
+  bottomInset?: number;
 };
 
-export function OnboardingSlideView({ slide, width }: OnboardingSlideViewProps) {
+export function OnboardingSlideView({
+  slide,
+  width,
+  bottomInset = 0,
+}: OnboardingSlideViewProps) {
   const { height } = useWindowDimensions();
   const compact = height < 720;
 
@@ -19,16 +24,18 @@ export function OnboardingSlideView({ slide, width }: OnboardingSlideViewProps) 
       style={{ flex: 1, width }}
       contentContainerStyle={{
         flexGrow: 1,
-        justifyContent: "center",
-        paddingVertical: 16,
-        paddingBottom: 24,
+        justifyContent: "flex-start",
+        paddingTop: 12,
+        paddingBottom: Math.max(24, bottomInset),
       }}
       showsVerticalScrollIndicator={false}
       bounces={false}
+      nestedScrollEnabled={Platform.OS === "android"}
+      keyboardShouldPersistTaps="handled"
     >
       <YStack
         paddingHorizontal={pillappLayout.screenPaddingX}
-        gap="$5"
+        gap="$4"
         accessibilityRole="summary"
       >
         {slide.badge ? (
@@ -46,11 +53,15 @@ export function OnboardingSlideView({ slide, width }: OnboardingSlideViewProps) 
           </YStack>
         ) : null}
 
-        <YStack width="100%" gap="$3" paddingHorizontal="$2">
-          <AppText variant={compact ? "title" : "headline"} textAlign="center">
+        <YStack width="100%" gap="$3">
+          <AppText
+            variant={compact ? "title" : "headline"}
+            color="primary"
+            textAlign="center"
+          >
             {slide.title}
           </AppText>
-          <AppText variant="body" muted textAlign="center">
+          <AppText variant="body" color="primary" textAlign="center">
             {slide.subtitle}
           </AppText>
         </YStack>
