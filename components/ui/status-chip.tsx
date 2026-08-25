@@ -1,5 +1,4 @@
 import {
-  getMedicationStatusColors,
   getMedicationStatusLabel,
   type PillAppMedicationStatus,
 } from "@/constants/colors";
@@ -40,8 +39,3 @@ export function StatusChip({ status }: StatusChipProps) {
     />
   );
 }
-
-/** @deprecated Usa StatusChip */
-export const StatusBadge = StatusChip;
-
-export { getMedicationStatusColors, getMedicationStatusLabel };

@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { formatDateKey } from "@/lib/calendar/week-utils";
+import { DEFAULT_PROFILE_AVATAR_ID } from "@/constants/profile-avatars";
 import type {
   DoseEvent,
   DoseStatus,
@@ -12,21 +14,39 @@ import type {
 
 export const APP_DATA_STORAGE_KEY = "pillapp:appData";
 
+export type ProfilePrefs = Pick<
+  UserProfile,
+  | "avatarId"
+  | "notificationsEnabled"
+  | "notificationSoundEnabled"
+  | "notificationSoundId"
+  | "largeText"
+  | "highContrast"
+  | "reduceMotion"
+  | "easyTap"
+  | "hapticsEnabled"
+  | "scanHintsEnabled"
+>;
+
 export type PersistedAppData = {
   medications: Medication[];
   dosesToday: DoseEvent[];
   measurements: MeasurementEntry[];
   symptoms: SymptomEntry[];
   journalNotes: JournalNote[];
-  profilePrefs: Pick<
-    UserProfile,
-    "notificationsEnabled" | "largeText" | "scanHintsEnabled"
-  >;
+  profilePrefs: ProfilePrefs;
 };
 
-export const DEFAULT_PROFILE_PREFS: PersistedAppData["profilePrefs"] = {
+export const DEFAULT_PROFILE_PREFS: ProfilePrefs = {
+  avatarId: DEFAULT_PROFILE_AVATAR_ID,
   notificationsEnabled: true,
+  notificationSoundEnabled: true,
+  notificationSoundId: "default",
   largeText: false,
+  highContrast: false,
+  reduceMotion: false,
+  easyTap: false,
+  hapticsEnabled: true,
   scanHintsEnabled: true,
 };
 
@@ -60,7 +80,7 @@ export function mergeDoseStatuses(
   generated: DoseEvent[],
   saved: DoseEvent[],
 ): DoseEvent[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDateKey(new Date());
   const savedMap = new Map<string, DoseEvent>(
     saved
       .filter((d) => d.date === today)

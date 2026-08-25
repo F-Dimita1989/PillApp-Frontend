@@ -21,6 +21,26 @@ export type ScannedMedicationFormValues = {
   note: string;
 };
 
+export const EMPTY_SCANNED_MEDICATION_FORM: ScannedMedicationFormValues = {
+  aic: "",
+  nome: "",
+  marca: "",
+  principioAttivo: "",
+  quantita: "",
+  unitaQuantita: "pillole",
+  dosaggio: "",
+  note: "",
+};
+
+export function sanitizeAicInput(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 9);
+}
+
+export function isValidOptionalAic(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 0 || digits.length === 8 || digits.length === 9;
+}
+
 function inferFormaHint(
   data: ReturnType<typeof normalizeFarmacoRecord>,
   denominazione: string,
@@ -85,17 +105,6 @@ export function getQuantitaUnitLabel(unita: QuantitaUnit): string {
       return "bustine";
     default:
       return "compresse";
-  }
-}
-
-export function getQuantitaFieldLabel(unita: QuantitaUnit): string {
-  switch (unita) {
-    case "ml":
-      return "Ml rimasti in confezione";
-    case "bustine":
-      return "Bustine rimaste";
-    default:
-      return "Pillole rimaste";
   }
 }
 
@@ -248,32 +257,6 @@ export function mapUnitaToMedicationForm(
     default:
       return "compressa";
   }
-}
-
-/** @deprecated Usa mapUnitaToMedicationForm */
-export function mapFormaToMedicationForm(forma: string): MedicationFormType {
-  const normalized = forma.toLowerCase();
-
-  if (normalized.includes("gocc")) {
-    return "gocce";
-  }
-  if (normalized.includes("capsul")) {
-    return "capsula";
-  }
-  if (normalized.includes("sciropp") || normalized.includes("soluz")) {
-    return "sciroppo";
-  }
-  if (normalized.includes("inal")) {
-    return "inalatore";
-  }
-  if (normalized.includes("iniez") || normalized.includes("fiala")) {
-    return "iniezione";
-  }
-  if (normalized.includes("crem") || normalized.includes("unguent")) {
-    return "crema";
-  }
-
-  return "compressa";
 }
 
 export function updateScannedMedicationField(

@@ -1,5 +1,3 @@
-import { PillAppColors } from "@/constants/colors";
-import { PillAppMaterialTheme } from "@/constants/theme";
 import { radii, spacing } from "@/constants/spacing";
 import { pillappColors } from "@/theme/tokens";
 
@@ -11,25 +9,25 @@ export const pillappCoachmarkTheme = {
   tooltip: {
     maxWidth: 360,
     radius: radii.md,
-    bg: PillAppColors.surface,
-    fg: PillAppColors.onSurface,
+    bg: pillappColors.surface,
+    fg: pillappColors.textPrimary,
     arrowSize: 8,
     padding: spacing.md,
-    buttonPrimaryBg: PillAppMaterialTheme.colors.primary,
-    buttonSecondaryBg: PillAppColors.onSurfaceVariant,
+    buttonPrimaryBg: pillappColors.primary,
+    buttonSecondaryBg: pillappColors.textSecondary,
   },
   motion: {
-    durationMs: 320,
+    durationMs: 400,
     easing: (t: number) => 1 - Math.pow(1 - t, 3),
   },
 } as const;
 
-/** Colore e spessore dell'alone attorno all'elemento evidenziato nel tour. */
+/** Alone brand attorno all'elemento evidenziato. */
 export const pillappCoachmarkSpotlight = {
-  ringColor: pillappColors.primary,
+  ringColor: pillappColors.secondary,
   ringWidth: 3,
   ringPadding: 4,
   ringShadowColor: pillappColors.primary,
-  ringShadowOpacity: 0.55,
+  ringShadowOpacity: 0.45,
   ringShadowRadius: 14,
 } as const;

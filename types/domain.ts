@@ -1,5 +1,9 @@
 /** Tipi di dominio PillApp — terapia, diario, profilo */
 
+import type { GuestSex } from "@/constants/profile";
+import type { ProfileAvatarId } from "@/constants/profile-avatars";
+import type { TherapyReminderSoundId } from "@/constants/therapy-reminder-sounds";
+
 export type MedicationFormType =
   | "compressa"
   | "gocce"
@@ -89,9 +93,17 @@ export type JournalNote = {
 export type UserProfile = {
   name: string;
   birthYear?: number;
+  sex?: GuestSex;
   caregiverEmail?: string;
+  avatarId: ProfileAvatarId;
   notificationsEnabled: boolean;
+  notificationSoundEnabled: boolean;
+  notificationSoundId: TherapyReminderSoundId;
   largeText: boolean;
+  highContrast: boolean;
+  reduceMotion: boolean;
+  easyTap: boolean;
+  hapticsEnabled: boolean;
   scanHintsEnabled: boolean;
 };
 

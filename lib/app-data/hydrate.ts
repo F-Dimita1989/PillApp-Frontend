@@ -6,6 +6,7 @@ import {
   loadPersistedAppData,
   mergeDoseStatuses,
   type PersistedAppData,
+  type ProfilePrefs,
 } from "@/lib/app-data/storage";
 import {
   buildDosesForToday,
@@ -18,12 +19,25 @@ import type { AppDataState } from "./types";
 
 export type { AppDataState };
 
+function prefsFromProfile(profile: UserProfile): ProfilePrefs {
+  return {
+    avatarId: profile.avatarId,
+    notificationsEnabled: profile.notificationsEnabled,
+    notificationSoundEnabled: profile.notificationSoundEnabled,
+    notificationSoundId: profile.notificationSoundId,
+    largeText: profile.largeText,
+    highContrast: profile.highContrast,
+    reduceMotion: profile.reduceMotion,
+    easyTap: profile.easyTap,
+    hapticsEnabled: profile.hapticsEnabled,
+    scanHintsEnabled: profile.scanHintsEnabled,
+  };
+}
+
 export const EMPTY_APP_STATE: AppDataState = {
   profile: {
     name: "",
-    notificationsEnabled: DEFAULT_PROFILE_PREFS.notificationsEnabled,
-    largeText: DEFAULT_PROFILE_PREFS.largeText,
-    scanHintsEnabled: DEFAULT_PROFILE_PREFS.scanHintsEnabled,
+    ...DEFAULT_PROFILE_PREFS,
   },
   medications: [],
   dosesToday: [],
@@ -39,18 +53,16 @@ export async function hydrateAppState(): Promise<AppDataState> {
     loadPersistedAppData(),
   ]);
 
+  const prefs: ProfilePrefs = {
+    ...DEFAULT_PROFILE_PREFS,
+    ...(persisted?.profilePrefs ?? {}),
+  };
+
   const profile: UserProfile = {
     name: guest?.name?.trim() ?? "",
-    birthYear: guest?.age
-      ? new Date().getFullYear() - guest.age
-      : undefined,
-    notificationsEnabled:
-      persisted?.profilePrefs.notificationsEnabled ??
-      DEFAULT_PROFILE_PREFS.notificationsEnabled,
-    largeText: persisted?.profilePrefs.largeText ?? DEFAULT_PROFILE_PREFS.largeText,
-    scanHintsEnabled:
-      persisted?.profilePrefs.scanHintsEnabled ??
-      DEFAULT_PROFILE_PREFS.scanHintsEnabled,
+    birthYear: guest?.age ? new Date().getFullYear() - guest.age : undefined,
+    sex: guest?.sex,
+    ...prefs,
   };
 
   const therapyMed =
@@ -81,10 +93,6 @@ export function toPersistedData(state: AppDataState): PersistedAppData {
     measurements: state.measurements,
     symptoms: state.symptoms,
     journalNotes: state.journalNotes,
-    profilePrefs: {
-      notificationsEnabled: state.profile.notificationsEnabled,
-      largeText: state.profile.largeText,
-      scanHintsEnabled: state.profile.scanHintsEnabled,
-    },
+    profilePrefs: prefsFromProfile(state.profile),
   };
 }

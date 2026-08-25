@@ -1,93 +1,103 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import type { ReactNode } from "react";
-import { XStack, YStack } from "tamagui";
+import type { ComponentProps, ReactNode } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AppText } from "@/components/ui/app-text";
-import { pillappColors } from "@/theme/tokens";
+import {
+  IntroHeroArc,
+  appScreenHeroLayout,
+} from "@/components/ui/intro-hero-arc";
+import { pillappColors, pillappLayout } from "@/theme/tokens";
+
+type HeroIcon = ComponentProps<typeof MaterialCommunityIcons>["name"];
+
+const HERO_ICON_SIZE = 40;
 
 type AppTopBarProps = {
   title: string;
   subtitle?: string;
   eyebrow?: string;
+  icon?: HeroIcon;
+  showLogo?: boolean;
   onBack?: () => void;
   trailing?: ReactNode;
-  /** Variante hero per schermate principali (es. Home) */
-  variant?: "default" | "hero";
 };
 
 export function AppTopBar({
   title,
   subtitle,
   eyebrow,
+  icon,
+  showLogo = false,
   onBack,
   trailing,
-  variant = "default",
 }: AppTopBarProps) {
-  if (variant === "hero") {
-    return (
-      <YStack width="100%" gap="$1" paddingBottom="$2">
-        {eyebrow ? (
-          <AppText variant="overline" color="primary">
-            {eyebrow}
-          </AppText>
-        ) : null}
-        <XStack width="100%" alignItems="flex-start" justifyContent="space-between" gap="$3">
-          <YStack flex={1} gap="$1" minWidth={0}>
-            <AppText variant="headline">{title}</AppText>
-            {subtitle ? (
-              <AppText variant="body" muted>
-                {subtitle}
-              </AppText>
-            ) : null}
-          </YStack>
-          {trailing}
-        </XStack>
-      </YStack>
-    );
-  }
+  const layout = appScreenHeroLayout;
 
   return (
-    <YStack width="100%" gap="$2" paddingBottom="$2">
-      <XStack width="100%" alignItems="center" gap="$2" minHeight={44}>
-        {onBack ? (
-          <XStack
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Indietro"
-            accessibilityHint="Torna alla schermata precedente"
-            width={44}
-            height={44}
-            alignItems="center"
-            justifyContent="center"
-            marginLeft={-8}
-            borderRadius="$2"
-            pressStyle={{ opacity: 0.7, backgroundColor: "$surfaceMuted" }}
-          >
+    <View style={styles.host}>
+      <IntroHeroArc
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+        showLogo={showLogo}
+        parentPaddingX={layout.parentPaddingX}
+        arcHeight={layout.arcHeight}
+        emblemSize={layout.emblemSize}
+        emblemRaiseExtra={layout.emblemRaiseExtra}
+        emblem={
+          icon ? (
             <MaterialCommunityIcons
-              name="arrow-left"
-              size={24}
-              color={pillappColors.textPrimary}
+              name={icon}
+              size={HERO_ICON_SIZE}
+              color={pillappColors.secondary}
             />
-          </XStack>
-        ) : null}
-        <YStack flex={1} gap="$1" minWidth={0}>
-          {eyebrow ? (
-            <AppText variant="overline" color="primary">
-              {eyebrow}
-            </AppText>
-          ) : null}
-          <AppText variant="title">{title}</AppText>
-        </YStack>
-        {trailing}
-      </XStack>
-      {subtitle ? (
-        <AppText variant="body" muted paddingLeft={onBack ? 36 : 0}>
-          {subtitle}
-        </AppText>
+          ) : undefined
+        }
+      />
+
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Indietro"
+          accessibilityHint="Torna alla schermata precedente"
+          hitSlop={8}
+          style={[styles.backButton, { top: 8 }]}
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color={pillappColors.onPrimary}
+          />
+        </Pressable>
       ) : null}
-    </YStack>
+
+      {trailing ? (
+        <View style={[styles.trailing, { top: 8 }]}>{trailing}</View>
+      ) : null}
+    </View>
   );
 }
 
-/** @deprecated Usa AppTopBar */
-export const AppHeader = AppTopBar;
+const styles = StyleSheet.create({
+  host: {
+    width: "100%",
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    left: pillappLayout.screenPaddingX,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.22)",
+    zIndex: 4,
+  },
+  trailing: {
+    position: "absolute",
+    right: pillappLayout.screenPaddingX,
+    zIndex: 4,
+  },
+});

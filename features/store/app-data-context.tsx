@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { AccessibilityProvider } from "@/lib/accessibility/context";
+import { accessibilityPrefsFromProfile } from "@/lib/accessibility/prefs";
 import {
   EMPTY_APP_STATE,
   hydrateAppState,
@@ -161,7 +163,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     const sync = async () => {
       try {
         if (state.profile.notificationsEnabled) {
-          await syncMedicationReminders(state.medications, true);
+          await syncMedicationReminders(state.medications, true, {
+            soundId: state.profile.notificationSoundId,
+            playSound: state.profile.notificationSoundEnabled,
+          });
         } else {
           await cancelAllMedicationReminders();
         }
@@ -172,7 +177,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     if (isReady) {
       void sync();
     }
-  }, [state.medications, state.profile.notificationsEnabled, isReady]);
+  }, [
+    state.medications,
+    state.profile.notificationsEnabled,
+    state.profile.notificationSoundId,
+    state.profile.notificationSoundEnabled,
+    isReady,
+  ]);
 
   const markDoseTaken = useCallback((doseId: string) => {
     dispatch({ type: "UPDATE_DOSE_STATUS", doseId, status: "taken" });
@@ -272,7 +283,16 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
+  const accessibility = useMemo(
+    () => accessibilityPrefsFromProfile(state.profile),
+    [state.profile],
+  );
+
+  return (
+    <AppDataContext.Provider value={value}>
+      <AccessibilityProvider value={accessibility}>{children}</AccessibilityProvider>
+    </AppDataContext.Provider>
+  );
 }
 
 export function useAppData() {

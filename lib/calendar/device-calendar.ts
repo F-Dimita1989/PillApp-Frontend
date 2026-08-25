@@ -112,14 +112,14 @@ export function getTherapyMarkedDates(
     marks[dateKey] = {
       ...(marks[dateKey] ?? {}),
       marked: true,
-      dotColor: pillappColors.success,
+      dotColor: pillappColors.secondary,
     };
   });
 
   marks[selectedDate] = {
     ...(marks[selectedDate] ?? {}),
     selected: true,
-    selectedColor: pillappColors.primary,
+    selectedColor: pillappColors.secondary,
   };
 
   return marks;

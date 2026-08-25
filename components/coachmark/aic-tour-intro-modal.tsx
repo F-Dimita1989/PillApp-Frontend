@@ -1,9 +1,18 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Modal, Pressable } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useRef, useState } from "react";
+import { Modal, Pressable, StyleSheet } from "react-native";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { YStack } from "tamagui";
 
 import { AppButton, AppText, PrimaryButton } from "@/components/ui";
-import { pillappColors, pillappShadows } from "@/theme/tokens";
+import { tourExitTiming, tourIntroTiming } from "@/lib/motion/tour-transition";
+import { pillappBrandGradient, pillappColors, pillappShadows } from "@/theme/tokens";
 
 type AicTourIntroModalProps = {
   visible: boolean;
@@ -16,84 +25,159 @@ export function AicTourIntroModal({
   onStart,
   onSkip,
 }: AicTourIntroModalProps) {
+  const [mounted, setMounted] = useState(visible);
+  const mountedRef = useRef(visible);
+  const backdropOpacity = useSharedValue(0);
+  const cardOpacity = useSharedValue(0);
+  const cardTranslateY = useSharedValue(18);
+
+  useEffect(() => {
+    if (visible) {
+      mountedRef.current = true;
+      setMounted(true);
+      backdropOpacity.value = 0;
+      cardOpacity.value = 0;
+      cardTranslateY.value = 18;
+      backdropOpacity.value = withTiming(1, tourIntroTiming);
+      cardOpacity.value = withTiming(1, tourIntroTiming);
+      cardTranslateY.value = withTiming(0, tourIntroTiming);
+      return;
+    }
+
+    if (!mountedRef.current) {
+      return;
+    }
+
+    backdropOpacity.value = withTiming(0, tourExitTiming);
+    cardOpacity.value = withTiming(0, tourExitTiming);
+    cardTranslateY.value = withTiming(12, tourExitTiming, (finished) => {
+      if (finished) {
+        mountedRef.current = false;
+        runOnJS(setMounted)(false);
+      }
+    });
+  }, [backdropOpacity, cardOpacity, cardTranslateY, visible]);
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ translateY: cardTranslateY.value }],
+  }));
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <Modal
-      visible={visible}
+      visible
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
       onRequestClose={onSkip}
     >
-      <YStack
-        flex={1}
-        justifyContent="center"
-        alignItems="center"
-        backgroundColor="rgba(15, 23, 42, 0.55)"
-        paddingHorizontal="$4"
-      >
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
         <Pressable
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          style={StyleSheet.absoluteFill}
           accessibilityLabel="Sfondo guida scansione"
           accessibilityRole="none"
         />
-        <YStack
-          width="100%"
-          maxWidth={400}
-          backgroundColor="$surface"
-          borderRadius="$4"
-          padding="$6"
-          borderWidth={1}
-          borderColor="$border"
-          gap="$3"
-          alignItems="center"
-          {...pillappShadows.lg}
-          accessibilityRole="alert"
-          accessibilityLabel="Breve guida alla scansione AIC. Premi Inizia guida per i 4 passi oppure Salta guida."
-        >
+        <Animated.View style={[styles.cardWrap, cardStyle]}>
           <YStack
-            width={56}
-            height={56}
-            borderRadius="$pill"
-            backgroundColor="$primarySoft"
-            alignItems="center"
-            justifyContent="center"
+            width="100%"
+            maxWidth={400}
+            backgroundColor="$surface"
+            borderRadius="$4"
+            overflow="hidden"
+            borderWidth={1}
+            borderColor="$borderStrong"
+            {...pillappShadows.lg}
+            accessibilityRole="alert"
+            accessibilityLabel="Breve guida alla scansione AIC. Premi Inizia guida per i 4 passi oppure Salta guida."
           >
-            <MaterialCommunityIcons
-              name="school-outline"
-              size={32}
-              color={pillappColors.primary}
+            <LinearGradient
+              colors={[...pillappBrandGradient.colors]}
+              locations={[...pillappBrandGradient.locations]}
+              start={pillappBrandGradient.start}
+              end={pillappBrandGradient.end}
+              style={styles.brandBar}
             />
+
+            <YStack padding="$6" gap="$3" alignItems="center">
+              <LinearGradient
+                colors={[...pillappBrandGradient.colors]}
+                locations={[...pillappBrandGradient.locations]}
+                start={pillappBrandGradient.start}
+                end={pillappBrandGradient.end}
+                style={styles.iconCircle}
+              >
+                <MaterialCommunityIcons
+                  name="school-outline"
+                  size={32}
+                  color={pillappColors.onPrimary}
+                />
+              </LinearGradient>
+
+              <AppText variant="title" color="primary" textAlign="center">
+                Breve guida alla scansione
+              </AppText>
+
+              <AppText variant="body" muted textAlign="center">
+                In 4 passi ti mostriamo dove trovare il codice AIC e come scansionare
+                la confezione. Puoi anche saltare la guida e usare subito la fotocamera.
+              </AppText>
+
+              <YStack gap="$2" width="100%" marginTop="$1">
+                <PrimaryButton
+                  icon="play-circle-outline"
+                  onPress={onStart}
+                  fullWidth
+                  accessibilityLabel="Inizia la guida alla scansione"
+                >
+                  Inizia guida
+                </PrimaryButton>
+                <AppButton
+                  variant="ghost"
+                  onPress={onSkip}
+                  fullWidth
+                  accessibilityLabel="Salta la guida e abilita la scansione"
+                >
+                  Salta guida
+                </AppButton>
+              </YStack>
+            </YStack>
           </YStack>
-
-          <AppText variant="title" textAlign="center">
-            Breve guida alla scansione
-          </AppText>
-
-          <AppText variant="body" muted textAlign="center">
-            In 4 passi ti mostriamo dove trovare il codice AIC e come scansionare
-            la confezione. Puoi anche saltare la guida e usare subito la fotocamera.
-          </AppText>
-
-          <YStack gap="$2" width="100%" marginTop="$1">
-            <PrimaryButton
-              icon="play-circle-outline"
-              onPress={onStart}
-              fullWidth
-              accessibilityLabel="Inizia la guida alla scansione"
-            >
-              Inizia guida
-            </PrimaryButton>
-            <AppButton
-              variant="ghost"
-              onPress={onSkip}
-              fullWidth
-              accessibilityLabel="Salta la guida e abilita la scansione"
-            >
-              Salta guida
-            </AppButton>
-          </YStack>
-        </YStack>
-      </YStack>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.55)",
+    paddingHorizontal: 16,
+  },
+  cardWrap: {
+    width: "100%",
+    maxWidth: 400,
+    zIndex: 1,
+  },
+  brandBar: {
+    height: 6,
+    width: "100%",
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

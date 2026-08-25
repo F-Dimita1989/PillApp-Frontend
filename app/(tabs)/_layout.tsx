@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
+import { BrandTabBarBackground } from "@/components/ui/brand-tab-bar-background";
 import { tabBarTheme } from "@/theme/tab-bar";
 import { pillappColors } from "@/theme/tokens";
 
@@ -17,6 +18,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: tabBarTheme.inactiveTintColor,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarBackground: BrandTabBarBackground,
         tabBarHideOnKeyboard: false,
         tabBarStyle: {
           position: "relative",
@@ -95,12 +97,6 @@ export default function TabLayout() {
               size={size ?? 24}
             />
           ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

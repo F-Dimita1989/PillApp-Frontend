@@ -1,11 +1,9 @@
 import { useCallback, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
-  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withTiming,
 } from "react-native-reanimated";
 
@@ -13,6 +11,11 @@ import { AccessSetupFlow } from "@/components/access-setup/access-setup-flow";
 import { OnboardingScreen } from "@/components/onboarding-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { skipOnboardingToHome } from "@/lib/onboarding/storage";
+import {
+  screenSwipeTiming,
+  swipeEnterX,
+  swipeExitX,
+} from "@/lib/motion/screen-transition";
 import { pillappColors } from "@/theme/tokens";
 
 type OnboardingFlowProps = {
@@ -23,74 +26,31 @@ type OnboardingFlowProps = {
 
 type WelcomeExitTarget = "intro" | "access";
 
-const EXIT_DURATION_MS = 550;
-const ENTER_DURATION_MS = 650;
-const CROSSFADE_DELAY_MS = 160;
-
-const exitTiming = {
-  duration: EXIT_DURATION_MS,
-  easing: Easing.inOut(Easing.cubic),
-};
-
-const enterTiming = {
-  duration: ENTER_DURATION_MS,
-  easing: Easing.out(Easing.cubic),
-};
-
 export function OnboardingFlow({
   onComplete,
   onSkipProfileSetup,
   startAtAccessSetup = false,
 }: OnboardingFlowProps) {
+  const { width: windowWidth } = useWindowDimensions();
+  const width = Math.max(windowWidth, 1);
+
   const [showWelcome, setShowWelcome] = useState(!startAtAccessSetup);
   const [showIntro, setShowIntro] = useState(false);
   const [showAccess, setShowAccess] = useState(startAtAccessSetup);
+  const [frontLayer, setFrontLayer] = useState<"welcome" | "intro" | "access">(
+    startAtAccessSetup ? "access" : "welcome",
+  );
   const [isTransitioning, setIsTransitioning] = useState(false);
   const isTransitioningRef = useRef(false);
 
-  const welcomeOpacity = useSharedValue(startAtAccessSetup ? 0 : 1);
-  const welcomeScale = useSharedValue(1);
-  const introOpacity = useSharedValue(0);
-  const introTranslateY = useSharedValue(22);
-  const introScale = useSharedValue(1);
-  const accessOpacity = useSharedValue(startAtAccessSetup ? 1 : 0);
-  const accessTranslateY = useSharedValue(startAtAccessSetup ? 0 : 22);
-  const exitOverlayOpacity = useSharedValue(0);
+  const welcomeX = useSharedValue(0);
+  const introX = useSharedValue(startAtAccessSetup ? 0 : width);
+  const accessX = useSharedValue(startAtAccessSetup ? 0 : width);
 
   const setIdle = useCallback(() => {
     isTransitioningRef.current = false;
     setIsTransitioning(false);
   }, []);
-
-  const enterIntro = useCallback(() => {
-    introOpacity.value = withDelay(CROSSFADE_DELAY_MS, withTiming(1, enterTiming));
-    introTranslateY.value = withDelay(CROSSFADE_DELAY_MS, withTiming(0, enterTiming));
-  }, [introOpacity, introTranslateY]);
-
-  const enterAccess = useCallback(() => {
-    accessOpacity.value = withDelay(CROSSFADE_DELAY_MS, withTiming(1, enterTiming));
-    accessTranslateY.value = withDelay(CROSSFADE_DELAY_MS, withTiming(0, enterTiming));
-  }, [accessOpacity, accessTranslateY]);
-
-  const revealAccessAfterSkip = useCallback(() => {
-    setShowWelcome(false);
-    setShowAccess(true);
-    accessOpacity.value = 0;
-    accessTranslateY.value = 22;
-    enterAccess();
-    exitOverlayOpacity.value = withTiming(0, enterTiming, (finished) => {
-      if (finished) {
-        runOnJS(setIdle)();
-      }
-    });
-  }, [accessOpacity, accessTranslateY, enterAccess, exitOverlayOpacity, setIdle]);
-
-  const prepareSkipToAccess = useCallback(() => {
-    void skipOnboardingToHome().then(() => {
-      onSkipProfileSetup();
-      revealAccessAfterSkip();
-    });
-  }, [onSkipProfileSetup, revealAccessAfterSkip]);
 
   const hideWelcome = useCallback(() => {
     setShowWelcome(false);
@@ -101,6 +61,14 @@ export function OnboardingFlow({
     setShowIntro(false);
     setIdle();
   }, [setIdle]);
+
+  const finishSkipToAccess = useCallback(() => {
+    void skipOnboardingToHome().then(() => {
+      onSkipProfileSetup();
+      setShowWelcome(false);
+      setIdle();
+    });
+  }, [onSkipProfileSetup, setIdle]);
 
   const animateWelcomeExit = useCallback(
     (target: WelcomeExitTarget) => {
@@ -113,39 +81,24 @@ export function OnboardingFlow({
 
       if (target === "intro") {
         setShowIntro(true);
-        introOpacity.value = 0;
-        introTranslateY.value = 22;
-        introScale.value = 1;
-        enterIntro();
-      } else {
-        exitOverlayOpacity.value = withTiming(1, exitTiming);
+        setFrontLayer("intro");
+        introX.value = swipeEnterX(width);
+        introX.value = withTiming(0, screenSwipeTiming);
+        welcomeX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
+          if (finished) {
+            runOnJS(hideWelcome)();
+          }
+        });
+        return;
       }
 
-      welcomeOpacity.value = withTiming(0, exitTiming, (finished) => {
-        if (!finished) {
-          return;
+      welcomeX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
+        if (finished) {
+          runOnJS(finishSkipToAccess)();
         }
-
-        if (target === "intro") {
-          runOnJS(hideWelcome)();
-          return;
-        }
-
-        runOnJS(prepareSkipToAccess)();
       });
-      welcomeScale.value = withTiming(0.97, exitTiming);
     },
-    [
-      enterIntro,
-      exitOverlayOpacity,
-      hideWelcome,
-      introOpacity,
-      introScale,
-      introTranslateY,
-      prepareSkipToAccess,
-      welcomeOpacity,
-      welcomeScale,
-    ],
+    [finishSkipToAccess, hideWelcome, introX, welcomeX, width],
   );
 
   const animateIntroExitToAccess = useCallback(() => {
@@ -156,24 +109,15 @@ export function OnboardingFlow({
     isTransitioningRef.current = true;
     setIsTransitioning(true);
     setShowAccess(true);
-    accessOpacity.value = 0;
-    accessTranslateY.value = 22;
-    enterAccess();
-
-    introOpacity.value = withTiming(0, exitTiming, (finished) => {
+    setFrontLayer("access");
+    accessX.value = swipeEnterX(width);
+    accessX.value = withTiming(0, screenSwipeTiming);
+    introX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
       if (finished) {
         runOnJS(hideIntro)();
       }
     });
-    introScale.value = withTiming(0.97, exitTiming);
-  }, [
-    accessOpacity,
-    accessTranslateY,
-    enterAccess,
-    hideIntro,
-    introOpacity,
-    introScale,
-  ]);
+  }, [accessX, hideIntro, introX, width]);
 
   const handleWelcomeContinue = useCallback(() => {
     animateWelcomeExit("intro");
@@ -184,29 +128,27 @@ export function OnboardingFlow({
   }, [animateWelcomeExit]);
 
   const welcomeStyle = useAnimatedStyle(() => ({
-    opacity: welcomeOpacity.value,
-    transform: [{ scale: welcomeScale.value }],
+    transform: [{ translateX: welcomeX.value }],
   }));
 
   const introStyle = useAnimatedStyle(() => ({
-    opacity: introOpacity.value,
-    transform: [{ translateY: introTranslateY.value }, { scale: introScale.value }],
+    transform: [{ translateX: introX.value }],
   }));
 
   const accessStyle = useAnimatedStyle(() => ({
-    opacity: accessOpacity.value,
-    transform: [{ translateY: accessTranslateY.value }],
-  }));
-
-  const exitOverlayStyle = useAnimatedStyle(() => ({
-    opacity: exitOverlayOpacity.value,
+    transform: [{ translateX: accessX.value }],
   }));
 
   return (
     <View style={styles.host}>
       {showAccess ? (
         <Animated.View
-          style={[styles.layer, styles.accessLayer, accessStyle]}
+          style={[
+            styles.layer,
+            styles.accessLayer,
+            frontLayer === "access" && styles.frontLayer,
+            accessStyle,
+          ]}
           pointerEvents={isTransitioning ? "none" : "auto"}
         >
           <AccessSetupFlow onComplete={onComplete} />
@@ -215,7 +157,12 @@ export function OnboardingFlow({
 
       {showIntro ? (
         <Animated.View
-          style={[styles.layer, styles.introLayer, introStyle]}
+          style={[
+            styles.layer,
+            styles.introLayer,
+            frontLayer === "intro" && styles.frontLayer,
+            introStyle,
+          ]}
           pointerEvents={isTransitioning ? "none" : "auto"}
         >
           <OnboardingScreen onComplete={animateIntroExitToAccess} />
@@ -224,7 +171,12 @@ export function OnboardingFlow({
 
       {showWelcome ? (
         <Animated.View
-          style={[styles.layer, styles.welcomeLayer, welcomeStyle]}
+          style={[
+            styles.layer,
+            styles.welcomeLayer,
+            frontLayer === "welcome" && styles.frontLayer,
+            welcomeStyle,
+          ]}
           pointerEvents={isTransitioning ? "none" : "auto"}
         >
           <WelcomeScreen
@@ -233,8 +185,6 @@ export function OnboardingFlow({
           />
         </Animated.View>
       ) : null}
-
-      <Animated.View pointerEvents="none" style={[styles.exitOverlay, exitOverlayStyle]} />
     </View>
   );
 }
@@ -242,9 +192,12 @@ export function OnboardingFlow({
 const styles = StyleSheet.create({
   host: {
     flex: 1,
+    overflow: "hidden",
+    backgroundColor: pillappColors.background,
   },
   layer: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: pillappColors.background,
   },
   accessLayer: {
     zIndex: 1,
@@ -255,9 +208,7 @@ const styles = StyleSheet.create({
   welcomeLayer: {
     zIndex: 3,
   },
-  exitOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 4,
-    backgroundColor: pillappColors.background,
+  frontLayer: {
+    zIndex: 5,
   },
 });

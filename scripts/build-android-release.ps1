@@ -1,6 +1,6 @@
 $javaHome = "C:\Program Files\Android\Android Studio\jbr"
 $androidHome = "$env:LOCALAPPDATA\Android\Sdk"
-$projectRoot = Join-Path $PSScriptRoot ".."
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 if (-not (Test-Path "$javaHome\bin\java.exe")) {
   Write-Error "Java non trovato in: $javaHome. Installa Android Studio o imposta JAVA_HOME."
@@ -11,14 +11,26 @@ $env:JAVA_HOME = $javaHome
 $env:ANDROID_HOME = $androidHome
 $env:Path = "$javaHome\bin;$androidHome\platform-tools;$env:Path"
 
-# Percorso Gradle breve per evitare il limite di 260 caratteri di Windows
 $gradleHome = "C:\gradle"
 if (-not (Test-Path $gradleHome)) {
   New-Item -ItemType Directory -Path $gradleHome | Out-Null
 }
 $env:GRADLE_USER_HOME = $gradleHome
 
+. (Join-Path $PSScriptRoot "install-long-path-ninja.ps1")
+
 Set-Location $projectRoot
+
+$staleGenerated = @(
+  (Join-Path $projectRoot "android\app\build\generated\res\createBundleReleaseJsAndAssets"),
+  (Join-Path $projectRoot "android\app\build\generated\assets\createBundleReleaseJsAndAssets")
+)
+foreach ($path in $staleGenerated) {
+  if (Test-Path $path) {
+    Write-Host "Pulisco cache risorse: $path"
+    Remove-Item -Recurse -Force $path
+  }
+}
 
 if (-not (Test-Path (Join-Path $projectRoot "android"))) {
   Write-Host "Cartella android assente: eseguo expo prebuild..."
@@ -30,7 +42,7 @@ if (-not (Test-Path (Join-Path $projectRoot "android"))) {
 
 Set-Location (Join-Path $projectRoot "android")
 Write-Host "Compilazione APK release (nessun telefono richiesto)..."
-.\gradlew assembleRelease
+cmd /c "gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a"
 
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE

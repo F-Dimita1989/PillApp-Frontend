@@ -10,6 +10,7 @@ import {
 import { Label, YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
+import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surface";
 import { layout, spacing } from "@/constants/spacing";
 import { pillappColors } from "@/theme/tokens";
 
@@ -39,12 +40,18 @@ export function AppSelect({
   accessibilityLabel,
 }: AppSelectProps) {
   const [open, setOpen] = useState(false);
+  const onBrand = useCardSurface() === "brand";
   const selected = options.find((option) => option.value === value);
 
   return (
     <YStack width="100%" gap="$2" flexShrink={0}>
       {label ? (
-        <Label color="$textPrimary" fontSize={14} fontWeight="600" lineHeight={20}>
+        <Label
+          color={onBrand ? pillappColors.onPrimary : "$textPrimary"}
+          fontSize={14}
+          fontWeight="600"
+          lineHeight={20}
+        >
           {label}
         </Label>
       ) : null}
@@ -63,14 +70,16 @@ export function AppSelect({
           pressed && !disabled && styles.triggerPressed,
         ]}
       >
-        <AppText
-          variant="body"
-          muted={!selected}
-          style={styles.triggerText}
-          numberOfLines={1}
-        >
-          {selected?.label ?? placeholder}
-        </AppText>
+        <CardSurfaceProvider surface="light">
+          <AppText
+            variant="body"
+            muted={!selected}
+            style={styles.triggerText}
+            numberOfLines={1}
+          >
+            {selected?.label ?? placeholder}
+          </AppText>
+        </CardSurfaceProvider>
         <MaterialCommunityIcons
           name="chevron-down"
           size={22}
@@ -84,6 +93,7 @@ export function AppSelect({
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
+        <CardSurfaceProvider surface="light">
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet} onStartShouldSetResponder={() => true}>
             <AppText variant="title" style={styles.sheetTitle}>
@@ -113,7 +123,7 @@ export function AppSelect({
                     <View style={styles.optionText}>
                       <AppText
                         variant="body"
-                        color={isSelected ? "primary" : undefined}
+                        color={isSelected ? "secondary" : undefined}
                         fontWeight={isSelected ? "700" : undefined}
                       >
                         {item.label}
@@ -128,7 +138,7 @@ export function AppSelect({
                       <MaterialCommunityIcons
                         name="check"
                         size={20}
-                        color={pillappColors.primary}
+                        color={pillappColors.secondary}
                       />
                     ) : null}
                   </Pressable>
@@ -137,6 +147,7 @@ export function AppSelect({
             />
           </View>
         </Pressable>
+        </CardSurfaceProvider>
       </Modal>
     </YStack>
   );
@@ -146,9 +157,9 @@ const styles = StyleSheet.create({
   trigger: {
     minHeight: 52,
     borderWidth: 1.5,
-    borderColor: pillappColors.border,
-    borderRadius: 12,
-    backgroundColor: pillappColors.surface,
+    borderColor: "rgba(255,255,255,0.5)",
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.94)",
     paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
@@ -159,7 +170,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   triggerPressed: {
-    borderColor: pillappColors.primary,
+    borderColor: pillappColors.secondary,
   },
   triggerText: {
     flex: 1,
@@ -199,7 +210,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   optionSelected: {
-    backgroundColor: pillappColors.primarySoft,
+    backgroundColor: pillappColors.secondarySoft,
   },
   optionPressed: {
     backgroundColor: pillappColors.surfaceMuted,

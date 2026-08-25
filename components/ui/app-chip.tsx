@@ -3,6 +3,7 @@ import { Pressable } from "react-native";
 import { XStack, type XStackProps } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
+import { useCardSurface } from "@/components/ui/card-surface";
 import { pillappColors } from "@/theme/tokens";
 
 type AppChipProps = XStackProps & {
@@ -25,30 +26,55 @@ export function AppChip({
   accessibilityLabel,
   ...rest
 }: AppChipProps) {
+  const onBrand = useCardSurface() === "brand";
   const content = (
     <XStack
       alignItems="center"
       justifyContent="center"
       gap="$2"
-      minHeight={44}
-      backgroundColor={selected ? "$primarySoft" : "$surface"}
-      borderColor={selected ? "$primary" : "$border"}
+      minHeight={48}
+      backgroundColor={
+        onBrand
+          ? selected
+            ? "rgba(255,255,255,0.22)"
+            : "rgba(255,255,255,0.1)"
+          : selected
+            ? "$secondarySoft"
+            : "$surface"
+      }
+      borderColor={
+        onBrand
+          ? selected
+            ? "rgba(255,255,255,1)"
+            : "rgba(255,255,255,0.55)"
+          : selected
+            ? "$secondary"
+            : "$border"
+      }
       borderWidth={selected ? 2 : 1}
-      borderRadius="$3"
+      borderRadius="$pill"
       paddingHorizontal="$3"
       paddingVertical="$2"
       opacity={disabled ? 0.45 : 1}
       {...rest}
     >
       {selected ? (
-        <MaterialCommunityIcons name="check" size={16} color={pillappColors.primary} />
+        <MaterialCommunityIcons
+          name="check"
+          size={16}
+          color={onBrand ? pillappColors.onPrimary : pillappColors.secondary}
+        />
       ) : icon ? (
-        <MaterialCommunityIcons name={icon} size={16} color={pillappColors.textSecondary} />
+        <MaterialCommunityIcons
+          name={icon}
+          size={16}
+          color={onBrand ? pillappColors.onPrimary : pillappColors.textSecondary}
+        />
       ) : null}
       <AppText
         variant="label"
-        color={selected ? "primary" : undefined}
-        muted={!selected}
+        color={onBrand ? "inverse" : selected ? "secondary" : undefined}
+        muted={!onBrand && !selected}
         flexShrink={0}
         textAlign="center"
       >

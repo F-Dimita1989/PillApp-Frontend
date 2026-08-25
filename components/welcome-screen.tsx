@@ -109,7 +109,7 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
 
   return (
     <View style={styles.root}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <LinearGradient
         colors={[...pillappBrandGradient.colors]}
         locations={[...pillappBrandGradient.locations]}
@@ -154,7 +154,7 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
                   textAlign="center"
                   opacity={0.92}
                 >
-                  L'app che ti aiuta a ricordare farmaci e orari, in modo semplice e
+                  L&apos;app che ti aiuta a ricordare farmaci e orari, in modo semplice e
                   sicuro.
                 </AppText>
               </YStack>

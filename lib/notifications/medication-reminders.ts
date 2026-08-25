@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 
-import { ensureNotificationPermissions, THERAPY_CHANNEL_ID } from "@/lib/notifications/setup";
+import { ensureNotificationPermissions, getNotificationChannelId, getNotificationSoundPayload } from "@/lib/notifications/setup";
 import { buildWeeklyReminderTrigger } from "@/lib/notifications/schedule-weekly-trigger";
 import type { Medication } from "@/types/domain";
 
@@ -26,6 +26,7 @@ async function clearStoredNotificationIds(): Promise<void> {
 export async function syncMedicationReminders(
   medications: Medication[],
   enabled: boolean,
+  options?: { soundId?: string; playSound?: boolean },
 ): Promise<number> {
   await clearStoredNotificationIds();
 
@@ -37,6 +38,11 @@ export async function syncMedicationReminders(
   if (!granted) {
     throw new Error("Permesso notifiche non concesso. Attivalo dalle impostazioni del telefono.");
   }
+
+  const soundId = options?.soundId ?? "default";
+  const playSound = options?.playSound ?? true;
+  const channelId = getNotificationChannelId(soundId, playSound);
+  const sound = getNotificationSoundPayload(soundId, playSound);
 
   const activeMeds = medications.filter((m) => m.active);
   const notificationIds: string[] = [];
@@ -53,14 +59,14 @@ export async function syncMedicationReminders(
           content: {
             title: "Promemoria PillApp",
             body: `${med.name} — ${med.dose} alle ${timeStr}`,
-            sound: true,
+            sound: sound ?? undefined,
             data: { medicationId: med.id, type: "dose_reminder" },
           },
           trigger: buildWeeklyReminderTrigger({
             weekday: WEEKDAY_FROM_INDEX[dayIndex],
             hour: time.hour,
             minute: time.minute,
-            channelId: THERAPY_CHANNEL_ID,
+            channelId,
           }),
         });
         notificationIds.push(id);

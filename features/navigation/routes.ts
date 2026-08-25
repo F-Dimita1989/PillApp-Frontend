@@ -8,5 +8,4 @@ export const AppRoutes = {
   scan: "/scan" as Href,
   journal: "/journal" as Href,
   profile: "/profile" as Href,
-  therapyLegacy: "/explore" as Href,
 };

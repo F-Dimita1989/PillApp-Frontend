@@ -1,9 +1,10 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { Platform, ScrollView, useWindowDimensions } from "react-native";
 import { YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import type { OnboardingSlide } from "@/constants/onboarding-slides";
-import { pillappLayout } from "@/theme/tokens";
+import { pillappBrandGradient, pillappLayout } from "@/theme/tokens";
 
 type OnboardingSlideViewProps = {
   slide: OnboardingSlide;
@@ -40,23 +41,28 @@ export function OnboardingSlideView({
       >
         {slide.badge ? (
           <YStack alignItems="center">
-            <YStack
-              borderRadius="$1"
-              paddingHorizontal="$3"
-              paddingVertical="$1"
-              backgroundColor="$primary"
+            <LinearGradient
+              colors={[...pillappBrandGradient.colors]}
+              locations={[...pillappBrandGradient.locations]}
+              start={pillappBrandGradient.start}
+              end={pillappBrandGradient.end}
+              style={{
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 4,
+              }}
             >
               <AppText variant="caption" color="inverse" fontWeight="700">
                 {slide.badge}
               </AppText>
-            </YStack>
+            </LinearGradient>
           </YStack>
         ) : null}
 
         <YStack width="100%" gap="$3">
           <AppText
             variant={compact ? "title" : "headline"}
-            color="primary"
+            color="secondary"
             textAlign="center"
           >
             {slide.title}

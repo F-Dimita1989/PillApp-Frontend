@@ -1,3 +1,5 @@
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
@@ -8,6 +10,7 @@ import {
   PrimaryButton,
 } from "@/components/ui";
 import { AIC_TOUR_ANCHORS } from "@/constants/aic-scanner-tour";
+import { pillappBrandGradient, pillappColors, pillappRadius } from "@/theme/tokens";
 import type { TooltipRenderProps } from "@edwardloopez/react-native-coachmark";
 
 type AicScanTourTooltipProps = TooltipRenderProps & {
@@ -47,11 +50,10 @@ export function AicScanTourTooltip({
   return (
     <YStack
       backgroundColor="$surface"
-      borderColor="$border"
+      borderColor="$borderStrong"
       borderWidth={1}
       borderRadius="$4"
-      padding="$4"
-      gap="$2"
+      overflow="hidden"
       shadowColor="$shadow"
       shadowOpacity={0.12}
       shadowRadius={16}
@@ -60,50 +62,72 @@ export function AicScanTourTooltip({
       accessibilityRole="alert"
       accessibilityLabel={`Guida passo ${index + 1} di ${count}. ${title ?? ""}. ${description ?? ""}`}
     >
-      <AppText variant="label" color="primary">
-        Passo {index + 1} di {count}
-      </AppText>
+      <LinearGradient
+        colors={[...pillappBrandGradient.colors]}
+        locations={[...pillappBrandGradient.locations]}
+        start={pillappBrandGradient.start}
+        end={pillappBrandGradient.end}
+        style={styles.brandBar}
+      />
 
-      <AppProgress progress={progress} />
-
-      {title ? (
-        <AppText variant="label" fontWeight="700">
-          {title}
+      <YStack padding="$4" gap="$2">
+        <AppText variant="overline" color="secondary">
+          Passo {index + 1} di {count}
         </AppText>
-      ) : null}
 
-      {description ? (
-        <AppText variant="caption" muted>
-          {description}
-        </AppText>
-      ) : null}
+        <AppProgress
+          progress={progress}
+          backgroundColor={pillappColors.secondarySoft}
+          height={6}
+          borderRadius={pillappRadius.pill}
+        />
 
-      {isFramingStep ? (
-        <YStack alignItems="center" marginTop="$1">
-          <AicScanExampleImage size="compact" />
-        </YStack>
-      ) : null}
+        {title ? (
+          <AppText variant="title" color="secondary">
+            {title}
+          </AppText>
+        ) : null}
 
-      <YStack gap="$2" marginTop="$1">
-        <PrimaryButton
-          onPress={handleNext}
-          fullWidth
-          accessibilityLabel={isLast ? "Fine guida" : "Passo successivo"}
-        >
-          {isLast ? "Fine guida" : "Avanti"}
-        </PrimaryButton>
+        {description ? (
+          <AppText variant="body" muted>
+            {description}
+          </AppText>
+        ) : null}
 
-        <XStack justifyContent="center" alignItems="center" gap="$4">
-          {!isFirst ? (
-            <AppButton variant="ghost" size="md" onPress={onBack}>
-              Indietro
+        {isFramingStep ? (
+          <YStack alignItems="center" marginTop="$1">
+            <AicScanExampleImage size="compact" />
+          </YStack>
+        ) : null}
+
+        <YStack gap="$2" marginTop="$1">
+          <PrimaryButton
+            onPress={handleNext}
+            fullWidth
+            accessibilityLabel={isLast ? "Fine guida" : "Passo successivo"}
+          >
+            {isLast ? "Fine guida" : "Avanti"}
+          </PrimaryButton>
+
+          <XStack justifyContent="center" alignItems="center" gap="$4">
+            {!isFirst ? (
+              <AppButton variant="ghost" size="md" onPress={onBack}>
+                Indietro
+              </AppButton>
+            ) : null}
+            <AppButton variant="ghost" size="md" onPress={handleSkip}>
+              Salta guida
             </AppButton>
-          ) : null}
-          <AppButton variant="ghost" size="md" onPress={handleSkip}>
-            Salta guida
-          </AppButton>
-        </XStack>
+          </XStack>
+        </YStack>
       </YStack>
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  brandBar: {
+    height: 6,
+    width: "100%",
+  },
+});

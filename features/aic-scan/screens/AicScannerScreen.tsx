@@ -1,9 +1,13 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator, StyleSheet } from "react-native";
 import { YStack } from "tamagui";
 
+import {
+  ManualMedicationForm,
+  validateManualMedication,
+} from "@/components/farmaci/manual-medication-form";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
 import {
   AppCard,
@@ -11,9 +15,11 @@ import {
   AppInput,
   AppScreen,
   AppText,
+  AppTopBar,
   BottomActionBar,
+  BrandIconBadge,
+  BrandIntroCard,
   ErrorState,
-  IntroHeroArc,
   PrimaryButton,
   SecondaryButton,
   SectionHeader,
@@ -22,6 +28,7 @@ import {
 import { AppRoutes } from "@/features/navigation/routes";
 import { useAppData } from "@/features/store/app-data-context";
 import {
+  EMPTY_SCANNED_MEDICATION_FORM,
   buildScannedMedicationFormValues,
   formatScannedMedicationNotes,
   mapUnitaToMedicationForm,
@@ -29,10 +36,11 @@ import {
   type ScannedMedicationFormValues,
 } from "@/lib/farmaci/form-values";
 import { pickAndScanMedicine } from "@/lib/farmaci/scan";
+import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
 import { pillappColors } from "@/theme/tokens";
 import type { Medication } from "@/types/domain";
 
-type ScanPhase = "idle" | "loading" | "confirm" | "error" | "success";
+type ScanPhase = "idle" | "loading" | "confirm" | "manual" | "error" | "success";
 
 export function AicScannerScreen() {
   const router = useRouter();
@@ -44,6 +52,9 @@ export function AicScannerScreen() {
     useState<ScannedMedicationFormValues | null>(null);
   const [dose, setDose] = useState("1 compressa");
   const [savedName, setSavedName] = useState("");
+  const [manualErrors, setManualErrors] = useState<{ nome?: string; aic?: string }>(
+    {},
+  );
 
   const runScan = useCallback(async (source: "camera" | "gallery") => {
     setPhase("loading");
@@ -69,17 +80,40 @@ export function AicScannerScreen() {
   }, []);
 
   const startManualEntry = () => {
-    setScanFormValues({
-      aic: "",
-      nome: "",
-      marca: "",
-      principioAttivo: "",
-      quantita: "",
-      unitaQuantita: "pillole",
-      dosaggio: "",
-      note: "",
-    });
-    setPhase("confirm");
+    setError("");
+    setManualErrors({});
+    setScanFormValues({ ...EMPTY_SCANNED_MEDICATION_FORM });
+    setDose("1 compressa");
+    setPhase("manual");
+  };
+
+  const saveMedication = (
+    values: ScannedMedicationFormValues,
+    source: Medication["source"],
+    doseValue: string,
+  ) => {
+    const medication: Medication = {
+      id: `med-${Date.now()}`,
+      name: values.nome.trim(),
+      aic: values.aic.trim() || undefined,
+      form: mapUnitaToMedicationForm(values.unitaQuantita),
+      dose: doseValue.trim() || "1 dose",
+      notes: formatScannedMedicationNotes(values) || undefined,
+      quantityRemaining: values.quantita.trim() || undefined,
+      quantityUnit: values.unitaQuantita,
+      schedule: {
+        times: ["08:00"],
+        daysActive: [true, true, true, true, true, true, true],
+      },
+      active: true,
+      createdAt: new Date().toISOString(),
+      source,
+    };
+
+    addMedication(medication);
+    setSavedName(medication.name);
+    setPhase("success");
+    setTimeout(() => router.replace(AppRoutes.medications), 1200);
   };
 
   const confirmMedication = () => {
@@ -89,121 +123,187 @@ export function AicScannerScreen() {
       return;
     }
 
-    const medication: Medication = {
-      id: `med-${Date.now()}`,
-      name: scanFormValues.nome.trim(),
-      aic: scanFormValues.aic.trim() || undefined,
-      form: mapUnitaToMedicationForm(scanFormValues.unitaQuantita),
-      dose: dose.trim() || "1 dose",
-      notes: formatScannedMedicationNotes(scanFormValues) || undefined,
-      quantityRemaining: scanFormValues.quantita.trim() || undefined,
-      quantityUnit: scanFormValues.unitaQuantita,
-      schedule: {
-        times: ["08:00"],
-        daysActive: [true, true, true, true, true, true, true],
-      },
-      active: true,
-      createdAt: new Date().toISOString(),
-      source: scanFormValues.aic.trim() ? "aic_scan" : "manual",
-    };
-
-    addMedication(medication);
-    setSavedName(medication.name);
-    setPhase("success");
-    setTimeout(() => router.replace(AppRoutes.medications), 1200);
+    saveMedication(
+      scanFormValues,
+      scanFormValues.aic.trim() ? "aic_scan" : "manual",
+      dose,
+    );
   };
 
+  const confirmManualMedication = () => {
+    if (!scanFormValues) {
+      return;
+    }
+
+    const nextErrors = validateManualMedication(scanFormValues);
+    setManualErrors(nextErrors);
+    if (nextErrors.nome || nextErrors.aic) {
+      return;
+    }
+
+    saveMedication(
+      scanFormValues,
+      "manual",
+      nearestTherapyDoseOption(dose, scanFormValues.unitaQuantita),
+    );
+  };
+
+  const resetToIdle = () => {
+    setScanFormValues(null);
+    setManualErrors({});
+    setError("");
+    setPhase("idle");
+  };
+
+  const isManual = phase === "manual";
+  const showScanArea = phase === "idle" || phase === "loading";
+
   return (
-    <YStack flex={1} backgroundColor="$background">
-      <IntroHeroArc
-        eyebrow="Funzione esclusiva"
-        title="Scansione AIC"
-        subtitle="Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
-        emblem={
-          <MaterialCommunityIcons
-            name="barcode-scan"
-            size={40}
-            color={pillappColors.primary}
+    <YStack flex={1} backgroundColor="$background" overflow="hidden">
+      <YStack flex={1} minHeight={0}>
+        <AppScreen
+        scroll={phase !== "loading"}
+        contentStyle={
+          phase === "confirm" || phase === "manual" ? { paddingBottom: 120 } : undefined
+        }
+        hero={
+          <AppTopBar
+            icon={isManual ? "pencil-outline" : "barcode-scan"}
+            eyebrow={isManual ? "Senza fotocamera" : "Funzione esclusiva"}
+            title={isManual ? "Inserisci un farmaco" : "Scansione AIC"}
+            subtitle={
+              isManual
+                ? "Basta il nome; AIC e altri campi sono facoltativi."
+                : "Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
+            }
           />
         }
-        showLogo={false}
-      />
-
-      <AppScreen
-        scroll={phase !== "loading"}
-        contentStyle={phase === "confirm" ? { paddingBottom: 120 } : undefined}
       >
-        <YStack width="100%" gap="$3">
-          <SectionHeader title="Area di scansione" />
-          <AppCard variant="outlined">
-            <AppCardContent alignItems="center">
-              <YStack
-                width="100%"
-                minHeight={220}
-                borderRadius="$3"
-                borderWidth={2}
-                borderStyle="dashed"
-                borderColor="$primary"
-                backgroundColor="$primarySoft"
-                alignItems="center"
-                justifyContent="center"
-                padding="$5"
-                gap="$3"
-                accessibilityLabel="Area di scansione codice AIC"
-              >
-                {phase === "loading" ? (
-                  <>
-                    <ActivityIndicator
-                      size="large"
-                      color={pillappColors.primary}
-                    />
-                    <AppText variant="body" textAlign="center">
-                      Lettura in corso…
-                    </AppText>
-                  </>
-                ) : (
-                  <>
-                    <MaterialCommunityIcons
-                      name="barcode-scan"
-                      size={48}
-                      color={pillappColors.primary}
-                    />
-                    <AppText variant="title" color="primary">
-                      Codice AIC
-                    </AppText>
-                    <AppText variant="body" muted textAlign="center">
-                      Cerca «AIC N.» e le 9 cifre stampate sulla confezione
-                    </AppText>
-                  </>
-                )}
-              </YStack>
-            </AppCardContent>
-          </AppCard>
-        </YStack>
+        {showScanArea ? (
+          <YStack width="100%" gap="$3">
+            <BrandIntroCard
+              icon="barcode-scan"
+              title="Dove trovare il codice"
+              description="Sulla confezione cerca «AIC N.» seguito da 9 cifre. Puoi usare la fotocamera, la galleria o inserire i dati a mano."
+            />
+            <SectionHeader title="Area di scansione" />
+            <AppCard>
+              <AppCardContent alignItems="center">
+                <YStack
+                  width="100%"
+                  minHeight={220}
+                  borderRadius="$3"
+                  overflow="hidden"
+                >
+                  <LinearGradient
+                    colors={[pillappColors.secondarySoft, pillappColors.primarySoft]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <YStack
+                    width="100%"
+                    minHeight={220}
+                    borderRadius="$3"
+                    borderWidth={2}
+                    borderStyle="dashed"
+                    borderColor="$secondary"
+                    alignItems="center"
+                    justifyContent="center"
+                    padding="$5"
+                    gap="$3"
+                    accessibilityLabel="Area di scansione codice AIC"
+                  >
+                    {phase === "loading" ? (
+                      <>
+                        <ActivityIndicator
+                          size="large"
+                          color={pillappColors.secondary}
+                        />
+                        <AppText variant="body" textAlign="center">
+                          Lettura in corso…
+                        </AppText>
+                      </>
+                    ) : (
+                      <>
+                        <BrandIconBadge
+                          name="barcode-scan"
+                          size={64}
+                          iconSize={32}
+                        />
+                        <AppText variant="title" color="secondary">
+                          Codice AIC
+                        </AppText>
+                        <AppText variant="body" muted textAlign="center">
+                          Cerca «AIC N.» e le 9 cifre stampate sulla confezione
+                        </AppText>
+                      </>
+                    )}
+                  </YStack>
+                </YStack>
+              </AppCardContent>
+            </AppCard>
+          </YStack>
+        ) : null}
 
         {phase === "confirm" && scanFormValues ? (
-          <AppCard>
-            <AppCardContent>
-              <SectionHeader
-                title="Conferma dati"
-                description="Verifica le informazioni prima di aggiungere il farmaco."
-              />
-              <ScannedMedicationForm
-                key={`scan-form-${scanFormValues.aic}`}
-                values={scanFormValues}
-                onChange={setScanFormValues}
-                showHeading={false}
-              />
-              <AppInput
-                label="Dose giornaliera"
-                value={dose}
-                onChangeText={setDose}
-              />
-              <AppText variant="caption" muted>
-                Potrai modificare orari e promemoria dalla scheda del farmaco.
-              </AppText>
-            </AppCardContent>
-          </AppCard>
+          <YStack width="100%" gap="$3">
+            <BrandIntroCard
+              icon="check-decagram"
+              title="Controlla i dati"
+              description="Verifica nome e codice AIC prima di aggiungere il farmaco alla terapia."
+            />
+            <AppCard>
+              <AppCardContent>
+                <SectionHeader
+                  title="Conferma dati"
+                  description="Verifica le informazioni prima di aggiungere il farmaco."
+                />
+                <ScannedMedicationForm
+                  key={`scan-form-${scanFormValues.aic}`}
+                  values={scanFormValues}
+                  onChange={setScanFormValues}
+                  showHeading={false}
+                />
+                <AppInput
+                  label="Dose giornaliera"
+                  value={dose}
+                  onChangeText={setDose}
+                />
+                <AppText variant="caption" muted>
+                  Potrai modificare orari e promemoria dalla scheda del farmaco.
+                </AppText>
+              </AppCardContent>
+            </AppCard>
+          </YStack>
+        ) : null}
+
+        {phase === "manual" && scanFormValues ? (
+          <YStack width="100%" gap="$3">
+            <BrandIntroCard
+              icon="pencil-outline"
+              title="Dati del farmaco"
+              description="Compila i campi sotto. Orari e promemoria si impostano dopo, dalla scheda del farmaco."
+            />
+
+            <AppCard>
+              <AppCardContent>
+                <ManualMedicationForm
+                  values={scanFormValues}
+                  onChange={(next) => {
+                    setScanFormValues(next);
+                    if (manualErrors.nome || manualErrors.aic) {
+                      setManualErrors(validateManualMedication(next));
+                    }
+                  }}
+                  dose={dose}
+                  onDoseChange={setDose}
+                  nomeError={manualErrors.nome}
+                  aicError={manualErrors.aic}
+                />
+              </AppCardContent>
+            </AppCard>
+          </YStack>
         ) : null}
 
         {phase === "error" ? (
@@ -246,7 +346,8 @@ export function AicScannerScreen() {
             </SecondaryButton>
           </YStack>
         ) : null}
-      </AppScreen>
+        </AppScreen>
+      </YStack>
 
       {phase === "confirm" ? (
         <BottomActionBar
@@ -254,10 +355,17 @@ export function AicScannerScreen() {
           primaryIcon="pill"
           onPrimaryPress={confirmMedication}
           secondaryLabel="Annulla"
-          onSecondaryPress={() => {
-            setScanFormValues(null);
-            setPhase("idle");
-          }}
+          onSecondaryPress={resetToIdle}
+        />
+      ) : null}
+
+      {phase === "manual" ? (
+        <BottomActionBar
+          primaryLabel="Aggiungi alla terapia"
+          primaryIcon="pill"
+          onPrimaryPress={confirmManualMedication}
+          secondaryLabel="Indietro"
+          onSecondaryPress={resetToIdle}
         />
       ) : null}
     </YStack>

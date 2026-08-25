@@ -1,11 +1,10 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { XStack, YStack } from "tamagui";
 
 import { AppButton } from "@/components/ui/app-button";
 import { AppCard, AppCardActions, AppCardContent } from "@/components/ui/app-card";
 import { AppText } from "@/components/ui/app-text";
+import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import { StatusChip } from "@/components/ui/status-chip";
-import { pillappColors } from "@/theme/tokens";
 import type { DoseEvent } from "@/types/domain";
 
 type MedicationScheduleCardProps = {
@@ -49,17 +48,7 @@ export function MedicationScheduleCard({
     <AppCard variant={dose.status === "overdue" ? "highlight" : "elevated"}>
       <AppCardContent>
         <XStack width="100%" justifyContent="space-between" alignItems="flex-start" gap="$3">
-          <XStack
-            width={48}
-            height={48}
-            borderRadius="$2"
-            backgroundColor="$primarySoft"
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-          >
-            <MaterialCommunityIcons name="pill" size={24} color={pillappColors.primary} />
-          </XStack>
+          <BrandIconBadge name="pill" size={48} iconSize={24} radius={16} />
           <YStack flex={1} gap="$1.5" minWidth={0}>
             <AppText variant="bodyStrong" numberOfLines={2}>
               {dose.medicationName}
@@ -82,7 +71,7 @@ export function MedicationScheduleCard({
             <AppText variant="overline" muted>
               Orario
             </AppText>
-            <AppText variant="title" color="primary">
+            <AppText variant="title">
               {dose.scheduledTime}
             </AppText>
           </YStack>
@@ -121,6 +110,3 @@ export function MedicationScheduleCard({
     </AppCard>
   );
 }
-
-/** @deprecated Usa MedicationScheduleCard */
-export const ReminderCard = MedicationScheduleCard;

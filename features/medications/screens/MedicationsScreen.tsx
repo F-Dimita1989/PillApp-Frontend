@@ -6,6 +6,7 @@ import { YStack } from "tamagui";
 import {
   AppScreen,
   AppTopBar,
+  BrandIntroCard,
   EmptyState,
   MedicationCard,
   PrimaryButton,
@@ -42,10 +43,21 @@ export function MedicationsScreen() {
   };
 
   return (
-    <AppScreen contentStyle={{ paddingBottom: 24 }}>
-      <AppTopBar
-        title="I miei farmaci"
-        subtitle="Terapia attiva, dosi e promemoria in un unico elenco."
+    <AppScreen
+      contentStyle={{ paddingBottom: 24 }}
+      hero={
+        <AppTopBar
+          icon="pill"
+          title="I miei farmaci"
+          subtitle="Terapia attiva, dosi e promemoria in un unico elenco."
+        />
+      }
+    >
+
+      <BrandIntroCard
+        icon="pill"
+        title="La tua terapia"
+        description="Tocca un farmaco per orari, quantità e assunzioni di oggi. Aggiungi nuovi farmaci con la scansione AIC."
       />
 
       {activeMeds.length > 0 ? (
@@ -68,7 +80,7 @@ export function MedicationsScreen() {
           actionLabel="Scansiona codice AIC"
           onAction={() => router.push(AppRoutes.scan)}
           icon={
-            <MaterialCommunityIcons name="pill" size={32} color={pillappColors.primary} />
+            <MaterialCommunityIcons name="pill" size={32} color={pillappColors.onPrimary} />
           }
         />
       ) : filteredMeds.length === 0 ? (

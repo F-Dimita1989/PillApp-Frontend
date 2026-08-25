@@ -42,6 +42,9 @@ app-example
 /ios
 /android
 
+# ninja scaricato dallo script di build Windows
+/tools/ninja/
+
 # ignore agents files
 AGENTS.md
 CLAUDE.md

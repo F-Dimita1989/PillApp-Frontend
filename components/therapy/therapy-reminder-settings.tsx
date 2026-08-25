@@ -123,17 +123,19 @@ export function TherapyReminderSettings({
         accessibilityLabel="Dosaggio per ogni assunzione"
       />
 
-      <AppText variant="label">Assunzioni al giorno</AppText>
-      <AppSegmentedControl
-        value={String(value.timesPerDay)}
-        onValueChange={(next) => {
-          if (next && !readOnly) setTimesPerDay(Number(next));
-        }}
-        options={TIMES_PER_DAY_OPTIONS.map((option) => ({
-          ...option,
-          disabled: readOnly,
-        }))}
-      />
+      <YStack width="100%" gap="$2">
+        <AppText variant="label">Assunzioni al giorno</AppText>
+        <AppSegmentedControl
+          value={String(value.timesPerDay)}
+          onValueChange={(next) => {
+            if (next && !readOnly) setTimesPerDay(Number(next));
+          }}
+          options={TIMES_PER_DAY_OPTIONS.map((option) => ({
+            ...option,
+            disabled: readOnly,
+          }))}
+        />
+      </YStack>
 
       <YStack width="100%" gap="$3">
         {value.orari.slice(0, value.timesPerDay).map((orario, index) => (

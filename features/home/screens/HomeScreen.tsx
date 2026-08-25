@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { XStack, YStack } from "tamagui";
 
 import { HomeWeekCalendar } from "@/components/home/home-week-calendar";
@@ -8,6 +8,7 @@ import { useNow } from "@/hooks/use-now";
 import {
   AppCard,
   AppCardContent,
+  AppProgress,
   AppScreen,
   AppText,
   AppTopBar,
@@ -20,51 +21,20 @@ import {
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
 import { AppRoutes } from "@/features/navigation/routes";
-import { medicationsToCombinedDayPlan } from "@/lib/app-data/sync";
-import { formatItalianDate, formatItalianTime } from "@/lib/time/datetime-labels";
+import { medicationsToCombinedDayPlan, buildDosesForDate } from "@/lib/app-data/sync";
+import { mergeDoseStatuses } from "@/lib/app-data/storage";
+import { formatDateKey, parseDateKey } from "@/lib/calendar/week-utils";
+import { MEASUREMENT_ICONS } from "@/lib/journal/labels";
+import { formatItalianDate } from "@/lib/time/datetime-labels";
 import { pillappColors } from "@/theme/tokens";
 import type { DoseEvent } from "@/types/domain";
-
-function TimeBadge({ time }: { time: string }) {
-  return (
-    <YStack
-      backgroundColor="$primarySoft"
-      borderRadius="$2"
-      paddingHorizontal="$3"
-      paddingVertical="$2"
-      alignItems="center"
-      justifyContent="center"
-      borderWidth={1}
-      borderColor="$border"
-      flexShrink={0}
-      accessibilityLabel={`Ora attuale: ${time}`}
-    >
-      <AppText variant="title" color="primary">
-        {time}
-      </AppText>
-    </YStack>
-  );
-}
 
 function AdherenceBar({ taken, total }: { taken: number; total: number }) {
   const progress = total ? taken / total : 0;
 
   return (
     <YStack width="100%" gap="$2">
-      <XStack
-        width="100%"
-        height={8}
-        backgroundColor="$surfaceMuted"
-        borderRadius="$pill"
-        overflow="hidden"
-      >
-        <XStack
-          flex={Math.max(progress, 0.001)}
-          backgroundColor="$success"
-          borderRadius="$pill"
-        />
-        <XStack flex={Math.max(1 - progress, 0.001)} />
-      </XStack>
+      <AppProgress progress={progress} height={8} borderRadius={999} />
       <XStack width="100%" justifyContent="space-between">
         <AppText variant="caption" muted>
           {taken} completate
@@ -116,7 +86,7 @@ function FeaturedDoseSection({
           <MaterialCommunityIcons
             name="barcode-scan"
             size={32}
-            color={pillappColors.primary}
+            color={pillappColors.onPrimary}
           />
         }
       />
@@ -132,7 +102,7 @@ function FeaturedDoseSection({
           <MaterialCommunityIcons
             name="calendar-blank-outline"
             size={32}
-            color={pillappColors.textMuted}
+            color={pillappColors.onPrimary}
           />
         }
       />
@@ -160,7 +130,14 @@ export function HomeScreen() {
     snoozeDose,
   } = useAppData();
 
-  const now = useNow();
+  const now = useNow(60_000);
+  const todayKey = formatDateKey(now);
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+  const isSelectedToday = selectedDate === todayKey;
+  const selectedDayLabel = useMemo(
+    () => formatItalianDate(parseDateKey(selectedDate)),
+    [selectedDate],
+  );
   const therapyDayPlan = useMemo(
     () => medicationsToCombinedDayPlan(medications),
     [medications],
@@ -169,6 +146,16 @@ export function HomeScreen() {
   const hasMedications = medications.some((m) => m.active);
   const hasDosesToday = dosesToday.length > 0;
 
+  const dosesForSelectedDay = useMemo(() => {
+    const generated = buildDosesForDate(medications, parseDateKey(selectedDate));
+    if (!isSelectedToday) {
+      return generated;
+    }
+    return mergeDoseStatuses(generated, dosesToday);
+  }, [dosesToday, isSelectedToday, medications, selectedDate]);
+
+  const hasDosesOnSelectedDay = dosesForSelectedDay.length > 0;
+
   const heroSubtitle = hasDosesToday
     ? `${adherenceToday.taken} di ${adherenceToday.total} assunzioni completate oggi`
     : hasMedications
@@ -176,65 +163,85 @@ export function HomeScreen() {
       : "Inizia aggiungendo il tuo primo farmaco";
 
   const dosesForList = useMemo(
-    () => (nextDose ? dosesToday.filter((d) => d.id !== nextDose.id) : dosesToday),
-    [dosesToday, nextDose],
+    () =>
+      isSelectedToday && nextDose
+        ? dosesForSelectedDay.filter((d) => d.id !== nextDose.id)
+        : dosesForSelectedDay,
+    [dosesForSelectedDay, isSelectedToday, nextDose],
   );
 
   return (
-    <AppScreen>
-      <AppTopBar
-        variant="hero"
-        eyebrow={formatItalianDate(now)}
-        title={greeting}
-        subtitle={heroSubtitle}
-        trailing={<TimeBadge time={formatItalianTime(now)} />}
-      />
+    <AppScreen
+      hero={
+        <AppTopBar
+          icon="home-heart"
+          eyebrow={formatItalianDate(now)}
+          title={greeting}
+          subtitle={heroSubtitle}
+        />
+      }
+    >
 
       <YStack width="100%" gap="$3">
         <SectionHeader
           title="La tua settimana"
           description="Terapia e impegni in calendario"
         />
-        <AppCard variant="outlined">
+        <AppCard>
           <AppCardContent>
-            <HomeWeekCalendar dayPlan={therapyDayPlan} />
+            <HomeWeekCalendar
+              dayPlan={therapyDayPlan}
+              selectedDate={selectedDate}
+              onSelectedDateChange={setSelectedDate}
+            />
           </AppCardContent>
         </AppCard>
       </YStack>
 
-      <FeaturedDoseSection
-        hasMedications={hasMedications}
-        hasDosesToday={hasDosesToday}
-        nextDose={nextDose}
-        onMarkTaken={markDoseTaken}
-        onSnooze={snoozeDose}
-        onScan={() => router.push(AppRoutes.scan)}
-      />
+      {isSelectedToday ? (
+        <FeaturedDoseSection
+          hasMedications={hasMedications}
+          hasDosesToday={hasDosesToday}
+          nextDose={nextDose}
+          onMarkTaken={markDoseTaken}
+          onSnooze={snoozeDose}
+          onScan={() => router.push(AppRoutes.scan)}
+        />
+      ) : null}
 
       <YStack width="100%" gap="$3">
         <SectionHeader
-          title="Agenda di oggi"
+          title={isSelectedToday ? "Agenda di oggi" : "Terapia del giorno"}
           description={
-            hasDosesToday
-              ? `${dosesToday.length} assunzion${dosesToday.length === 1 ? "e" : "i"} in programma`
-              : undefined
+            hasDosesOnSelectedDay
+              ? `${dosesForSelectedDay.length} assunzion${dosesForSelectedDay.length === 1 ? "e" : "i"} · ${selectedDayLabel}`
+              : selectedDayLabel
           }
         />
-        {hasDosesToday ? (
+        {hasDosesOnSelectedDay ? (
           <YStack width="100%" gap="$3">
             {dosesForList.map((dose) => (
               <MedicationScheduleCard
                 key={dose.id}
                 dose={dose}
-                compact={dose.status === "taken" || dose.status === "skipped"}
+                compact={
+                  !isSelectedToday ||
+                  dose.status === "taken" ||
+                  dose.status === "skipped"
+                }
+                statusMessage={
+                  isSelectedToday ? undefined : "In programma per questo giorno"
+                }
                 onMarkTaken={
-                  dose.status !== "taken" && dose.status !== "skipped"
+                  isSelectedToday &&
+                  dose.status !== "taken" &&
+                  dose.status !== "skipped"
                     ? () => markDoseTaken(dose.id)
                     : undefined
                 }
               />
             ))}
-            {dosesForList.length === 0 && nextDose ? (
+            {isSelectedToday && dosesForList.length === 0 && nextDose ? (
               <AppText variant="body" muted>
                 La prossima assunzione è evidenziata sopra.
               </AppText>
@@ -245,7 +252,9 @@ export function HomeScreen() {
             title="Agenda vuota"
             description={
               hasMedications
-                ? "Oggi non ci sono altre assunzioni previste per i tuoi farmaci."
+                ? isSelectedToday
+                  ? "Oggi non ci sono altre assunzioni previste per i tuoi farmaci."
+                  : `Nessuna assunzione prevista per ${selectedDayLabel.toLowerCase()}.`
                 : "Aggiungi un farmaco per iniziare a ricevere promemoria personalizzati."
             }
             actionLabel={hasMedications ? undefined : "Scansiona codice AIC"}
@@ -254,15 +263,15 @@ export function HomeScreen() {
         )}
       </YStack>
 
-      {hasDosesToday ? (
-        <AppCard variant="muted">
+      {isSelectedToday && hasDosesToday ? (
+        <AppCard>
           <AppCardContent>
             <SectionHeader
               title="Aderenza di oggi"
               description="Ogni conferma aiuta te e il medico a monitorare la terapia"
             />
             <XStack width="100%" justifyContent="space-between" alignItems="baseline">
-              <AppText variant="display" color="primary">
+              <AppText variant="display">
                 {adherenceToday.percentage}%
               </AppText>
               <AppText variant="bodyStrong" muted>
@@ -281,6 +290,7 @@ export function HomeScreen() {
             {measurements.slice(0, 3).map((m) => (
               <MeasurementCard
                 key={m.id}
+                icon={MEASUREMENT_ICONS[m.kind]}
                 label={m.label}
                 value={m.value}
                 unit={m.unit}
@@ -296,7 +306,7 @@ export function HomeScreen() {
 
       <YStack width="100%" gap="$3">
         <SectionHeader title="Azioni rapide" />
-        <AppCard variant="outlined">
+        <AppCard>
           <AppCardContent gap="$2">
             <QuickActionButton
               label="Scansiona codice AIC"

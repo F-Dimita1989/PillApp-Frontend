@@ -4,6 +4,7 @@ import { XStack, YStack } from "tamagui";
 import { CalendarProvider, WeekCalendar } from "react-native-calendars";
 
 import { AppText } from "@/components/ui/app-text";
+import { useCardSurface } from "@/components/ui/card-surface";
 import "@/lib/calendar/locale";
 import {
   getDeviceEventsMarkedDates,
@@ -11,7 +12,6 @@ import {
   type MarkedDates,
 } from "@/lib/calendar/device-calendar";
 import {
-  formatDateKey,
   getWeekStart,
   parseDateKey,
 } from "@/lib/calendar/week-utils";
@@ -21,17 +21,26 @@ import {
   formatItalianTime,
 } from "@/lib/time/datetime-labels";
 import { useNow } from "@/hooks/use-now";
-import { pillappCalendarTheme } from "@/lib/calendar/calendar-theme";
+import {
+  pillappCalendarTheme,
+  pillappCalendarThemeBrand,
+} from "@/lib/calendar/calendar-theme";
 import { pillappColors } from "@/theme/tokens";
 
 type HomeWeekCalendarProps = {
   dayPlan: TherapyDayPlan;
+  selectedDate: string;
+  onSelectedDateChange: (date: string) => void;
 };
 
-export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
-  const calendarTheme = useMemo(() => pillappCalendarTheme, []);
+export function HomeWeekCalendar({
+  dayPlan,
+  selectedDate,
+  onSelectedDateChange,
+}: HomeWeekCalendarProps) {
+  const onBrand = useCardSurface() === "brand";
+  const calendarTheme = onBrand ? pillappCalendarThemeBrand : pillappCalendarTheme;
 
-  const [selectedDate, setSelectedDate] = useState(formatDateKey(new Date()));
   const [deviceMarks, setDeviceMarks] = useState<
     Awaited<ReturnType<typeof getDeviceEventsMarkedDates>>
   >({});
@@ -107,7 +116,7 @@ export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
           <AppText variant="caption" muted textAlign="right">
             {selectedLabel}
           </AppText>
-          <AppText variant="label" color="primary" textAlign="right">
+          <AppText variant="label" textAlign="right">
             {formatItalianTime(now)}
           </AppText>
         </YStack>
@@ -115,17 +124,16 @@ export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
 
       <AppText variant="caption" muted>
         {hasTherapyDays
-          ? "Verde: giorni terapia · Blu: eventi del calendario del telefono"
+          ? "Teal: giorni terapia · Blu: eventi del calendario del telefono"
           : "Blu: eventi del calendario del telefono"}
       </AppText>
 
       <CalendarProvider
         date={selectedDate}
         onDateChanged={(date) => {
-          setSelectedDate(date);
+          onSelectedDateChange(date);
           void loadDeviceWeekEvents(date);
         }}
-        showTodayButton
         theme={calendarTheme}
       >
         <WeekCalendar
@@ -134,7 +142,7 @@ export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
           allowShadow={false}
           theme={calendarTheme}
           onDayPress={(day) => {
-            setSelectedDate(day.dateString);
+            onSelectedDateChange(day.dateString);
             void loadDeviceWeekEvents(day.dateString);
           }}
         />
@@ -142,7 +150,10 @@ export function HomeWeekCalendar({ dayPlan }: HomeWeekCalendarProps) {
 
       {isLoadingDeviceEvents ? (
         <XStack alignItems="center" gap="$2">
-          <ActivityIndicator size="small" color={pillappColors.primary} />
+          <ActivityIndicator
+            size="small"
+            color={onBrand ? pillappColors.onPrimary : pillappColors.secondary}
+          />
           <AppText variant="caption" muted>
             Aggiornamento eventi del telefono...
           </AppText>

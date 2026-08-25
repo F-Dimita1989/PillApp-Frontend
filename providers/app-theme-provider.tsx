@@ -21,6 +21,3 @@ export function AppThemeProvider({ children }: AppThemeProviderProps) {
     </TamaguiProvider>
   );
 }
-
-/** @deprecated Usa AppThemeProvider */
-export const PillAppPaperProvider = AppThemeProvider;

@@ -3,6 +3,7 @@ import { THERAPY_DAYS, THERAPY_DAY_TO_WEEKDAY } from "@/lib/therapy/types";
 import type { TherapyPlan } from "@/lib/therapy/plan-storage";
 import type { DoseEvent, DoseStatus, Medication } from "@/types/domain";
 import { mapUnitaToMedicationForm } from "@/lib/farmaci/form-values";
+import { formatDateKey } from "@/lib/calendar/week-utils";
 
 const THERAPY_DAY_KEYS = THERAPY_DAYS as readonly TherapyDayKey[];
 
@@ -48,15 +49,17 @@ export function medicationFromTherapyPlan(plan: TherapyPlan): Medication {
   };
 }
 
-export function buildDosesForToday(medications: Medication[]): DoseEvent[] {
-  const today = new Date().toISOString().slice(0, 10);
-  const weekday = new Date().getDay() + 1;
+export function buildDosesForDate(
+  medications: Medication[],
+  date: Date,
+): DoseEvent[] {
+  const dateKey = formatDateKey(date);
+  const isToday = dateKey === formatDateKey(new Date());
+  const dayIndex = date.getDay();
   const doses: DoseEvent[] = [];
 
   for (const med of medications) {
     if (!med.active) continue;
-
-    const dayIndex = weekday - 1;
     if (!med.schedule.daysActive[dayIndex]) continue;
 
     for (const time of med.schedule.times) {
@@ -65,14 +68,18 @@ export function buildDosesForToday(medications: Medication[]): DoseEvent[] {
         medicationId: med.id,
         medicationName: med.name,
         scheduledTime: time,
-        date: today,
-        status: inferInitialStatus(time),
+        date: dateKey,
+        status: isToday ? inferInitialStatus(time) : "pending",
         dose: med.dose,
       });
     }
   }
 
   return doses.sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+}
+
+export function buildDosesForToday(medications: Medication[]): DoseEvent[] {
+  return buildDosesForDate(medications, new Date());
 }
 
 function inferInitialStatus(scheduledTime: string): DoseStatus {

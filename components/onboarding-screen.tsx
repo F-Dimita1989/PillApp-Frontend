@@ -10,12 +10,8 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Animated, {
-  Extrapolation,
-  interpolate,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
-  type SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
@@ -44,46 +40,23 @@ type OnboardingScreenProps = {
 
 type OnboardingSlidePageProps = {
   slide: OnboardingSlide;
-  index: number;
   width: number;
-  scrollX: SharedValue<number>;
   heroZoneHeight: number;
   bottomInset: number;
 };
 
 function OnboardingSlidePage({
   slide,
-  index,
   width,
-  scrollX,
   heroZoneHeight,
   bottomInset,
 }: OnboardingSlidePageProps) {
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      scrollX.value,
-      [(index - 0.65) * width, index * width, (index + 0.65) * width],
-      [0, 1, 0],
-      Extrapolation.CLAMP,
-    ),
-    transform: [
-      {
-        translateY: interpolate(
-          scrollX.value,
-          [(index - 1) * width, index * width, (index + 1) * width],
-          [12, 0, 12],
-          Extrapolation.CLAMP,
-        ),
-      },
-    ],
-  }));
-
   return (
     <View style={[styles.page, { width }]}>
       <View style={{ height: heroZoneHeight }} />
-      <Animated.View style={[styles.slideBody, textStyle]}>
+      <View style={styles.slideBody}>
         <OnboardingSlideView slide={slide} width={width} bottomInset={bottomInset} />
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -155,17 +128,15 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   );
 
   const renderItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<OnboardingSlide>) => (
+    ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
       <OnboardingSlidePage
         slide={item}
-        index={index}
         width={width}
-        scrollX={scrollX}
         heroZoneHeight={heroZoneHeight}
         bottomInset={slideBottomInset}
       />
     ),
-    [heroZoneHeight, scrollX, slideBottomInset, width],
+    [heroZoneHeight, slideBottomInset, width],
   );
 
   return (
@@ -208,6 +179,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             emblemSize={onboardingHeroEmblemLayout.size}
             emblemVariant="carousel"
             carouselStageHeight={arcLayout.carouselStageHeight}
+            extendIntoStatusBar
             emblem={
               <OnboardingArcCarousel
                 scrollX={scrollX}
@@ -233,7 +205,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               width={index === currentIndex ? 24 : 8}
               height={8}
               borderRadius="$pill"
-              backgroundColor={index === currentIndex ? "$primary" : "$border"}
+              backgroundColor={index === currentIndex ? "$secondary" : "$border"}
             />
           ))}
         </XStack>

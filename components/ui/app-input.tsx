@@ -1,6 +1,9 @@
 import { Platform } from "react-native";
 import { Input, Label, YStack, type InputProps } from "tamagui";
 
+import { useCardSurface } from "@/components/ui/card-surface";
+import { pillappColors } from "@/theme/tokens";
+
 const SINGLE_LINE_HEIGHT = 52;
 
 function multilineHeight(rows: number, minHeight?: number | string) {
@@ -29,6 +32,7 @@ export function AppInput({
   textAlignVertical,
   ...rest
 }: AppInputProps) {
+  const onBrand = useCardSurface() === "brand";
   const isDisabled = disabled ?? editable === false;
   const isMultiline = Boolean(multiline);
   const rows = typeof numberOfLines === "number" ? numberOfLines : 4;
@@ -44,7 +48,7 @@ export function AppInput({
     <YStack width="100%" gap="$2" flexShrink={0} alignSelf="stretch">
       {label ? (
         <Label
-          color="$textPrimary"
+          color={onBrand ? pillappColors.onPrimary : "$textPrimary"}
           fontSize={14}
           fontWeight="600"
           lineHeight={20}
@@ -58,8 +62,8 @@ export function AppInput({
         flexShrink={0}
         multiline={isMultiline}
         numberOfLines={isMultiline ? rows : 1}
-        backgroundColor="$surface"
-        borderColor={error ? "$error" : "$border"}
+        backgroundColor="rgba(255,255,255,0.94)"
+        borderColor={error ? "$error" : onBrand ? "rgba(255,255,255,0.5)" : "$border"}
         borderWidth={1.5}
         borderRadius="$3"
         color="$textPrimary"
@@ -76,7 +80,7 @@ export function AppInput({
         disabled={isDisabled}
         opacity={isDisabled ? 0.55 : 1}
         focusStyle={{
-          borderColor: "$primary",
+          borderColor: "$secondary",
           borderWidth: 2,
         }}
         {...rest}
@@ -114,8 +118,4 @@ export function AppInputMultiline({
       {...rest}
     />
   );
-}
-
-export function AppTextField(props: AppInputProps) {
-  return <AppInput {...props} />;
 }

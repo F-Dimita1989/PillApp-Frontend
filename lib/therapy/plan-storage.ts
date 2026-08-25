@@ -23,8 +23,8 @@ import {
 } from "@/lib/therapy/types";
 import type { QuantitaUnit } from "@/types/domain";
 
-export const PLAN_KEY = "pillapp:weeklyTherapyPlan";
-export const PLAN_NOTIFICATION_IDS_KEY = "pillapp:weeklyTherapyNotificationIds";
+const PLAN_KEY = "pillapp:weeklyTherapyPlan";
+const PLAN_NOTIFICATION_IDS_KEY = "pillapp:weeklyTherapyNotificationIds";
 
 export type TherapyPlan = {
   aic: string;
@@ -90,11 +90,6 @@ export async function getTherapyPlan(): Promise<TherapyPlan | null> {
   } catch {
     return null;
   }
-}
-
-export async function hasTherapyPlan(): Promise<boolean> {
-  const plan = await getTherapyPlan();
-  return Boolean(plan?.farmacoNome?.trim());
 }
 
 function parseTime(rawTime: string): { hour: number; minute: number } | null {

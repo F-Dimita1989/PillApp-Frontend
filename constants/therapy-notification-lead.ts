@@ -23,17 +23,3 @@ export const THERAPY_NOTIFICATION_LEAD_OPTIONS: TherapyNotificationLeadOption[] 
   ];
 
 export const DEFAULT_NOTIFICATION_LEAD_ID: TherapyNotificationLeadId = "15";
-
-export function therapyLeadIdToMinutes(id: TherapyNotificationLeadId): number {
-  return (
-    THERAPY_NOTIFICATION_LEAD_OPTIONS.find((option) => option.id === id)?.minutes ??
-    15
-  );
-}
-
-export function therapyLeadMinutesToId(minutes: number): TherapyNotificationLeadId {
-  const match = THERAPY_NOTIFICATION_LEAD_OPTIONS.find(
-    (option) => option.minutes === minutes,
-  );
-  return match?.id ?? DEFAULT_NOTIFICATION_LEAD_ID;
-}

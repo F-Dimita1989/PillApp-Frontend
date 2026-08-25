@@ -1,10 +1,12 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { XStack, YStack } from "tamagui";
 
 import { AppButton } from "@/components/ui/app-button";
 import { AppCard, AppCardContent } from "@/components/ui/app-card";
+import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import { AppText } from "@/components/ui/app-text";
-import { pillappColors } from "@/theme/tokens";
+import { pillappBrandGradient, pillappColors } from "@/theme/tokens";
 
 type MedicationCardProps = {
   name: string;
@@ -27,17 +29,7 @@ export function MedicationCard({
     <AppCard variant="elevated" pressable={Boolean(onPress)}>
       <AppCardContent>
         <XStack width="100%" alignItems="center" gap="$3">
-          <YStack
-            width={48}
-            height={48}
-            borderRadius="$2"
-            backgroundColor="$primarySoft"
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-          >
-            <MaterialCommunityIcons name="pill" size={24} color={pillappColors.primary} />
-          </YStack>
+          <BrandIconBadge name="pill" size={48} iconSize={24} radius={16} />
           <YStack flex={1} gap="$1.5" minWidth={0}>
             <AppText variant="bodyStrong" numberOfLines={2}>
               {name}
@@ -89,15 +81,27 @@ type MeasurementCardProps = {
   value: string;
   unit: string;
   hint?: string;
+  icon?: keyof typeof MaterialCommunityIcons.glyphMap;
 };
 
-export function MeasurementCard({ label, value, unit, hint }: MeasurementCardProps) {
+export function MeasurementCard({
+  label,
+  value,
+  unit,
+  hint,
+  icon,
+}: MeasurementCardProps) {
   return (
-    <AppCard variant="outlined" flexGrow={1} flexBasis="45%" minWidth={140}>
+    <AppCard flexGrow={1} flexBasis="45%" minWidth={140}>
       <AppCardContent>
-        <AppText variant="overline" color="primary">
-          {label}
-        </AppText>
+        <XStack alignItems="center" gap="$2">
+          {icon ? (
+            <BrandIconBadge name={icon} size={28} iconSize={16} />
+          ) : null}
+          <AppText variant="overline" color="secondary">
+            {label}
+          </AppText>
+        </XStack>
         <XStack alignItems="baseline" gap="$1" flexWrap="wrap">
           <AppText variant="title">{value}</AppText>
           <AppText variant="body" muted>
@@ -158,23 +162,35 @@ export function BottomActionBar({
   onSecondaryPress,
 }: BottomActionBarProps) {
   return (
-    <XStack
+    <YStack
       width="100%"
-      gap="$3"
-      padding="$4"
-      borderTopWidth={1}
-      borderTopColor="$border"
+      borderTopWidth={0}
       backgroundColor="$surface"
-      alignItems="stretch"
+      flexShrink={0}
+      overflow="hidden"
     >
-      {secondaryLabel && onSecondaryPress ? (
-        <AppButton variant="secondary" flex={1} fullWidth onPress={onSecondaryPress}>
-          {secondaryLabel}
+      <LinearGradient
+        colors={[...pillappBrandGradient.colors]}
+        locations={[...pillappBrandGradient.locations]}
+        start={pillappBrandGradient.start}
+        end={pillappBrandGradient.end}
+        style={{ height: 4, width: "100%" }}
+      />
+      <YStack width="100%" gap="$2" padding="$4">
+        <AppButton
+          variant="primary"
+          fullWidth
+          icon={primaryIcon}
+          onPress={onPrimaryPress}
+        >
+          {primaryLabel}
         </AppButton>
-      ) : null}
-      <AppButton variant="primary" flex={1} fullWidth icon={primaryIcon} onPress={onPrimaryPress}>
-        {primaryLabel}
-      </AppButton>
-    </XStack>
+        {secondaryLabel && onSecondaryPress ? (
+          <AppButton variant="ghost" fullWidth onPress={onSecondaryPress}>
+            {secondaryLabel}
+          </AppButton>
+        ) : null}
+      </YStack>
+    </YStack>
   );
 }

@@ -1,6 +1,7 @@
 import { buildDosesForToday, therapyDayPlanToDaysActive } from "@/lib/app-data/sync";
 import {
   DEFAULT_PROFILE_PREFS,
+  loadPersistedAppData,
   savePersistedAppData,
 } from "@/lib/app-data/storage";
 import {
@@ -53,17 +54,22 @@ export async function saveSetupMedications(
   const medications = items.map(toMedication);
   const dosesToday = buildDosesForToday(medications);
 
+  const existing = await loadPersistedAppData();
+
   await savePersistedAppData({
     medications,
     dosesToday,
-    measurements: [],
-    symptoms: [],
-    journalNotes: [],
-    profilePrefs: DEFAULT_PROFILE_PREFS,
+    measurements: existing?.measurements ?? [],
+    symptoms: existing?.symptoms ?? [],
+    journalNotes: existing?.journalNotes ?? [],
+    profilePrefs: existing?.profilePrefs ?? DEFAULT_PROFILE_PREFS,
   });
 
   try {
-    const reminders = await syncMedicationReminders(medications, true);
+    const reminders = await syncMedicationReminders(medications, true, {
+      soundId: existing?.profilePrefs.notificationSoundId,
+      playSound: existing?.profilePrefs.notificationSoundEnabled,
+    });
     return { reminders };
   } catch (notificationError) {
     return {

@@ -3,8 +3,6 @@ import { useMemo } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { Image, StyleSheet, View } from "react-native";
 import Animated, {
-  Extrapolation,
-  interpolate,
   useAnimatedStyle,
   type SharedValue,
 } from "react-native-reanimated";
@@ -30,10 +28,8 @@ type OnboardingArcCarouselProps = {
 type CarouselCardProps = {
   slide: OnboardingSlide;
   index: number;
-  scrollX: SharedValue<number>;
   slideWidth: number;
   layout: OnboardingArcLayout;
-  slideOffset: number;
   iconSize: number;
   logoSize: number;
 };
@@ -111,37 +107,21 @@ function CarouselCardContent({
 function CarouselCard({
   slide,
   index,
-  scrollX,
   slideWidth,
   layout,
-  slideOffset,
   iconSize,
   logoSize,
 }: CarouselCardProps) {
   const { emblemSize, emblemCenterY } = layout;
   const baseTop = emblemCenterY - emblemSize / 2;
 
-  const animatedStyle = useAnimatedStyle(() => {
-    const focusDistance = Math.abs(index * slideWidth - scrollX.value);
-    const rel = focusDistance / slideWidth;
-
-    return {
-      position: "absolute",
-      left: index * slideOffset,
-      top: baseTop,
-      opacity: interpolate(rel, [0, 1.05, 1.45], [1, 1, 0], Extrapolation.CLAMP),
-      transform: [
-        {
-          scale: interpolate(rel, [0, 1], [1, 0.94], Extrapolation.CLAMP),
-        },
-      ],
-      zIndex: Math.round(1000 - focusDistance),
-    };
-  });
-
   return (
-    <Animated.View
-      style={animatedStyle}
+    <View
+      style={{
+        position: "absolute",
+        left: index * slideWidth,
+        top: baseTop,
+      }}
       collapsable={false}
       pointerEvents="none"
       accessibilityLabel={`Illustrazione: ${slide.title}`}
@@ -154,7 +134,7 @@ function CarouselCard({
           logoSize={logoSize}
         />
       </HeroEmblemFrame>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -170,18 +150,11 @@ export function OnboardingArcCarousel({
   );
   const iconSize = Math.round(emblemSize * 0.48);
   const logoSize = onboardingHeroEmblemLayout.logoSize;
-  const slideOffset = useMemo(() => {
-    const peekWidth = onboardingHeroEmblemLayout.carouselPeekWidth;
-    return slideWidth / 2 + emblemSize / 2 - peekWidth;
-  }, [emblemSize, slideWidth]);
 
   const trackStyle = useAnimatedStyle(() => ({
     transform: [
       {
-        translateX:
-          layout.ellipseCx -
-          emblemSize / 2 -
-          (scrollX.value / slideWidth) * slideOffset,
+        translateX: layout.ellipseCx - emblemSize / 2 - scrollX.value,
       },
     ],
   }));
@@ -194,10 +167,8 @@ export function OnboardingArcCarousel({
             key={slide.id}
             slide={slide}
             index={index}
-            scrollX={scrollX}
             slideWidth={slideWidth}
             layout={layout}
-            slideOffset={slideOffset}
             iconSize={iconSize}
             logoSize={logoSize}
           />
@@ -206,8 +177,6 @@ export function OnboardingArcCarousel({
     </View>
   );
 }
-
-export { getOnboardingArcLayout };
 
 const styles = StyleSheet.create({
   stage: {

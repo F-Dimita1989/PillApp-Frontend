@@ -1,16 +1,11 @@
 import { styled, Text, XStack, YStack } from "tamagui";
 
-import { fullWidthRowProps, fullWidthStackProps } from "@/theme/tamagui-layout";
+import { fullWidthStackProps } from "@/theme/tamagui-layout";
 import { pillappShadows } from "@/theme/tokens";
 
 /** Stack a larghezza piena — base per schermate e card. */
 export const FullWidthStack = styled(YStack, {
   ...fullWidthStackProps,
-});
-
-/** Riga a larghezza piena — allineamento verticale centrato. */
-export const FullWidthRow = styled(XStack, {
-  ...fullWidthRowProps,
 });
 
 export const HealthcareText = styled(Text, {
@@ -99,7 +94,7 @@ export const HealthcareText = styled(Text, {
 
 export const HealthcareCard = styled(FullWidthStack, {
   name: "HealthcareCard",
-  borderRadius: "$3",
+  borderRadius: "$4",
   padding: "$4",
   gap: "$3",
   variants: {
@@ -122,9 +117,9 @@ export const HealthcareCard = styled(FullWidthStack, {
         ...pillappShadows.none,
       },
       highlight: {
-        backgroundColor: "$primarySoft",
+        backgroundColor: "$secondarySoft",
         borderWidth: 1,
-        borderColor: "$borderStrong",
+        borderColor: "$secondary",
         ...pillappShadows.sm,
       },
     },
@@ -151,7 +146,7 @@ export const HealthcareButtonFrame = styled(XStack, {
   flexWrap: "nowrap",
   flexShrink: 0,
   gap: "$2",
-  borderRadius: "$2",
+  borderRadius: "$pill",
   overflow: "hidden",
   pressStyle: {
     opacity: 0.92,
@@ -166,7 +161,7 @@ export const HealthcareButtonFrame = styled(XStack, {
       secondary: {
         backgroundColor: "$surface",
         borderWidth: 1.5,
-        borderColor: "$primary",
+        borderColor: "$secondary",
       },
       ghost: {
         backgroundColor: "$surfaceMuted",

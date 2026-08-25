@@ -185,5 +185,3 @@ export const pillappLayout = {
   cardGap: 12,
   contentMaxWidth: 480,
 } as const;
-
-export type PillappStatusToken = keyof typeof pillappColors.status;

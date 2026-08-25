@@ -16,17 +16,6 @@ export const radii = {
   pill: 999,
 } as const;
 
-export const touchTarget = {
-  min: 48,
-  comfortable: 52,
-} as const;
-
-export const elevation = {
-  card: 1,
-  raised: 2,
-  overlay: 4,
-} as const;
-
 export const layout = {
   screenPaddingHorizontal: spacing.md,
   screenPaddingVertical: spacing.sm,

@@ -14,7 +14,7 @@ export function StartupSplash() {
             resizeMode="contain"
             accessibilityLabel="Logo PillApp"
           />
-          <ActivityIndicator size="large" color={pillappColors.primary} />
+          <ActivityIndicator size="large" color={pillappColors.secondary} />
         </View>
       </ScreenSafeArea>
     </View>

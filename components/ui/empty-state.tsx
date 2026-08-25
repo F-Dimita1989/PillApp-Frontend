@@ -3,6 +3,8 @@ import { YStack } from "tamagui";
 
 import { AppButton } from "@/components/ui/app-button";
 import { AppText } from "@/components/ui/app-text";
+import { BrandGradientCard } from "@/components/ui/brand-gradient-card";
+import { CardSurfaceProvider } from "@/components/ui/card-surface";
 
 type EmptyStateProps = {
   title: string;
@@ -22,16 +24,16 @@ export function EmptyState({
   tone = "neutral",
 }: EmptyStateProps) {
   const backgroundColor =
-    tone === "error" ? "$errorSoft" : tone === "success" ? "$successSoft" : "$surfaceMuted";
+    tone === "error" ? "$errorSoft" : tone === "success" ? "$successSoft" : undefined;
 
-  return (
+  const body = (
     <YStack
       width="100%"
       backgroundColor={backgroundColor}
-      borderRadius="$3"
-      borderWidth={1}
-      borderColor="$border"
-      padding="$6"
+      borderRadius={tone === "neutral" ? undefined : "$4"}
+      borderWidth={tone === "neutral" ? 0 : 1}
+      borderColor={tone === "error" ? "$error" : tone === "success" ? "$success" : undefined}
+      padding={tone === "neutral" ? 0 : "$6"}
       alignItems="center"
       gap="$3"
       accessibilityRole="text"
@@ -52,15 +54,15 @@ export function EmptyState({
       ) : null}
     </YStack>
   );
-}
 
-export function LoadingState({ message = "Caricamento in corso…" }: { message?: string }) {
+  if (tone !== "neutral") {
+    return body;
+  }
+
   return (
-    <YStack padding="$6" alignItems="center" gap="$3">
-      <AppText variant="body" muted>
-        {message}
-      </AppText>
-    </YStack>
+    <CardSurfaceProvider surface="brand">
+      <BrandGradientCard>{body}</BrandGradientCard>
+    </CardSurfaceProvider>
   );
 }
 

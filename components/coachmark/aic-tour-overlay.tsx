@@ -7,7 +7,7 @@ import {
   isReduceMotionEnabled,
 } from "@edwardloopez/react-native-coachmark";
 import type { SpotlightShape, TooltipRenderProps, TourStep } from "@edwardloopez/react-native-coachmark";
-import { useCallback, useEffect, useMemo, useState, memo, Fragment } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo, Fragment } from "react";
 import {
   Dimensions,
   Modal,
@@ -16,6 +16,8 @@ import {
   StyleSheet,
 } from "react-native";
 import Animated, {
+  Easing,
+  LinearTransition,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
@@ -26,6 +28,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AIC_TOUR_ANCHORS } from "@/constants/aic-scanner-tour";
 import { pillappCoachmarkSpotlight } from "@/constants/coachmark-theme";
 import { layout, spacing } from "@/constants/spacing";
+import { useAccessibility } from "@/lib/accessibility/context";
+import {
+  tourExitTiming,
+  tourOverlayTiming,
+  tourTooltipTiming,
+} from "@/lib/motion/tour-transition";
 
 type CustomTooltipWrapperProps = {
   renderer: ((props: TooltipRenderProps) => React.ReactElement) | undefined;
@@ -122,8 +130,14 @@ export function AicTourOverlay() {
   const { state, getAnchor, setMeasured, next, back, stop, theme } =
     useCoachmarkContext();
   const insets = useSafeAreaInsets();
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const { reduceMotion: preferReduceMotion } = useAccessibility();
+  const [systemReduceMotion, setSystemReduceMotion] = useState(false);
+  const reduceMotion = preferReduceMotion || systemReduceMotion;
+  const didSnapHole = useRef(false);
+  const isFirstTooltip = useRef(true);
   const opacity = useSharedValue(0);
+  const tooltipOpacity = useSharedValue(0);
+  const tooltipTranslateY = useSharedValue(16);
   const holeX = useSharedValue(0);
   const holeY = useSharedValue(0);
   const holeWidth = useSharedValue(1);
@@ -137,13 +151,8 @@ export function AicTourOverlay() {
   const activeStep = state.activeTour?.steps[state.index];
 
   useEffect(() => {
-    isReduceMotionEnabled().then(setReduceMotion);
+    isReduceMotionEnabled().then(setSystemReduceMotion);
   }, []);
-
-  useEffect(() => {
-    const duration = reduceMotion ? 0 : theme.motion.durationMs;
-    opacity.value = withTiming(state.isActive ? 1 : 0, { duration });
-  }, [opacity, state.isActive, theme.motion.durationMs, reduceMotion]);
 
   const { targetRect, holeShape, holeRadius, remeasure } = useTourMeasurement({
     activeStep,
@@ -160,30 +169,98 @@ export function AicTourOverlay() {
     holeHeight,
   });
 
+  useEffect(() => {
+    if (!state.isActive) {
+      didSnapHole.current = false;
+      isFirstTooltip.current = true;
+      opacity.value = withTiming(0, reduceMotion ? { duration: 0 } : tourExitTiming);
+      tooltipOpacity.value = withTiming(0, reduceMotion ? { duration: 0 } : tourExitTiming);
+      return;
+    }
+
+    if (!targetRect) {
+      return;
+    }
+
+    if (!didSnapHole.current) {
+      didSnapHole.current = true;
+      holeX.value = targetRect.x;
+      holeY.value = targetRect.y;
+      holeWidth.value = targetRect.width;
+      holeHeight.value = targetRect.height;
+      opacity.value = reduceMotion ? 1 : withTiming(1, tourOverlayTiming);
+    }
+  }, [
+    holeHeight,
+    holeWidth,
+    holeX,
+    holeY,
+    opacity,
+    reduceMotion,
+    state.isActive,
+    targetRect,
+    tooltipOpacity,
+  ]);
+
+  useEffect(() => {
+    if (!state.isActive) {
+      return;
+    }
+
+    if (reduceMotion) {
+      tooltipOpacity.value = 1;
+      tooltipTranslateY.value = 0;
+      isFirstTooltip.current = false;
+      return;
+    }
+
+    if (isFirstTooltip.current) {
+      isFirstTooltip.current = false;
+      tooltipOpacity.value = 1;
+      tooltipTranslateY.value = 0;
+      return;
+    }
+
+    tooltipOpacity.value = 0.45;
+    tooltipTranslateY.value = 12;
+    tooltipOpacity.value = withTiming(1, tourTooltipTiming);
+    tooltipTranslateY.value = withTiming(0, tourTooltipTiming);
+  }, [reduceMotion, state.index, state.isActive, tooltipOpacity, tooltipTranslateY]);
+
   const handleOrientationChange = useCallback(() => {
     remeasure();
   }, [remeasure]);
 
   useOrientationChange(state.isActive, handleOrientationChange);
 
-  // Dopo lo scroll manuale sul passo 4, riallinea il buco senza rilanciare autoFocus.
   useEffect(() => {
+    if (!state.isActive) {
+      return;
+    }
+
+    const stepId = activeStep?.id;
     if (
-      !state.isActive ||
-      activeStep?.id !== AIC_TOUR_ANCHORS.resultCard
+      stepId !== AIC_TOUR_ANCHORS.framingBox &&
+      stepId !== AIC_TOUR_ANCHORS.resultCard
     ) {
       return;
     }
 
+    const delay = stepId === AIC_TOUR_ANCHORS.framingBox ? 620 : 680;
     const timer = setTimeout(() => {
       void remeasure();
-    }, 700);
+    }, delay);
 
     return () => clearTimeout(timer);
   }, [state.isActive, state.index, activeStep?.id, remeasure]);
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
+  }));
+
+  const tooltipMotionStyle = useAnimatedStyle(() => ({
+    opacity: tooltipOpacity.value,
+    transform: [{ translateY: tooltipTranslateY.value }],
   }));
 
   const handleSkip = useCallback(() => stop("skipped"), [stop]);
@@ -255,8 +332,14 @@ export function AicTourOverlay() {
         />
 
         <Animated.View
+          layout={
+            reduceMotion
+              ? undefined
+              : LinearTransition.duration(280).easing(Easing.out(Easing.cubic))
+          }
           style={[
             styles.tooltipContainer,
+            tooltipMotionStyle,
             {
               left: layout.screenPaddingHorizontal,
               right: layout.screenPaddingHorizontal,

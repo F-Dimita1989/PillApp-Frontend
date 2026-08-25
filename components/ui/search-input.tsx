@@ -24,16 +24,16 @@ export function SearchInput({
     <XStack
       width="100%"
       alignItems="center"
-      backgroundColor="$surface"
-      borderWidth={1}
-      borderColor="$border"
-      borderRadius="$2"
-      paddingLeft="$3"
+      backgroundColor="rgba(255,255,255,0.94)"
+      borderWidth={1.5}
+      borderColor="rgba(42, 171, 160, 0.35)"
+      borderRadius="$3"
+      paddingLeft="$4"
       paddingRight="$2"
-      height={48}
+      height={52}
       gap="$2"
       focusStyle={{
-        borderColor: "$primary",
+        borderColor: "$secondary",
         borderWidth: 1.5,
       }}
     >
@@ -54,8 +54,8 @@ export function SearchInput({
         color="$textPrimary"
         fontSize={16}
         lineHeight={22}
-        height={46}
-        paddingVertical={Platform.OS === "android" ? 10 : 8}
+        height={50}
+        paddingVertical={Platform.OS === "android" ? 14 : 12}
         backgroundColor="transparent"
         borderWidth={0}
         accessibilityRole="search"

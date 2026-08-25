@@ -14,22 +14,19 @@ type AicScanExampleImageProps = {
 
 export function AicScanExampleImage({ size = "full" }: AicScanExampleImageProps) {
   const { width: screenW } = useWindowDimensions();
-  const cardPadding = spacing.md * 2;
-  const framingPadding = spacing.sm * 2;
-  const fullMaxWidth =
-    screenW - layout.screenPaddingHorizontal * 2 - cardPadding - framingPadding;
   const compactMaxWidth =
     screenW - layout.screenPaddingHorizontal * 2 - (spacing.sm + 2) * 2;
-  const width =
-    size === "compact"
-      ? Math.min(compactMaxWidth, 300)
-      : fullMaxWidth;
-  const height = Math.round(width / ASPECT_RATIO);
+  const compactWidth = Math.min(compactMaxWidth, 300);
 
   return (
     <Image
       source={source}
-      style={[styles.image, { width, height }]}
+      style={[
+        styles.image,
+        size === "compact"
+          ? { width: compactWidth, height: Math.round(compactWidth / ASPECT_RATIO) }
+          : { width: "100%", aspectRatio: ASPECT_RATIO },
+      ]}
       contentFit="contain"
       accessibilityRole="image"
       accessibilityLabel="Esempio confezione Tachipirina con codice AIC evidenziato in rosso"

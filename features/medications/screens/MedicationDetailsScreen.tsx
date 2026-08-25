@@ -8,6 +8,7 @@ import {
   AppCardContent,
   AppScreen,
   AppTopBar,
+  BrandIntroCard,
   EmptyState,
   InfoRow,
   MedicationScheduleCard,
@@ -52,15 +53,25 @@ export function MedicationDetailsScreen() {
     .join(", ");
 
   return (
-    <AppScreen>
-      <AppTopBar
+    <AppScreen
+      hero={
+        <AppTopBar
+          icon="pill"
+          title={medication.name}
+          subtitle={medication.dose}
+          eyebrow={medication.source === "aic_scan" ? "Da scansione AIC" : "Inserimento manuale"}
+          onBack={() => router.back()}
+        />
+      }
+    >
+
+      <BrandIntroCard
+        icon="pill"
         title={medication.name}
-        subtitle={medication.dose}
-        eyebrow={medication.source === "aic_scan" ? "Da scansione AIC" : "Inserimento manuale"}
-        onBack={() => router.back()}
+        description={`${medication.dose} · ${medication.source === "aic_scan" ? "Aggiunto da scansione AIC" : "Inserito manualmente"}`}
       />
 
-      <AppCard variant="outlined">
+      <AppCard>
         <AppCardContent>
           <SectionHeader title="Informazioni" />
           <InfoRow label="Forma" value={MEDICATION_FORM_LABELS[medication.form]} />

@@ -11,6 +11,7 @@ import { Label, YStack } from "tamagui";
 
 import { PrimaryButton } from "@/components/ui/app-button";
 import { AppText } from "@/components/ui/app-text";
+import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surface";
 import { layout, spacing } from "@/constants/spacing";
 import { pillappColors } from "@/theme/tokens";
 
@@ -37,6 +38,7 @@ export function AppMultiSelect({
 }: AppMultiSelectProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(values);
+  const onBrand = useCardSurface() === "brand";
 
   const summary = useMemo(() => {
     if (values.length === 0) return placeholder;
@@ -68,7 +70,12 @@ export function AppMultiSelect({
   return (
     <YStack width="100%" gap="$2" flexShrink={0}>
       {label ? (
-        <Label color="$textPrimary" fontSize={14} fontWeight="600" lineHeight={20}>
+        <Label
+          color={onBrand ? pillappColors.onPrimary : "$textPrimary"}
+          fontSize={14}
+          fontWeight="600"
+          lineHeight={20}
+        >
           {label}
         </Label>
       ) : null}
@@ -81,18 +88,21 @@ export function AppMultiSelect({
         accessibilityState={{ disabled, expanded: open }}
         style={({ pressed }) => [
           styles.trigger,
+          onBrand && styles.triggerOnBrand,
           disabled && styles.triggerDisabled,
           pressed && !disabled && styles.triggerPressed,
         ]}
       >
-        <AppText
-          variant="body"
-          muted={values.length === 0}
-          style={styles.triggerText}
-          numberOfLines={2}
-        >
-          {summary}
-        </AppText>
+        <CardSurfaceProvider surface="light">
+          <AppText
+            variant="body"
+            muted={values.length === 0}
+            style={styles.triggerText}
+            numberOfLines={2}
+          >
+            {summary}
+          </AppText>
+        </CardSurfaceProvider>
         <MaterialCommunityIcons
           name="chevron-down"
           size={22}
@@ -106,6 +116,7 @@ export function AppMultiSelect({
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
+        <CardSurfaceProvider surface="light">
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <View style={styles.sheet} onStartShouldSetResponder={() => true}>
             <AppText variant="title" style={styles.sheetTitle}>
@@ -132,7 +143,7 @@ export function AppMultiSelect({
                     <View style={styles.optionText}>
                       <AppText
                         variant="body"
-                        color={isSelected ? "primary" : undefined}
+                        color={isSelected ? "secondary" : undefined}
                         fontWeight={isSelected ? "700" : undefined}
                       >
                         {item.label}
@@ -141,7 +152,7 @@ export function AppMultiSelect({
                     <MaterialCommunityIcons
                       name={isSelected ? "checkbox-marked" : "checkbox-blank-outline"}
                       size={22}
-                      color={isSelected ? pillappColors.primary : pillappColors.textMuted}
+                      color={isSelected ? pillappColors.secondary : pillappColors.textMuted}
                     />
                   </Pressable>
                 );
@@ -154,6 +165,7 @@ export function AppMultiSelect({
             </View>
           </View>
         </Pressable>
+        </CardSurfaceProvider>
       </Modal>
     </YStack>
   );
@@ -164,7 +176,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderWidth: 1.5,
     borderColor: pillappColors.border,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: pillappColors.surface,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -173,11 +185,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.sm,
   },
+  triggerOnBrand: {
+    borderColor: "rgba(255,255,255,0.5)",
+    backgroundColor: "rgba(255,255,255,0.94)",
+  },
   triggerDisabled: {
     opacity: 0.55,
   },
   triggerPressed: {
-    borderColor: pillappColors.primary,
+    borderColor: pillappColors.secondary,
   },
   triggerText: {
     flex: 1,
@@ -216,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   optionSelected: {
-    backgroundColor: pillappColors.primarySoft,
+    backgroundColor: pillappColors.secondarySoft,
   },
   optionPressed: {
     backgroundColor: pillappColors.surfaceMuted,

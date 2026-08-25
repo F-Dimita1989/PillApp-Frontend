@@ -4,7 +4,9 @@ import { Pressable } from "react-native";
 import { XStack, YStack, type XStackProps } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
-import { pillappColors } from "@/theme/tokens";
+import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { playAppHaptic } from "@/lib/accessibility/haptics";
 
 type AppListItemProps = XStackProps & {
   title: string;
@@ -14,6 +16,7 @@ type AppListItemProps = XStackProps & {
   onPress?: () => void;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessibilityState?: { selected?: boolean; disabled?: boolean };
 };
 
 export function AppListItem({
@@ -24,22 +27,21 @@ export function AppListItem({
   onPress,
   accessibilityLabel,
   accessibilityHint,
+  accessibilityState,
   ...rest
 }: AppListItemProps) {
+  const { easyTap, hapticsEnabled } = useAccessibility();
   const content = (
     <XStack
       width="100%"
       alignItems="center"
       gap="$3"
-      paddingVertical="$3"
+      paddingVertical={easyTap ? "$4" : "$3"}
+      minHeight={easyTap ? 64 : undefined}
       {...rest}
     >
       {icon ? (
-        <MaterialCommunityIcons
-          name={icon}
-          size={24}
-          color={pillappColors.primary}
-        />
+        <BrandIconBadge name={icon} size={40} iconSize={20} radius={12} />
       ) : null}
       <YStack flex={1} gap="$1">
         <AppText variant="bodyStrong">{title}</AppText>
@@ -59,10 +61,14 @@ export function AppListItem({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        void playAppHaptic(hapticsEnabled);
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={accessibilityHint}
+      accessibilityState={accessibilityState}
     >
       {content}
     </Pressable>

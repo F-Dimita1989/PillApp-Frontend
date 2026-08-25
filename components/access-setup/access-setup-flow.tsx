@@ -10,17 +10,14 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import Animated, {
-  Extrapolation,
-  interpolate,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
-  type SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 
 import { AccessSetupSlideView } from "@/components/access-setup/access-setup-slide-view";
+import { PrivacyTermsModal } from "@/components/access-setup/privacy-terms-modal";
 import { OnboardingArcCarousel } from "@/components/onboarding/onboarding-arc-carousel";
 import { OnboardingGradientButton } from "@/components/onboarding/onboarding-gradient-button";
 import { AppText } from "@/components/ui/app-text";
@@ -50,50 +47,29 @@ type AccessSetupFlowProps = {
 
 type AccessSetupSlidePageProps = {
   slide: OnboardingSlide;
-  index: number;
   width: number;
-  scrollX: SharedValue<number>;
   heroZoneHeight: number;
   permissionStates: AppPermissionState[];
   isLoadingPermissions: boolean;
   hasRequestedPermissions: boolean;
   permissionsGranted: boolean;
+  onOpenTerms: () => void;
 };
 
 function AccessSetupSlidePage({
   slide,
-  index,
   width,
-  scrollX,
   heroZoneHeight,
   permissionStates,
   isLoadingPermissions,
   hasRequestedPermissions,
   permissionsGranted,
+  onOpenTerms,
 }: AccessSetupSlidePageProps) {
-  const textStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      scrollX.value,
-      [(index - 0.65) * width, index * width, (index + 0.65) * width],
-      [0, 1, 0],
-      Extrapolation.CLAMP,
-    ),
-    transform: [
-      {
-        translateY: interpolate(
-          scrollX.value,
-          [(index - 1) * width, index * width, (index + 1) * width],
-          [12, 0, 12],
-          Extrapolation.CLAMP,
-        ),
-      },
-    ],
-  }));
-
   return (
     <View style={[styles.page, { width }]}>
       <View style={{ height: heroZoneHeight }} />
-      <Animated.View style={[styles.slideBody, textStyle]}>
+      <View style={styles.slideBody}>
         <AccessSetupSlideView
           slide={slide}
           width={width}
@@ -101,8 +77,9 @@ function AccessSetupSlidePage({
           isLoadingPermissions={isLoadingPermissions}
           hasRequestedPermissions={hasRequestedPermissions}
           permissionsGranted={permissionsGranted}
+          onOpenTerms={onOpenTerms}
         />
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -118,6 +95,8 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
   const [hasRequestedPermissions, setHasRequestedPermissions] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const arcLayout = useMemo(
     () => getOnboardingArcLayout(width, accessSetupEmblemSize),
@@ -194,7 +173,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   );
 
   const handleFinish = useCallback(async () => {
-    if (isFinishing) {
+    if (isFinishing || !termsAccepted) {
       return;
     }
 
@@ -205,7 +184,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     } finally {
       setIsFinishing(false);
     }
-  }, [isFinishing, onComplete]);
+  }, [isFinishing, onComplete, termsAccepted]);
 
   const handlePrimaryPress = useCallback(() => {
     if (isFirstSlide) {
@@ -220,6 +199,19 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     void handleFinish();
   }, [goNext, handleFinish, handleRequestPermissions, isFirstSlide, permissionsGranted]);
 
+  const openTerms = useCallback(() => {
+    setTermsModalVisible(true);
+  }, []);
+
+  const closeTerms = useCallback(() => {
+    setTermsModalVisible(false);
+  }, []);
+
+  const confirmTerms = useCallback(() => {
+    setTermsAccepted(true);
+    setTermsModalVisible(false);
+  }, []);
+
   const primaryLabel = useMemo(() => {
     if (isFirstSlide) {
       if (isRequestingPermissions) {
@@ -230,29 +222,29 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     return isFinishing ? "Attendi..." : "Ho capito";
   }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsGranted]);
 
-  const primaryDisabled = isRequestingPermissions || isFinishing;
+  const primaryDisabled =
+    isRequestingPermissions || isFinishing || (isLastSlide && !termsAccepted);
 
   const renderItem = useCallback(
-    ({ item, index }: ListRenderItemInfo<OnboardingSlide>) => (
+    ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
       <AccessSetupSlidePage
         slide={item}
-        index={index}
         width={width}
-        scrollX={scrollX}
         heroZoneHeight={heroZoneHeight}
         permissionStates={permissionStates}
         isLoadingPermissions={isLoadingPermissions}
         hasRequestedPermissions={hasRequestedPermissions}
         permissionsGranted={permissionsGranted}
+        onOpenTerms={openTerms}
       />
     ),
     [
       hasRequestedPermissions,
       heroZoneHeight,
       isLoadingPermissions,
+      openTerms,
       permissionStates,
       permissionsGranted,
-      scrollX,
       width,
     ],
   );
@@ -295,6 +287,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
             showCopy={false}
             showLogo={false}
             parentPaddingX={0}
+            extendIntoStatusBar
             emblemSize={accessSetupEmblemSize}
             emblemVariant="carousel"
             carouselStageHeight={arcLayout.carouselStageHeight}
@@ -324,7 +317,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
               width={index === currentIndex ? 24 : 8}
               height={8}
               borderRadius="$pill"
-              backgroundColor={index === currentIndex ? "$primary" : "$border"}
+              backgroundColor={index === currentIndex ? "$secondary" : "$border"}
             />
           ))}
         </XStack>
@@ -353,6 +346,13 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
           </View>
         </XStack>
       </YStack>
+
+      <PrivacyTermsModal
+        visible={termsModalVisible}
+        accepted={termsAccepted}
+        onClose={closeTerms}
+        onConfirm={confirmTerms}
+      />
     </YStack>
   );
 }

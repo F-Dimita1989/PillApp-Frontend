@@ -1,24 +1,24 @@
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import * as SystemUI from "expo-system-ui";
 import { StatusBar } from "expo-status-bar";
+import * as NavigationBar from "expo-navigation-bar";
+import * as SystemUI from "expo-system-ui";
 import { useCallback, useEffect, useState } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { OnboardingFlow } from "@/components/onboarding-flow";
-import { PostOnboardingFlow } from "@/components/post-onboarding-flow";
+import { AppEntryFlow } from "@/components/app-entry-flow";
 import { StartupSplash } from "@/components/startup-splash";
-import { pillappColors } from "@/theme/tokens";
+import { AppDataProvider } from "@/features/store/app-data-context";
 import { getHasCompletedAccessSetup } from "@/lib/access-setup/storage";
-import { getHasSeenOnboarding } from "@/lib/onboarding/storage";
 import { initializeNotifications } from "@/lib/notifications/setup";
+import { getHasSeenOnboarding } from "@/lib/onboarding/storage";
 import { hasCompletedSetup } from "@/lib/profile/storage";
 import { AppThemeProvider } from "@/providers/app-theme-provider";
 import { PillAppCoachmarkProvider } from "@/providers/coachmark-provider";
-import { AppDataProvider } from "@/features/store/app-data-context";
+import { pillappColors } from "@/theme/tokens";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -26,8 +26,17 @@ export const unstable_settings = {
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
-void SystemUI.setBackgroundColorAsync(pillappColors.background);
+void SystemUI.setBackgroundColorAsync(pillappColors.surface);
 void initializeNotifications();
+
+function applyPhoneSystemBars(): void {
+  void SystemUI.setBackgroundColorAsync(pillappColors.surface);
+  if (Platform.OS !== "android") return;
+  void NavigationBar.setBackgroundColorAsync(pillappColors.surface).catch(() => {});
+  void NavigationBar.setButtonStyleAsync("dark").catch(() => {});
+  void NavigationBar.setPositionAsync("relative").catch(() => {});
+  void NavigationBar.setVisibilityAsync("visible").catch(() => {});
+}
 
 const navigationTheme = {
   ...DefaultTheme,
@@ -46,6 +55,10 @@ export default function RootLayout() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [needsAccessSetup, setNeedsAccessSetup] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
+
+  useEffect(() => {
+    applyPhoneSystemBars();
+  }, []);
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -90,32 +103,22 @@ export default function RootLayout() {
     );
   }
 
-  if (!hasSeenOnboarding || needsAccessSetup) {
+  if (!hasSeenOnboarding || needsAccessSetup || needsSetup) {
     return (
       <AppThemeProvider>
         <PillAppCoachmarkProvider>
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
-              <OnboardingFlow
+              <AppEntryFlow
+                hasSeenOnboarding={hasSeenOnboarding}
+                needsAccessSetup={needsAccessSetup}
+                needsSetup={needsSetup}
                 startAtAccessSetup={hasSeenOnboarding && needsAccessSetup}
-                onComplete={handleAccessSetupComplete}
+                onAccessSetupComplete={handleAccessSetupComplete}
+                onProfileSetupComplete={() => setNeedsSetup(false)}
                 onSkipProfileSetup={handleSkipProfileSetup}
               />
-            </ThemeProvider>
-          </SafeAreaProvider>
-        </PillAppCoachmarkProvider>
-      </AppThemeProvider>
-    );
-  }
-
-  if (needsSetup) {
-    return (
-      <AppThemeProvider>
-        <PillAppCoachmarkProvider>
-          <SafeAreaProvider>
-            <ThemeProvider value={navigationTheme}>
-              <PostOnboardingFlow onComplete={() => setNeedsSetup(false)} />
-              <StatusBar style="dark" />
+              <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
             </ThemeProvider>
           </SafeAreaProvider>
         </PillAppCoachmarkProvider>
@@ -129,20 +132,21 @@ export default function RootLayout() {
         <PillAppCoachmarkProvider>
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
-              <View style={{ flex: 1, backgroundColor: pillappColors.background }}>
+              <View
+                style={{ flex: 1, backgroundColor: pillappColors.background }}
+              >
                 <Stack
                   screenOptions={{
                     contentStyle: { backgroundColor: "transparent" },
                   }}
                 >
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen
-                    name="modal"
-                    options={{ presentation: "modal", title: "Modal" }}
+                    name="(tabs)"
+                    options={{ headerShown: false }}
                   />
                 </Stack>
               </View>
-              <StatusBar style="dark" />
+              <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
             </ThemeProvider>
           </SafeAreaProvider>
         </PillAppCoachmarkProvider>

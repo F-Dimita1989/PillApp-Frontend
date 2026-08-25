@@ -8,6 +8,16 @@
     "scheme": "pillapp",
     "userInterfaceStyle": "light",
     "backgroundColor": "#FFFFFF",
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#FFFFFF",
+      "translucent": false
+    },
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#FFFFFF",
+      "enforceContrast": false
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
@@ -15,6 +25,7 @@
     },
     "android": {
       "userInterfaceStyle": "light",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -34,6 +45,15 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-navigation-bar",
+        {
+          "backgroundColor": "#FFFFFF",
+          "barStyle": "dark",
+          "position": "relative",
+          "visibility": "visible"
+        }
+      ],
       "expo-dev-client",
       "expo-router",
       [
@@ -54,7 +74,11 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#2F80ED",
-          "sounds": [],
+          "sounds": [
+            "./assets/sounds/pillapp-default.wav",
+            "./assets/sounds/pillapp-soft.wav",
+            "./assets/sounds/pillapp-alert.wav"
+          ],
           "enableBackgroundRemoteNotifications": false
         }
       ],
@@ -80,10 +104,12 @@
             "deploymentTarget": "16.0"
           },
           "android": {
-            "userInterfaceStyle": "light"
+            "userInterfaceStyle": "light",
+            "buildArchs": ["arm64-v8a"]
           }
         }
-      ]
+      ],
+      "./plugins/with-short-cmake-object-paths.js"
     ],
     "experiments": {
       "typedRoutes": true,

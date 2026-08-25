@@ -19,12 +19,12 @@ export async function pickMedicineImage(
       ? await ImagePicker.launchCameraAsync({
           mediaTypes: ["images"],
           allowsEditing: false,
-          quality: 1,
+          quality: 0.7,
         })
       : await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ["images"],
           allowsEditing: false,
-          quality: 1,
+          quality: 0.7,
         });
 
   if (pickerResult.canceled) {

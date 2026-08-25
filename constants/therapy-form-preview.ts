@@ -1,6 +1,4 @@
 import type { ScannedMedicationFormValues } from "@/lib/farmaci/form-values";
-import type { TherapyReminderSettingsValue } from "@/lib/therapy/reminder-settings";
-import { INITIAL_THERAPY_DAY_PLAN } from "@/lib/therapy/types";
 
 /** Esempio Tachipirina — stessa struttura del form post-scansione. */
 export const THERAPY_FORM_PREVIEW: ScannedMedicationFormValues = {
@@ -13,14 +11,3 @@ export const THERAPY_FORM_PREVIEW: ScannedMedicationFormValues = {
   dosaggio: "500 mg",
   note: "",
 };
-
-export const THERAPY_REMINDER_PREVIEW: TherapyReminderSettingsValue = {
-  timesPerDay: 2,
-  orari: ["08:00", "20:00"],
-  dayPlan: INITIAL_THERAPY_DAY_PLAN,
-  notificationsEnabled: true,
-  notificationSoundId: "default",
-  notificationLeadId: "15",
-};
-
-export const THERAPY_DOSE_PREVIEW = "1 compressa";

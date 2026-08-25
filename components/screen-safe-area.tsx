@@ -10,6 +10,8 @@ type ScreenSafeAreaProps = {
   style?: StyleProp<ViewStyle>;
   /** Per schermate dentro le tab: evita doppio padding in basso (gestito dalla tab bar). */
   includeBottomInset?: boolean;
+  /** Override dei bordi safe area (es. hero edge-to-edge senza inset laterali). */
+  edges?: Edge[];
 };
 
 const TAB_SCREEN_EDGES: Edge[] = ["top", "left", "right"];
@@ -19,11 +21,12 @@ export function ScreenSafeArea({
   children,
   style,
   includeBottomInset = false,
+  edges,
 }: ScreenSafeAreaProps) {
   return (
     <SafeAreaView
       style={[styles.safeArea, style]}
-      edges={includeBottomInset ? FULL_SCREEN_EDGES : TAB_SCREEN_EDGES}
+      edges={edges ?? (includeBottomInset ? FULL_SCREEN_EDGES : TAB_SCREEN_EDGES)}
     >
       {children}
     </SafeAreaView>

@@ -35,6 +35,28 @@ export const onboardingHeroEmblemLayout = {
   carouselRaiseUp: 36,
 } as const;
 
+/** Cupola intro onboarding — stessa altezza di IntroHeroArc default. */
+export const onboardingIntroArcHeight = 300;
+
+/** Parametri hero allineati alla prima slide dell'intro (OnboardingScreen). */
+export const onboardingIntroHeroLayout = {
+  arcHeight: onboardingIntroArcHeight,
+  emblemSize: onboardingHeroEmblemLayout.size,
+  logoSize: onboardingHeroEmblemLayout.logoSize,
+  parentPaddingX: 0,
+  /** Offset verticale del cerchio come nel carosello intro. */
+  emblemRaiseExtra: onboardingHeroEmblemLayout.carouselRaiseUp,
+} as const;
+
+/** Hero compatto per le schermate in-app: stessa grafica, meno spazio verticale. */
+export const appScreenHeroLayout = {
+  arcHeight: 168,
+  emblemSize: 96,
+  logoSize: 68,
+  parentPaddingX: 0,
+  emblemRaiseExtra: 0,
+} as const;
+
 export type OnboardingArcLayout = {
   fullWidth: number;
   arcHeight: number;
@@ -146,6 +168,10 @@ type IntroHeroArcProps = {
   /** `carousel`: card assolute sull'arco; `framed`: singolo cerchio centrato */
   emblemVariant?: "framed" | "carousel";
   carouselStageHeight?: number;
+  /** Solleva il cerchio (es. allineamento al carosello intro). */
+  emblemRaiseExtra?: number;
+  /** Se true, la cupola entra sotto la status bar. In-app resta sotto la barra bianca fissa. */
+  extendIntoStatusBar?: boolean;
 };
 
 export function IntroHeroArc({
@@ -155,11 +181,13 @@ export function IntroHeroArc({
   showLogo = true,
   emblem,
   showCopy = true,
-  arcHeight = 300,
+  arcHeight = onboardingIntroArcHeight,
   parentPaddingX = 0,
   emblemSize: emblemSizeProp,
   emblemVariant = "framed",
   carouselStageHeight: carouselStageHeightProp,
+  emblemRaiseExtra = 0,
+  extendIntoStatusBar = false,
 }: IntroHeroArcProps) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -197,8 +225,8 @@ export function IntroHeroArc({
       width={fullWidth}
       marginLeft={bleedOffset}
       marginRight={bleedOffset}
-      marginTop={-insets.top}
-      paddingTop={insets.top}
+      marginTop={extendIntoStatusBar ? -insets.top : 0}
+      paddingTop={extendIntoStatusBar ? insets.top : 0}
       alignItems="center"
       accessibilityRole="header"
     >
@@ -254,7 +282,7 @@ export function IntroHeroArc({
                   onboardingHeroEmblemLayout.carouselRaiseUp
                 ),
               }
-            : { marginTop: -(emblemOverlap + emblemLift) },
+            : { marginTop: -(emblemOverlap + emblemLift + emblemRaiseExtra) },
         ]}
       >
         {emblemVariant === "carousel" ? (
@@ -266,7 +294,16 @@ export function IntroHeroArc({
             ) : showLogo ? (
               <Image
                 source={require("@/assets/images/pillapp-logo.png")}
-                style={{ width: logoSize, height: logoSize }}
+                style={{
+                  width:
+                    emblemSize === onboardingHeroEmblemLayout.size
+                      ? onboardingHeroEmblemLayout.logoSize
+                      : logoSize,
+                  height:
+                    emblemSize === onboardingHeroEmblemLayout.size
+                      ? onboardingHeroEmblemLayout.logoSize
+                      : logoSize,
+                }}
                 resizeMode="contain"
                 accessibilityLabel="Logo PillApp"
               />
@@ -280,6 +317,7 @@ export function IntroHeroArc({
           width="100%"
           paddingHorizontal={pillappLayout.screenPaddingX}
           paddingTop="$3"
+          paddingBottom="$2"
           gap="$2"
           alignItems="center"
         >

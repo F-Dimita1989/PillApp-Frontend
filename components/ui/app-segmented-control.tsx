@@ -1,7 +1,10 @@
-import { Pressable, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Pressable, StyleSheet } from "react-native";
 import { XStack, type XStackProps } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
+import { useCardSurface } from "@/components/ui/card-surface";
+import { pillappBrandGradient, pillappRadius } from "@/theme/tokens";
 
 export type SegmentedOption = {
   value: string;
@@ -21,16 +24,18 @@ export function AppSegmentedControl({
   onValueChange,
   ...rest
 }: AppSegmentedControlProps) {
+  const onBrand = useCardSurface() === "brand";
+
   return (
     <XStack
       width="100%"
-      flexWrap="wrap"
-      gap="$1"
-      backgroundColor="$surfaceMuted"
-      borderRadius="$3"
+      alignItems="center"
+      overflow="hidden"
+      backgroundColor={onBrand ? "rgba(255,255,255,0.12)" : "$surfaceMuted"}
+      borderRadius="$pill"
       borderWidth={1}
-      borderColor="$border"
-      padding="$1"
+      borderColor={onBrand ? "rgba(255,255,255,0.4)" : "$border"}
+      padding={4}
       {...rest}
     >
       {options.map((option) => {
@@ -40,31 +45,45 @@ export function AppSegmentedControl({
             key={option.value}
             disabled={option.disabled}
             onPress={() => onValueChange(option.value)}
-            style={{ flex: 1, minWidth: 72 }}
+            style={styles.segment}
             accessibilityRole="button"
             accessibilityState={{ selected, disabled: option.disabled }}
             accessibilityLabel={option.label}
           >
+            {selected && !onBrand ? (
+              <LinearGradient
+                colors={[...pillappBrandGradient.colors]}
+                locations={[...pillappBrandGradient.locations]}
+                start={pillappBrandGradient.start}
+                end={pillappBrandGradient.end}
+                style={StyleSheet.absoluteFill}
+              />
+            ) : null}
             <XStack
+              width="100%"
+              height={40}
               alignItems="center"
               justifyContent="center"
-              height={44}
-              paddingHorizontal="$2"
-              borderRadius="$2"
-              backgroundColor={selected ? "$primary" : "transparent"}
+              borderRadius="$pill"
+              backgroundColor={
+                selected && onBrand ? "rgba(255,255,255,0.94)" : "transparent"
+              }
               opacity={option.disabled ? 0.45 : 1}
             >
               <AppText
                 variant="label"
-                color={selected ? "inverse" : undefined}
-                muted={!selected}
-                flexShrink={0}
-                textAlign="center"
-                style={
-                  Platform.OS === "android"
-                    ? { includeFontPadding: false }
-                    : undefined
+                color={
+                  selected
+                    ? onBrand
+                      ? "primary"
+                      : "inverse"
+                    : onBrand
+                      ? "inverse"
+                      : undefined
                 }
+                muted={!selected && !onBrand}
+                textAlign="center"
+                numberOfLines={1}
               >
                 {option.label}
               </AppText>
@@ -75,3 +94,12 @@ export function AppSegmentedControl({
     </XStack>
   );
 }
+
+const styles = StyleSheet.create({
+  segment: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: pillappRadius.pill,
+    overflow: "hidden",
+  },
+});

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { XStack, YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
+import { useCardSurface } from "@/components/ui/card-surface";
 
 type SectionHeaderProps = {
   title: string;
@@ -13,6 +14,7 @@ type SectionHeaderProps = {
 
 export function SectionHeader({ title, description, subtitle, action }: SectionHeaderProps) {
   const resolvedDescription = description ?? subtitle;
+  const onBrand = useCardSurface() === "brand";
 
   return (
     <XStack
@@ -23,7 +25,7 @@ export function SectionHeader({ title, description, subtitle, action }: SectionH
       paddingBottom="$1"
     >
       <YStack flex={1} gap="$1" minWidth={0}>
-        <AppText variant="overline" muted>
+        <AppText variant="overline" color={onBrand ? "inverse" : "secondary"}>
           {title}
         </AppText>
         {resolvedDescription ? (
@@ -36,5 +38,3 @@ export function SectionHeader({ title, description, subtitle, action }: SectionH
     </XStack>
   );
 }
-
-export const SectionTitle = SectionHeader;

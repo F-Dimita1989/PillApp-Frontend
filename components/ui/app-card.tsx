@@ -1,30 +1,72 @@
 import type { ReactNode } from "react";
 import { YStack, type YStackProps } from "tamagui";
 
+import { BrandGradientCard } from "@/components/ui/brand-gradient-card";
+import { BrandStripe } from "@/components/ui/brand-stripe";
+import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surface";
+import { useAccessibility } from "@/lib/accessibility/context";
 import { HealthcareCard, FullWidthStack } from "@/theme/tamagui-primitives";
 
 type AppCardProps = YStackProps & {
   children: ReactNode;
-  variant?: "elevated" | "outlined" | "muted" | "highlight";
+  variant?: "brand" | "elevated" | "outlined" | "muted" | "highlight";
   pressable?: boolean;
-  /** @deprecated Usa variant */
-  mode?: "elevated" | "outlined" | "contained";
 };
 
-export function AppCard({ children, variant, mode, pressable, ...rest }: AppCardProps) {
-  const resolvedVariant =
-    variant ??
-    (mode === "outlined" ? "outlined" : mode === "contained" ? "muted" : "elevated");
+function isBrandVariant(
+  variant: NonNullable<AppCardProps["variant"]>,
+): boolean {
+  return variant === "brand";
+}
+
+export function AppCard({
+  children,
+  variant = "elevated",
+  pressable,
+  ...rest
+}: AppCardProps) {
+  const { highContrast } = useAccessibility();
+
+  if (isBrandVariant(variant)) {
+    return (
+      <CardSurfaceProvider surface="brand">
+        <BrandGradientCard>
+          <YStack width="100%" gap="$3" {...rest}>
+            {children}
+          </YStack>
+        </BrandGradientCard>
+      </CardSurfaceProvider>
+    );
+  }
+
+  const lightVariant =
+    variant === "muted"
+      ? "muted"
+      : variant === "highlight"
+        ? "highlight"
+        : variant === "elevated"
+          ? "elevated"
+          : "outlined";
 
   return (
-    <HealthcareCard
-      variant={resolvedVariant}
-      pressable={pressable}
-      overflow="visible"
-      {...rest}
-    >
-      {children}
-    </HealthcareCard>
+    <CardSurfaceProvider surface="light">
+      <HealthcareCard
+        variant={lightVariant}
+        pressable={pressable}
+        {...(highContrast
+          ? { borderWidth: 2, borderColor: "$textPrimary" }
+          : {})}
+        {...rest}
+        padding={0}
+        gap={0}
+        overflow="hidden"
+      >
+        <BrandStripe />
+        <YStack width="100%" padding="$4" gap="$3">
+          {children}
+        </YStack>
+      </HealthcareCard>
+    </CardSurfaceProvider>
   );
 }
 
@@ -38,6 +80,8 @@ export function AppCardContent({ children, ...rest }: YStackProps & { children: 
 
 /** Area azioni in fondo alla card — separata dai campi, mai sovrapposta. */
 export function AppCardActions({ children, ...rest }: YStackProps & { children: ReactNode }) {
+  const surface = useCardSurface();
+
   return (
     <FullWidthStack
       gap="$3"
@@ -45,7 +89,7 @@ export function AppCardActions({ children, ...rest }: YStackProps & { children: 
       flexShrink={0}
       paddingTop="$4"
       borderTopWidth={1}
-      borderTopColor="$border"
+      borderTopColor={surface === "brand" ? "rgba(255,255,255,0.28)" : "$border"}
       {...rest}
     >
       {children}

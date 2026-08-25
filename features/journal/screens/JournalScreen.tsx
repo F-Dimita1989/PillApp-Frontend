@@ -1,40 +1,57 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { XStack, YStack } from "tamagui";
 
+import { JournalSectionHeading } from "@/components/journal/journal-section-heading";
+import { JournalStripeCard } from "@/components/journal/journal-stripe-card";
 import {
+  AppBadge,
   AppCard,
-  AppCardActions,
-  AppCardContent,
+  AppDivider,
+  AppInput,
   AppInputMultiline,
   AppScreen,
   AppSegmentedControl,
   AppSnackbar,
   AppText,
-  AppTextField,
   AppTopBar,
+  BrandIntroCard,
   EmptyState,
   MeasurementCard,
   PrimaryButton,
   SecondaryButton,
-  SectionHeader,
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
+import {
+  hasJournalExportData,
+  shareJournalPdf,
+} from "@/lib/journal/export-pdf";
+import {
+  MEASUREMENT_ICONS,
+  MEASUREMENT_PLACEHOLDERS,
+  MEASUREMENT_UNITS,
+  MOOD_LABELS,
+  moodBadgeTone,
+} from "@/lib/journal/labels";
 import { pillappColors } from "@/theme/tokens";
 import type { MeasurementKind, MoodLevel } from "@/types/domain";
 import { MEASUREMENT_LABELS } from "@/types/domain";
 
-const MOOD_OPTIONS: { value: MoodLevel; label: string }[] = [
-  { value: "ottimo", label: "Ottimo" },
-  { value: "buono", label: "Buono" },
-  { value: "cosi_cosi", label: "Così così" },
-  { value: "male", label: "Male" },
-  { value: "pessimo", label: "Pessimo" },
-];
+const MOOD_OPTIONS = (
+  Object.entries(MOOD_LABELS) as [MoodLevel, string][]
+).map(([value, label]) => ({ value, label }));
 
 export function JournalScreen() {
-  const { measurements, symptoms, journalNotes, addMeasurement, addSymptom, addJournalNote } =
-    useAppData();
+  const {
+    profile,
+    medications,
+    measurements,
+    symptoms,
+    journalNotes,
+    addMeasurement,
+    addSymptom,
+    addJournalNote,
+  } = useAppData();
 
   const [kind, setKind] = useState<MeasurementKind>("pressure");
   const [value, setValue] = useState("");
@@ -42,15 +59,31 @@ export function JournalScreen() {
   const [note, setNote] = useState("");
   const [mood, setMood] = useState<MoodLevel>("buono");
   const [snack, setSnack] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  const canExport = useMemo(
+    () =>
+      hasJournalExportData({
+        profile,
+        measurements,
+        symptoms,
+        notes: journalNotes,
+        medications,
+      }),
+    [journalNotes, measurements, medications, profile, symptoms],
+  );
 
   const saveMeasurement = () => {
-    if (!value.trim()) return;
+    if (!value.trim()) {
+      setSnack("Inserisci un valore prima di salvare.");
+      return;
+    }
     addMeasurement({
       id: `meas-${Date.now()}`,
       kind,
       label: MEASUREMENT_LABELS[kind],
       value: value.trim(),
-      unit: kind === "pressure" ? "mmHg" : kind === "glucose" ? "mg/dL" : kind === "weight" ? "kg" : "%",
+      unit: MEASUREMENT_UNITS[kind],
       recordedAt: new Date().toISOString(),
     });
     setValue("");
@@ -58,7 +91,10 @@ export function JournalScreen() {
   };
 
   const saveSymptom = () => {
-    if (!symptomLabel.trim()) return;
+    if (!symptomLabel.trim()) {
+      setSnack("Scrivi il sintomo da registrare.");
+      return;
+    }
     addSymptom({
       id: `sym-${Date.now()}`,
       label: symptomLabel.trim(),
@@ -70,7 +106,10 @@ export function JournalScreen() {
   };
 
   const saveNote = () => {
-    if (!note.trim()) return;
+    if (!note.trim()) {
+      setSnack("Scrivi una nota prima di salvare.");
+      return;
+    }
     addJournalNote({
       id: `note-${Date.now()}`,
       mood,
@@ -81,95 +120,176 @@ export function JournalScreen() {
     setSnack("Nota salvata nel diario");
   };
 
-  return (
-    <AppScreen>
-      <AppTopBar
-        title="Diario salute"
-        subtitle="Registra misurazioni, sintomi e come ti senti oggi."
-      />
+  const exportPdf = async () => {
+    if (!canExport) {
+      setSnack("Aggiungi almeno una misurazione o una nota, poi esporta il PDF.");
+      return;
+    }
+    setExporting(true);
+    try {
+      await shareJournalPdf({
+        profile,
+        measurements,
+        symptoms,
+        notes: journalNotes,
+        medications,
+      });
+      setSnack("PDF pronto: salvalo sul telefono o invialo al medico.");
+    } catch (error) {
+      setSnack(
+        error instanceof Error
+          ? error.message
+          : "Non è stato possibile creare il PDF.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
-      <AppCard variant="outlined">
-        <AppCardContent>
-          <SectionHeader title="Nuova misurazione" />
-          <AppSegmentedControl
-            value={kind}
-            onValueChange={(v) => setKind(v as MeasurementKind)}
-            options={[
-              { value: "pressure", label: "Pressione" },
-              { value: "glucose", label: "Glicemia" },
-              { value: "weight", label: "Peso" },
-              { value: "saturation", label: "Sat." },
-            ]}
-          />
-          <AppTextField
-            label="Valore"
-            value={value}
-            onChangeText={setValue}
-            keyboardType="decimal-pad"
-            accessibilityLabel={`Valore ${MEASUREMENT_LABELS[kind]}`}
-          />
-        </AppCardContent>
-        <AppCardActions>
+  return (
+    <AppScreen
+      hero={
+        <AppTopBar
+          icon="notebook-heart-outline"
+          eyebrow="Per te e per il medico"
+          title="Diario salute"
+          subtitle="Registra misurazioni e note, poi salva un PDF da inviare al tuo medico."
+        />
+      }
+    >
+      <BrandIntroCard
+        icon="file-pdf-box"
+        title="Report per il medico"
+        description="Crea un PDF con misurazioni, note, sintomi e terapia in corso. Potrai salvarlo sul telefono o inviarlo."
+      >
+        <PrimaryButton
+          icon="share-variant"
+          fullWidth
+          loading={exporting}
+          disabled={exporting}
+          onPress={() => void exportPdf()}
+          accessibilityHint="Genera un PDF e apre la condivisione del telefono"
+        >
+          {exporting ? "Preparazione PDF…" : "Salva e condividi PDF"}
+        </PrimaryButton>
+      </BrandIntroCard>
+
+      <JournalStripeCard
+        actions={
           <PrimaryButton icon="content-save" fullWidth onPress={saveMeasurement}>
             Salva misurazione
           </PrimaryButton>
-        </AppCardActions>
-      </AppCard>
+        }
+      >
+        <JournalSectionHeading
+          icon="heart-pulse"
+          title="Nuova misurazione"
+          description="Pressione, glicemia, peso o saturazione."
+        />
+        <AppSegmentedControl
+          value={kind}
+          onValueChange={(next) => {
+            setKind(next as MeasurementKind);
+            setValue("");
+          }}
+          options={[
+            { value: "pressure", label: "Pressione" },
+            { value: "glucose", label: "Glicemia" },
+            { value: "weight", label: "Peso" },
+            { value: "saturation", label: "Sat." },
+          ]}
+        />
+        <AppInput
+          label={`Valore (${MEASUREMENT_UNITS[kind]})`}
+          value={value}
+          onChangeText={setValue}
+          placeholder={MEASUREMENT_PLACEHOLDERS[kind]}
+          keyboardType="decimal-pad"
+          hint={`Unità: ${MEASUREMENT_UNITS[kind]}`}
+          accessibilityLabel={`Valore ${MEASUREMENT_LABELS[kind]}`}
+        />
+      </JournalStripeCard>
 
-      <AppCard variant="outlined">
-        <AppCardContent>
-          <SectionHeader title="Sintomi e umore" />
-          <AppTextField
-            label="Sintomo (es. stanchezza)"
-            value={symptomLabel}
-            onChangeText={setSymptomLabel}
-          />
-          <SecondaryButton icon="plus" fullWidth onPress={saveSymptom}>
-            Aggiungi sintomo
-          </SecondaryButton>
-          <AppSegmentedControl
-            value={mood}
-            onValueChange={(v) => setMood(v as MoodLevel)}
-            options={MOOD_OPTIONS.map((m) => ({ value: m.value, label: m.label }))}
-          />
-          <AppInputMultiline
-            label="Note del giorno"
-            value={note}
-            onChangeText={setNote}
-            rows={4}
-            accessibilityLabel="Note del giorno"
-          />
-        </AppCardContent>
-        <AppCardActions>
+      <JournalStripeCard
+        actions={
           <PrimaryButton icon="notebook-edit-outline" fullWidth onPress={saveNote}>
             Salva nota
           </PrimaryButton>
-        </AppCardActions>
-      </AppCard>
+        }
+      >
+        <JournalSectionHeading
+          icon="emoticon-outline"
+          title="Come ti senti"
+          description="Umore e una nota da tenere nel tempo."
+        />
+        <AppSegmentedControl
+          value={mood}
+          onValueChange={(next) => setMood(next as MoodLevel)}
+          options={MOOD_OPTIONS}
+        />
+        <AppInputMultiline
+          label="Note del giorno"
+          value={note}
+          onChangeText={setNote}
+          rows={4}
+          placeholder="Es. stamattina un po' di stanchezza, pressione nella norma…"
+          accessibilityLabel="Note del giorno"
+        />
+        <AppDivider />
+        <JournalSectionHeading
+          icon="alert-circle-outline"
+          title="Sintomo"
+          description="Facoltativo — es. mal di testa, nausea, affanno."
+        />
+        <AppInput
+          label="Sintomo"
+          value={symptomLabel}
+          onChangeText={setSymptomLabel}
+          placeholder="Es. stanchezza"
+          accessibilityLabel="Sintomo da registrare"
+        />
+        <SecondaryButton icon="plus" fullWidth onPress={saveSymptom}>
+          Aggiungi sintomo
+        </SecondaryButton>
+      </JournalStripeCard>
 
       <YStack width="100%" gap="$3">
-        <SectionHeader title="Misurazioni recenti" />
+        <JournalSectionHeading
+          icon="chart-line"
+          title="Misurazioni recenti"
+          description={
+            measurements.length
+              ? `${measurements.length} registrazioni nel diario.`
+              : "Le misurazioni che registri compariranno qui."
+          }
+        />
         {measurements.length === 0 ? (
           <EmptyState
             title="Nessuna misurazione"
-            description="Le misurazioni che registri compariranno qui."
+            description="Salva pressione, glicemia, peso o saturazione per vederle qui e nel PDF."
             icon={
               <MaterialCommunityIcons
                 name="heart-pulse"
                 size={28}
-                color={pillappColors.textMuted}
+                color={pillappColors.onPrimary}
               />
             }
           />
         ) : (
           <XStack width="100%" flexWrap="wrap" gap="$3">
-            {measurements.slice(0, 4).map((m) => (
+            {measurements.slice(0, 8).map((item) => (
               <MeasurementCard
-                key={m.id}
-                label={m.label}
-                value={m.value}
-                unit={m.unit}
-                hint={new Date(m.recordedAt).toLocaleDateString("it-IT")}
+                key={item.id}
+                icon={MEASUREMENT_ICONS[item.kind]}
+                label={item.label}
+                value={item.value}
+                unit={item.unit}
+                hint={new Date(item.recordedAt).toLocaleString("it-IT", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               />
             ))}
           </XStack>
@@ -177,59 +297,107 @@ export function JournalScreen() {
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionHeader title="Sintomi recenti" />
+        <JournalSectionHeading
+          icon="medical-bag"
+          title="Sintomi recenti"
+          description={
+            symptoms.length
+              ? `${symptoms.length} sintomi annotati.`
+              : "I sintomi restano nel diario e nel PDF per il medico."
+          }
+        />
         {symptoms.length === 0 ? (
-          <AppText variant="body" muted>
-            Nessun sintomo registrato.
-          </AppText>
+          <AppCard>
+            <YStack padding="$4">
+              <AppText variant="body" muted>
+                Nessun sintomo registrato.
+              </AppText>
+            </YStack>
+          </AppCard>
         ) : (
-          <AppCard variant="muted">
-            <AppCardContent gap="$2">
-              {symptoms.slice(0, 5).map((s) => (
-                <XStack key={s.id} gap="$2" alignItems="center">
-                  <MaterialCommunityIcons
-                    name="circle-small"
-                    size={20}
-                    color={pillappColors.secondary}
-                  />
-                  <AppText variant="body" flex={1}>
-                    {s.label}
-                  </AppText>
-                  <AppText variant="caption" muted>
-                    {new Date(s.recordedAt).toLocaleDateString("it-IT")}
-                  </AppText>
+          <AppCard>
+            <YStack width="100%" gap="$1" padding="$2">
+              {symptoms.slice(0, 8).map((item) => (
+                <XStack
+                  key={item.id}
+                  gap="$3"
+                  alignItems="center"
+                  paddingVertical="$2"
+                  paddingHorizontal="$2"
+                >
+                  <YStack
+                    width={36}
+                    height={36}
+                    borderRadius={18}
+                    alignItems="center"
+                    justifyContent="center"
+                    backgroundColor="$secondarySoft"
+                    flexShrink={0}
+                  >
+                    <MaterialCommunityIcons
+                      name="alert-circle-outline"
+                      size={18}
+                      color={pillappColors.secondary}
+                    />
+                  </YStack>
+                  <YStack flex={1} minWidth={0} gap="$0.5">
+                    <AppText variant="bodyStrong">{item.label}</AppText>
+                    <AppText variant="caption" muted>
+                      {new Date(item.recordedAt).toLocaleString("it-IT", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </AppText>
+                  </YStack>
                 </XStack>
               ))}
-            </AppCardContent>
+            </YStack>
           </AppCard>
         )}
       </YStack>
 
       <YStack width="100%" gap="$3">
-        <SectionHeader
+        <JournalSectionHeading
+          icon="notebook-outline"
           title="Note diario"
-          description="Storico delle tue annotazioni giornaliere."
+          description="Storico delle tue annotazioni, pronto per il PDF."
         />
         {journalNotes.length === 0 ? (
           <EmptyState
             title="Nessuna nota"
             description="Scrivi come ti senti oggi per tenerne traccia nel tempo."
+            icon={
+              <MaterialCommunityIcons
+                name="notebook-outline"
+                size={28}
+                color={pillappColors.onPrimary}
+              />
+            }
           />
         ) : (
-          journalNotes.map((n) => (
-            <AppCard key={n.id} variant="outlined">
-              <AppCardContent>
-                <YStack gap="$2">
-                  <AppText variant="overline" color="primary">
-                    {n.mood ? `Umore: ${n.mood.replace("_", " ")}` : "Nota"}
-                  </AppText>
-                  <AppText variant="body">{n.text}</AppText>
-                  <AppText variant="caption" muted>
-                    {new Date(n.recordedAt).toLocaleString("it-IT")}
-                  </AppText>
-                </YStack>
-              </AppCardContent>
-            </AppCard>
+          journalNotes.slice(0, 12).map((item) => (
+            <JournalStripeCard key={item.id}>
+              <XStack alignItems="center" justifyContent="space-between" gap="$3">
+                <AppText variant="overline" color="primary">
+                  {new Date(item.recordedAt).toLocaleString("it-IT", {
+                    weekday: "short",
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </AppText>
+                {item.mood ? (
+                  <AppBadge
+                    label={MOOD_LABELS[item.mood]}
+                    tone={moodBadgeTone(item.mood)}
+                  />
+                ) : null}
+              </XStack>
+              <AppText variant="body">{item.text}</AppText>
+            </JournalStripeCard>
           ))
         )}
       </YStack>
