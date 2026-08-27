@@ -15,7 +15,7 @@ import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surfac
 import { layout, spacing } from "@/constants/spacing";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { speakAppText } from "@/lib/accessibility/speech";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappShadows } from "@/theme/tokens";
 
 import type { SelectOption } from "@/components/ui/app-select";
 
@@ -241,6 +241,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     borderWidth: 1,
     borderColor: pillappColors.border,
+    ...pillappShadows.lg,
   },
   sheetTitle: {
     textAlign: "center",

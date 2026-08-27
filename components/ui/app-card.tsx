@@ -6,6 +6,7 @@ import { BrandStripe } from "@/components/ui/brand-stripe";
 import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surface";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { HealthcareCard, FullWidthStack } from "@/theme/tamagui-primitives";
+import { pillappShadows } from "@/theme/tokens";
 
 type AppCardProps = YStackProps & {
   children: ReactNode;
@@ -47,28 +48,32 @@ export function AppCard({
         : variant === "elevated"
           ? "elevated"
           : "outlined";
+  const cardShadow = highContrast ? pillappShadows.none : pillappShadows.md;
 
   return (
     <CardSurfaceProvider surface="light">
-      <HealthcareCard
-        variant={lightVariant}
-        pressable={pressable}
-        {...(highContrast
-          ? { borderWidth: 2.5, borderColor: "$textPrimary" }
-          : {})}
-        {...(reduceMotion && pressable
-          ? { pressStyle: { opacity: 1, scale: 1 } }
-          : {})}
-        {...rest}
-        padding={0}
-        gap={0}
-        overflow="hidden"
-      >
-        <BrandStripe />
-        <YStack width="100%" padding="$4" gap="$3">
-          {children}
-        </YStack>
-      </HealthcareCard>
+      <YStack width="100%" overflow="visible" style={cardShadow} {...rest}>
+        <HealthcareCard
+          variant={lightVariant}
+          pressable={pressable}
+          {...(highContrast
+            ? { borderWidth: 2.5, borderColor: "$textPrimary" }
+            : {})}
+          {...(reduceMotion && pressable
+            ? { pressStyle: { opacity: 1, scale: 1 } }
+            : {})}
+          width="100%"
+          padding={0}
+          gap={0}
+          overflow="hidden"
+          {...pillappShadows.none}
+        >
+          <BrandStripe />
+          <YStack width="100%" padding="$4" gap="$3">
+            {children}
+          </YStack>
+        </HealthcareCard>
+      </YStack>
     </CardSurfaceProvider>
   );
 }

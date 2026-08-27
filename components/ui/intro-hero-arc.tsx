@@ -2,11 +2,11 @@ import type { ReactNode } from "react";
 import { Image, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, {
-  Defs,
-  Ellipse,
-  G,
-  Stop,
-  LinearGradient as SvgLinearGradient,
+    Defs,
+    Ellipse,
+    G,
+    Stop,
+    LinearGradient as SvgLinearGradient,
 } from "react-native-svg";
 import { YStack } from "tamagui";
 
@@ -318,22 +318,22 @@ export function IntroHeroArc({
           paddingHorizontal={pillappLayout.screenPaddingX}
           paddingTop="$3"
           paddingBottom="$2"
-          gap="$2"
-          alignItems="center"
         >
-          {eyebrow ? (
-            <AppText variant="overline" color="primary">
-              {eyebrow}
+          <YStack alignItems="center" gap="$2" width="100%">
+            {eyebrow ? (
+              <AppText variant="overline" color="primary">
+                {eyebrow}
+              </AppText>
+            ) : null}
+            <AppText variant="headline" textAlign="center" color="primary">
+              {title}
             </AppText>
-          ) : null}
-          <AppText variant="headline" textAlign="center" color="primary">
-            {title}
-          </AppText>
-          {subtitle ? (
-            <AppText variant="body" muted textAlign="center" maxWidth={340}>
-              {subtitle}
-            </AppText>
-          ) : null}
+            {subtitle ? (
+              <AppText variant="body" muted textAlign="center" maxWidth={340}>
+                {subtitle}
+              </AppText>
+            ) : null}
+          </YStack>
         </YStack>
       ) : null}
     </YStack>

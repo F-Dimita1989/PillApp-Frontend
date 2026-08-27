@@ -15,7 +15,7 @@ import { SoundPreviewButton } from "@/components/ui/sound-preview-button";
 import { layout, spacing } from "@/constants/spacing";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { speakAppText } from "@/lib/accessibility/speech";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappShadows } from "@/theme/tokens";
 
 export type SelectOption = {
   value: string;
@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderWidth: 1,
     borderColor: pillappColors.border,
+    ...pillappShadows.lg,
   },
   sheetTitle: {
     textAlign: "center",

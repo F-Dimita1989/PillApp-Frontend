@@ -84,15 +84,21 @@ export function PrivacyTermsModal({
           maxWidth={420}
           maxHeight={height * 0.88}
           alignSelf="center"
+          borderRadius="$4"
+          overflow="visible"
+          zIndex={1}
+          {...pillappShadows.lg}
+          accessibilityRole="alert"
+          accessibilityLabel={TERMS_AND_PRIVACY_TITLE}
+        >
+        <YStack
+          width="100%"
+          maxHeight={height * 0.88}
           backgroundColor="$surface"
           borderRadius="$4"
           overflow="hidden"
           borderWidth={1}
           borderColor="$borderStrong"
-          zIndex={1}
-          {...pillappShadows.lg}
-          accessibilityRole="alert"
-          accessibilityLabel={TERMS_AND_PRIVACY_TITLE}
         >
           <LinearGradient
             colors={[...pillappBrandGradient.colors]}
@@ -181,6 +187,7 @@ export function PrivacyTermsModal({
               Chiudi
             </AppButton>
           </YStack>
+        </YStack>
         </YStack>
       </YStack>
     </Modal>

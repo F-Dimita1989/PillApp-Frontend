@@ -1,11 +1,17 @@
 import type { ReactNode } from "react";
-import { Platform, ScrollView, StyleSheet, type ScrollViewProps, type StyleProp, type ViewStyle } from "react-native";
+import {
+    Platform,
+    ScrollView,
+    StyleSheet,
+    type ScrollViewProps,
+    type StyleProp,
+    type ViewStyle,
+} from "react-native";
 import { YStack, type YStackProps } from "tamagui";
 
 import { ScreenSafeArea } from "@/components/screen-safe-area";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { screenContentProps } from "@/theme/tamagui-layout";
-import { pillappColors } from "@/theme/tokens";
 
 type AppScreenProps = {
   children: ReactNode;
@@ -26,7 +32,7 @@ export function AppScreen({
   style,
 }: AppScreenProps) {
   const { highContrast } = useAccessibility();
-  const screenBackground = highContrast ? "#FFFFFF" : pillappColors.background;
+  const screenBackground = highContrast ? "#FFFFFF" : "transparent";
 
   const body = (
     <YStack
@@ -67,7 +73,7 @@ export function AppScreen({
             ? ["left", "right"]
             : ["top", "left", "right"]
         }
-        style={[styles.screen, { backgroundColor: pillappColors.surface }]}
+        style={[styles.screen, { backgroundColor: screenBackground }]}
       >
         {screen}
       </ScreenSafeArea>

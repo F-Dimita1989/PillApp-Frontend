@@ -88,13 +88,11 @@ export function AicTourIntroModal({
         <Animated.View style={[styles.cardWrap, cardStyle]}>
           <YStack
             width="100%"
-            maxWidth={400}
             backgroundColor="$surface"
             borderRadius="$4"
             overflow="hidden"
             borderWidth={1}
             borderColor="$borderStrong"
-            {...pillappShadows.lg}
             accessibilityRole="alert"
             accessibilityLabel="Breve guida alla scansione AIC. Premi Inizia guida per i 4 passi oppure Salta guida."
           >
@@ -168,6 +166,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 400,
     zIndex: 1,
+    borderRadius: 20,
+    ...pillappShadows.lg,
   },
   brandBar: {
     height: 6,

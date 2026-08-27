@@ -10,7 +10,7 @@ import {
   PrimaryButton,
 } from "@/components/ui";
 import { AIC_TOUR_ANCHORS } from "@/constants/aic-scanner-tour";
-import { pillappBrandGradient, pillappColors, pillappRadius } from "@/theme/tokens";
+import { pillappBrandGradient, pillappColors, pillappRadius, pillappShadows } from "@/theme/tokens";
 import type { TooltipRenderProps } from "@edwardloopez/react-native-coachmark";
 
 type AicScanTourTooltipProps = TooltipRenderProps & {
@@ -48,17 +48,13 @@ export function AicScanTourTooltip({
   };
 
   return (
+    <YStack width="100%" overflow="visible" style={pillappShadows.md}>
     <YStack
       backgroundColor="$surface"
       borderColor="$borderStrong"
       borderWidth={1}
       borderRadius="$4"
       overflow="hidden"
-      shadowColor="$shadow"
-      shadowOpacity={0.12}
-      shadowRadius={16}
-      shadowOffset={{ width: 0, height: 4 }}
-      elevation={5}
       accessibilityRole="alert"
       accessibilityLabel={`Guida passo ${index + 1} di ${count}. ${title ?? ""}. ${description ?? ""}`}
     >
@@ -121,6 +117,7 @@ export function AicScanTourTooltip({
           </XStack>
         </YStack>
       </YStack>
+    </YStack>
     </YStack>
   );
 }

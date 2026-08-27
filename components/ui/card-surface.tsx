@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
 
-export type CardSurface = "light" | "brand";
+export type CardSurface = "pattern" | "light" | "brand";
 
-const CardSurfaceContext = createContext<CardSurface>("light");
+const CardSurfaceContext = createContext<CardSurface>("pattern");
 
 export function CardSurfaceProvider({
   surface,

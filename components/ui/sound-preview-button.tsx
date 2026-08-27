@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappShadows } from "@/theme/tokens";
 
 type SoundPreviewButtonProps = {
   onPress: () => void;
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: pillappColors.secondarySoft,
+    ...pillappShadows.sm,
   },
   pressed: {
     opacity: 0.85,

@@ -1,20 +1,19 @@
 import { useCallback, useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 
 import { OnboardingFlow } from "@/components/onboarding-flow";
 import { PostOnboardingFlow } from "@/components/post-onboarding-flow";
 import {
-  screenSwipeTiming,
-  swipeEnterX,
-  swipeExitX,
+    screenSwipeTiming,
+    swipeEnterX,
+    swipeExitX,
 } from "@/lib/motion/screen-transition";
-import { pillappColors } from "@/theme/tokens";
 
 type AppEntryFlowProps = {
   hasSeenOnboarding: boolean;
@@ -72,12 +71,16 @@ export function AppEntryFlow({
     setProfileInFront(true);
     profileX.value = swipeEnterX(width);
     profileX.value = withTiming(0, screenSwipeTiming);
-    onboardingX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
-      if (!finished) {
-        return;
-      }
-      runOnJS(finishOnboardingTransition)();
-    });
+    onboardingX.value = withTiming(
+      swipeExitX(width),
+      screenSwipeTiming,
+      (finished) => {
+        if (!finished) {
+          return;
+        }
+        runOnJS(finishOnboardingTransition)();
+      },
+    );
   }, [
     finishOnboardingTransition,
     needsSetup,
@@ -141,11 +144,9 @@ const styles = StyleSheet.create({
   },
   profileLayer: {
     zIndex: 1,
-    backgroundColor: pillappColors.background,
   },
   onboardingLayer: {
     zIndex: 2,
-    backgroundColor: pillappColors.background,
   },
   frontLayer: {
     zIndex: 5,

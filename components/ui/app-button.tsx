@@ -16,7 +16,7 @@ import {
   HealthcareButtonFrame,
   HealthcareText,
 } from "@/theme/tamagui-primitives";
-import { pillappBrandGradient, pillappColors } from "@/theme/tokens";
+import { pillappBrandGradient, pillappColors, pillappShadows } from "@/theme/tokens";
 
 export type AppButtonVariant = "primary" | "secondary" | "ghost" | "success" | "danger";
 export type AppButtonSize = "lg" | "md";
@@ -277,6 +277,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
+    ...pillappShadows.sm,
   },
   pillLg: {
     minHeight: 52,

@@ -147,6 +147,28 @@ export const pillappBrandGradient = {
   end: { x: 1, y: 1 } as const,
 };
 
+/** Sfondo app: teal e blu del logo, diluiti verso il bianco. */
+export const pillappAmbientWash = {
+  teal: {
+    colors: [
+      "rgba(42, 171, 160, 0.20)",
+      "rgba(78, 196, 181, 0.10)",
+      "rgba(255, 255, 255, 0)",
+    ] as const,
+    start: { x: 0, y: 0 } as const,
+    end: { x: 1, y: 0.7 } as const,
+  },
+  blue: {
+    colors: [
+      "rgba(255, 255, 255, 0)",
+      "rgba(43, 127, 212, 0.10)",
+      "rgba(30, 95, 158, 0.18)",
+    ] as const,
+    start: { x: 0, y: 0.3 } as const,
+    end: { x: 1, y: 1 } as const,
+  },
+} as const;
+
 export const pillappLayout = {
   screenPaddingX: 16,
   screenPaddingY: 16,

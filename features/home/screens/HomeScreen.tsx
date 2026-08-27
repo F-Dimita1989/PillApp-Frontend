@@ -4,25 +4,28 @@ import { useMemo, useState } from "react";
 import { XStack, YStack } from "tamagui";
 
 import { HomeWeekCalendar } from "@/components/home/home-week-calendar";
-import { useNow } from "@/hooks/use-now";
 import {
-  AppCard,
-  AppCardContent,
-  AppProgress,
-  AppScreen,
-  AppText,
-  AppTopBar,
-  EmptyState,
-  MeasurementCard,
-  MedicationScheduleCard,
-  QuickActionButton,
-  SectionHeader,
-  SuccessState,
+    AppCard,
+    AppCardContent,
+    AppProgress,
+    AppScreen,
+    AppText,
+    AppTopBar,
+    EmptyState,
+    MeasurementCard,
+    MedicationScheduleCard,
+    QuickActionButton,
+    SectionHeader,
+    SuccessState,
 } from "@/components/ui";
-import { useAppData } from "@/features/store/app-data-context";
 import { AppRoutes } from "@/features/navigation/routes";
-import { medicationsToCombinedDayPlan, buildDosesForDate } from "@/lib/app-data/sync";
+import { useAppData } from "@/features/store/app-data-context";
+import { useNow } from "@/hooks/use-now";
 import { mergeDoseStatuses } from "@/lib/app-data/storage";
+import {
+    buildDosesForDate,
+    medicationsToCombinedDayPlan,
+} from "@/lib/app-data/sync";
 import { formatDateKey, parseDateKey } from "@/lib/calendar/week-utils";
 import { MEASUREMENT_ICONS } from "@/lib/journal/labels";
 import { formatItalianDate } from "@/lib/time/datetime-labels";
@@ -147,7 +150,10 @@ export function HomeScreen() {
   const hasDosesToday = dosesToday.length > 0;
 
   const dosesForSelectedDay = useMemo(() => {
-    const generated = buildDosesForDate(medications, parseDateKey(selectedDate));
+    const generated = buildDosesForDate(
+      medications,
+      parseDateKey(selectedDate),
+    );
     if (!isSelectedToday) {
       return generated;
     }
@@ -181,7 +187,6 @@ export function HomeScreen() {
         />
       }
     >
-
       <YStack width="100%" gap="$3">
         <SectionHeader
           title="La tua settimana"
@@ -258,7 +263,9 @@ export function HomeScreen() {
                 : "Aggiungi un farmaco per iniziare a ricevere promemoria personalizzati."
             }
             actionLabel={hasMedications ? undefined : "Scansiona codice AIC"}
-            onAction={hasMedications ? undefined : () => router.push(AppRoutes.scan)}
+            onAction={
+              hasMedications ? undefined : () => router.push(AppRoutes.scan)
+            }
           />
         )}
       </YStack>
@@ -270,15 +277,20 @@ export function HomeScreen() {
               title="Aderenza di oggi"
               description="Ogni conferma aiuta te e il medico a monitorare la terapia"
             />
-            <XStack width="100%" justifyContent="space-between" alignItems="baseline">
-              <AppText variant="display">
-                {adherenceToday.percentage}%
-              </AppText>
+            <XStack
+              width="100%"
+              justifyContent="space-between"
+              alignItems="baseline"
+            >
+              <AppText variant="display">{adherenceToday.percentage}%</AppText>
               <AppText variant="bodyStrong" muted>
                 {adherenceToday.taken}/{adherenceToday.total}
               </AppText>
             </XStack>
-            <AdherenceBar taken={adherenceToday.taken} total={adherenceToday.total} />
+            <AdherenceBar
+              taken={adherenceToday.taken}
+              total={adherenceToday.total}
+            />
           </AppCardContent>
         </AppCard>
       ) : null}

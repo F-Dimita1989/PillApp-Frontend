@@ -157,23 +157,6 @@ export function JournalScreen() {
         />
       }
     >
-      <BrandIntroCard
-        icon="file-pdf-box"
-        title="Report per il medico"
-        description="Crea un PDF con misurazioni, note, sintomi e terapia in corso. Potrai salvarlo sul telefono o inviarlo."
-      >
-        <PrimaryButton
-          icon="share-variant"
-          fullWidth
-          loading={exporting}
-          disabled={exporting}
-          onPress={() => void exportPdf()}
-          accessibilityHint="Genera un PDF e apre la condivisione del telefono"
-        >
-          {exporting ? "Preparazione PDF…" : "Salva e condividi PDF"}
-        </PrimaryButton>
-      </BrandIntroCard>
-
       <JournalStripeCard
         actions={
           <PrimaryButton icon="content-save" fullWidth onPress={saveMeasurement}>
@@ -401,6 +384,23 @@ export function JournalScreen() {
           ))
         )}
       </YStack>
+
+      <BrandIntroCard
+        icon="file-pdf-box"
+        title="Report per il medico"
+        description="Crea un PDF con misurazioni, note, sintomi e terapia in corso. Potrai salvarlo sul telefono o inviarlo."
+      >
+        <PrimaryButton
+          icon="share-variant"
+          fullWidth
+          loading={exporting}
+          disabled={exporting}
+          onPress={() => void exportPdf()}
+          accessibilityHint="Genera un PDF e apre la condivisione del telefono"
+        >
+          {exporting ? "Preparazione PDF…" : "Salva e condividi PDF"}
+        </PrimaryButton>
+      </BrandIntroCard>
 
       <AppSnackbar
         visible={Boolean(snack)}

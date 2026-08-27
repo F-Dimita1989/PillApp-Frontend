@@ -59,7 +59,7 @@ export function OnboardingSlideView({
           </YStack>
         ) : null}
 
-        <YStack width="100%" gap="$3">
+        <YStack alignItems="center" gap="$3" width="100%">
           <AppText
             variant={compact ? "title" : "headline"}
             color="secondary"

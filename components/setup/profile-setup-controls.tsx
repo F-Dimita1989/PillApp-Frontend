@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { XStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappShadows } from "@/theme/tokens";
 
 type ProfileSetupButtonProps = {
   children: string;
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: pillappColors.surface,
+    ...pillappShadows.sm,
   },
   secondaryButton: {
     minHeight: 48,
@@ -104,6 +105,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.88)",
     backgroundColor: "transparent",
+    ...pillappShadows.sm,
   },
   fullWidth: {
     flex: undefined,

@@ -12,7 +12,12 @@ type SectionHeaderProps = {
   action?: ReactNode;
 };
 
-export function SectionHeader({ title, description, subtitle, action }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  description,
+  subtitle,
+  action,
+}: SectionHeaderProps) {
   const resolvedDescription = description ?? subtitle;
   const onBrand = useCardSurface() === "brand";
 
@@ -22,7 +27,6 @@ export function SectionHeader({ title, description, subtitle, action }: SectionH
       alignItems="flex-end"
       justifyContent="space-between"
       gap="$3"
-      paddingBottom="$1"
     >
       <YStack flex={1} gap="$1" minWidth={0}>
         <AppText variant="overline" color={onBrand ? "inverse" : "secondary"}>

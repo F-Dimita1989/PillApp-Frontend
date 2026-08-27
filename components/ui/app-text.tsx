@@ -54,6 +54,7 @@ export function AppText({
   speakOnPress = true,
   fontSize: fontSizeOverride,
   lineHeight: lineHeightOverride,
+  style,
   ...rest
 }: AppTextProps) {
   const surface = useCardSurface();
@@ -103,6 +104,7 @@ export function AppText({
           ? "700"
           : undefined)
       }
+      style={style}
       onPress={canSpeak || onPress ? handlePress : undefined}
       onLongPress={canSpeak || onLongPress ? handleLongPress : undefined}
       accessibilityHint={canSpeak ? "Tocca per ascoltare" : rest.accessibilityHint}

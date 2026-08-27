@@ -12,7 +12,7 @@ import { Label, YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { layout, spacing } from "@/constants/spacing";
-import { pillappColors, pillappRadius } from "@/theme/tokens";
+import { pillappColors, pillappRadius, pillappShadows } from "@/theme/tokens";
 
 export type ProfileSetupSelectOption = {
   value: string;
@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderWidth: 1,
     borderColor: pillappColors.border,
+    ...pillappShadows.lg,
   },
   sheetTitle: {
     textAlign: "center",

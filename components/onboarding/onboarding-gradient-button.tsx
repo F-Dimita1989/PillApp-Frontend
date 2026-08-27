@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, StyleSheet } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappShadows } from "@/theme/tokens";
 
 const brandGradient = {
   colors: [
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
+    ...pillappShadows.sm,
   },
   pressed: {
     opacity: 0.9,

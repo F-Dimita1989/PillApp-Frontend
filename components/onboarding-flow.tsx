@@ -1,22 +1,21 @@
 import { useCallback, useRef, useState } from "react";
 import { StyleSheet, View, useWindowDimensions } from "react-native";
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 
 import { AccessSetupFlow } from "@/components/access-setup/access-setup-flow";
 import { OnboardingScreen } from "@/components/onboarding-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
-import { skipOnboardingToHome } from "@/lib/onboarding/storage";
 import {
-  screenSwipeTiming,
-  swipeEnterX,
-  swipeExitX,
+    screenSwipeTiming,
+    swipeEnterX,
+    swipeExitX,
 } from "@/lib/motion/screen-transition";
-import { pillappColors } from "@/theme/tokens";
+import { skipOnboardingToHome } from "@/lib/onboarding/storage";
 
 type OnboardingFlowProps = {
   onComplete: () => void;
@@ -84,19 +83,27 @@ export function OnboardingFlow({
         setFrontLayer("intro");
         introX.value = swipeEnterX(width);
         introX.value = withTiming(0, screenSwipeTiming);
-        welcomeX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
-          if (finished) {
-            runOnJS(hideWelcome)();
-          }
-        });
+        welcomeX.value = withTiming(
+          swipeExitX(width),
+          screenSwipeTiming,
+          (finished) => {
+            if (finished) {
+              runOnJS(hideWelcome)();
+            }
+          },
+        );
         return;
       }
 
-      welcomeX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
-        if (finished) {
-          runOnJS(finishSkipToAccess)();
-        }
-      });
+      welcomeX.value = withTiming(
+        swipeExitX(width),
+        screenSwipeTiming,
+        (finished) => {
+          if (finished) {
+            runOnJS(finishSkipToAccess)();
+          }
+        },
+      );
     },
     [finishSkipToAccess, hideWelcome, introX, welcomeX, width],
   );
@@ -112,11 +119,15 @@ export function OnboardingFlow({
     setFrontLayer("access");
     accessX.value = swipeEnterX(width);
     accessX.value = withTiming(0, screenSwipeTiming);
-    introX.value = withTiming(swipeExitX(width), screenSwipeTiming, (finished) => {
-      if (finished) {
-        runOnJS(hideIntro)();
-      }
-    });
+    introX.value = withTiming(
+      swipeExitX(width),
+      screenSwipeTiming,
+      (finished) => {
+        if (finished) {
+          runOnJS(hideIntro)();
+        }
+      },
+    );
   }, [accessX, hideIntro, introX, width]);
 
   const handleWelcomeContinue = useCallback(() => {
@@ -193,11 +204,9 @@ const styles = StyleSheet.create({
   host: {
     flex: 1,
     overflow: "hidden",
-    backgroundColor: pillappColors.background,
   },
   layer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: pillappColors.background,
   },
   accessLayer: {
     zIndex: 1,

@@ -75,13 +75,13 @@ export function reminderNotificationCopy(
 ): { title: string; body: string } {
   if (minutesBefore <= 0) {
     return {
-      title: "È l'orario di assunzione",
-      body: `${medName} — ${dose} alle ${timeStr}`,
+      title: "Un momento di cura per te ❤️☺️",
+      body: `È ora di ${medName} (${dose}), alle ${timeStr}. Un piccolo gesto, fatto con calma.`,
     };
   }
 
   return {
-    title: `Promemoria tra ${minutesBefore} minuti`,
-    body: `${medName} — ${dose} alle ${timeStr}`,
+    title: `Tra ${minutesBefore} minuti, un pensiero per te ❤️☺️`,
+    body: `${medName} (${dose}) alle ${timeStr}. Preparati con serenità, ci siamo quasi.`,
   };
 }

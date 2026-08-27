@@ -1,17 +1,17 @@
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-  type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
+    Pressable,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+    type ListRenderItemInfo,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
+    useAnimatedScrollHandler,
+    useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
@@ -19,17 +19,17 @@ import { XStack, YStack } from "tamagui";
 import { OnboardingArcCarousel } from "@/components/onboarding/onboarding-arc-carousel";
 import { OnboardingGradientButton } from "@/components/onboarding/onboarding-gradient-button";
 import { OnboardingSlideView } from "@/components/onboarding/onboarding-slide-view";
+import {
+    IntroHeroArc,
+    getOnboardingArcLayout,
+    getOnboardingHeroZoneHeight,
+    onboardingHeroEmblemLayout,
+} from "@/components/ui";
 import { AppText } from "@/components/ui/app-text";
 import {
-  IntroHeroArc,
-  getOnboardingArcLayout,
-  getOnboardingHeroZoneHeight,
-  onboardingHeroEmblemLayout,
-} from "@/components/ui";
-import {
-  ONBOARDING_SLIDE_COUNT,
-  onboardingSlides,
-  type OnboardingSlide,
+    ONBOARDING_SLIDE_COUNT,
+    onboardingSlides,
+    type OnboardingSlide,
 } from "@/constants/onboarding-slides";
 import { markOnboardingAsSeen } from "@/lib/onboarding/storage";
 import { pillappLayout } from "@/theme/tokens";
@@ -55,7 +55,11 @@ function OnboardingSlidePage({
     <View style={[styles.page, { width }]}>
       <View style={{ height: heroZoneHeight }} />
       <View style={styles.slideBody}>
-        <OnboardingSlideView slide={slide} width={width} bottomInset={bottomInset} />
+        <OnboardingSlideView
+          slide={slide}
+          width={width}
+          bottomInset={bottomInset}
+        />
       </View>
     </View>
   );
@@ -74,14 +78,16 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   );
 
   const heroZoneHeight = useMemo(
-    () => getOnboardingHeroZoneHeight(width, onboardingHeroEmblemLayout.size, insets.top),
+    () =>
+      getOnboardingHeroZoneHeight(
+        width,
+        onboardingHeroEmblemLayout.size,
+        insets.top,
+      ),
     [insets.top, width],
   );
 
-  const slideBottomInset = useMemo(
-    () => insets.bottom + 16,
-    [insets.bottom],
-  );
+  const slideBottomInset = useMemo(() => insets.bottom + 16, [insets.bottom]);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -140,7 +146,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="transparent">
       <StatusBar style="dark" />
       <View style={styles.pagerHost}>
         <Animated.FlatList
@@ -205,12 +211,18 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               width={index === currentIndex ? 24 : 8}
               height={8}
               borderRadius="$pill"
-              backgroundColor={index === currentIndex ? "$secondary" : "$border"}
+              backgroundColor={
+                index === currentIndex ? "$secondary" : "$border"
+              }
             />
           ))}
         </XStack>
 
-        <XStack justifyContent="space-between" alignItems="center" minHeight={48}>
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          minHeight={48}
+        >
           {isFirstSlide ? (
             <Pressable
               onPress={() => void finishOnboarding()}

@@ -6,7 +6,6 @@ import { HapticTab } from "@/components/haptic-tab";
 import { BrandTabBarBackground } from "@/components/ui/brand-tab-bar-background";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { tabBarTheme } from "@/theme/tab-bar";
-import { pillappColors } from "@/theme/tokens";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -47,12 +46,10 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: {
           ...tabBarTheme.labelStyle,
-          ...(largeText
-            ? { fontSize: 12, lineHeight: 16 }
-            : {}),
+          ...(largeText ? { fontSize: 12, lineHeight: 16 } : {}),
         },
         sceneStyle: {
-          backgroundColor: pillappColors.background,
+          backgroundColor: "transparent",
         },
       }}
     >

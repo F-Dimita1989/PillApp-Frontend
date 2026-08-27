@@ -1,17 +1,17 @@
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-  type ListRenderItemInfo,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
+    Pressable,
+    StyleSheet,
+    View,
+    useWindowDimensions,
+    type ListRenderItemInfo,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import Animated, {
-  useAnimatedScrollHandler,
-  useSharedValue,
+    useAnimatedScrollHandler,
+    useSharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
@@ -20,23 +20,23 @@ import { AccessSetupSlideView } from "@/components/access-setup/access-setup-sli
 import { PrivacyTermsModal } from "@/components/access-setup/privacy-terms-modal";
 import { OnboardingArcCarousel } from "@/components/onboarding/onboarding-arc-carousel";
 import { OnboardingGradientButton } from "@/components/onboarding/onboarding-gradient-button";
+import {
+    IntroHeroArc,
+    getOnboardingArcLayout,
+    getOnboardingHeroZoneHeight,
+} from "@/components/ui";
 import { AppText } from "@/components/ui/app-text";
 import {
-  IntroHeroArc,
-  getOnboardingArcLayout,
-  getOnboardingHeroZoneHeight,
-} from "@/components/ui";
-import {
-  ACCESS_SETUP_SLIDE_COUNT,
-  accessSetupEmblemSize,
-  accessSetupSlides,
+    ACCESS_SETUP_SLIDE_COUNT,
+    accessSetupEmblemSize,
+    accessSetupSlides,
 } from "@/constants/access-setup-slides";
 import type { OnboardingSlide } from "@/constants/onboarding-slides";
 import {
-  allPermissionsGranted,
-  getAppPermissionStates,
-  requestAllAppPermissions,
-  type AppPermissionState,
+    allPermissionsGranted,
+    getAppPermissionStates,
+    requestAllAppPermissions,
+    type AppPermissionState,
 } from "@/lib/access-setup/permissions";
 import { markAccessSetupComplete } from "@/lib/access-setup/storage";
 import { pillappLayout } from "@/theme/tokens";
@@ -90,7 +90,9 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const listRef = useRef<Animated.FlatList<OnboardingSlide>>(null);
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [permissionStates, setPermissionStates] = useState<AppPermissionState[]>([]);
+  const [permissionStates, setPermissionStates] = useState<
+    AppPermissionState[]
+  >([]);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
   const [hasRequestedPermissions, setHasRequestedPermissions] = useState(false);
@@ -167,7 +169,9 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const handleScrollEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(event.nativeEvent.contentOffset.x / width);
-      setCurrentIndex(Math.max(0, Math.min(ACCESS_SETUP_SLIDE_COUNT - 1, index)));
+      setCurrentIndex(
+        Math.max(0, Math.min(ACCESS_SETUP_SLIDE_COUNT - 1, index)),
+      );
     },
     [width],
   );
@@ -234,9 +238,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsGranted]);
 
   const primaryDisabled =
-    isRequestingPermissions ||
-    isFinishing ||
-    (isFirstSlide && !termsAccepted);
+    isRequestingPermissions || isFinishing || (isFirstSlide && !termsAccepted);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
@@ -263,7 +265,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   );
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="transparent">
       <StatusBar style="dark" />
       <View style={styles.pagerHost}>
         <Animated.FlatList
@@ -330,12 +332,18 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
               width={index === currentIndex ? 24 : 8}
               height={8}
               borderRadius="$pill"
-              backgroundColor={index === currentIndex ? "$secondary" : "$border"}
+              backgroundColor={
+                index === currentIndex ? "$secondary" : "$border"
+              }
             />
           ))}
         </XStack>
 
-        <XStack justifyContent="space-between" alignItems="center" minHeight={48}>
+        <XStack
+          justifyContent="space-between"
+          alignItems="center"
+          minHeight={48}
+        >
           {isFirstSlide ? (
             <View style={styles.sideSlot} />
           ) : (

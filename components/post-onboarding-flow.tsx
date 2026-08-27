@@ -1,17 +1,17 @@
 import {
-  CoachmarkAnchor,
-  createTour,
-  useCoachmark,
+    CoachmarkAnchor,
+    createTour,
+    useCoachmark,
 } from "@edwardloopez/react-native-coachmark";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  type ScrollView as ScrollViewType,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    View,
+    type NativeScrollEvent,
+    type NativeSyntheticEvent,
+    type ScrollView as ScrollViewType,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
@@ -24,8 +24,8 @@ import { MedicationQuantitySection } from "@/components/farmaci/medication-quant
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
 import { ScreenSafeArea } from "@/components/screen-safe-area";
 import {
-  ProfileSetupAnimatedShell,
-  type ProfileSetupTransitionDirection,
+    ProfileSetupAnimatedShell,
+    type ProfileSetupTransitionDirection,
 } from "@/components/setup/profile-setup-animated-shell";
 import { ProfileSetupChoiceCard } from "@/components/setup/profile-setup-choice-card";
 import { ProfileSetupHero } from "@/components/setup/profile-setup-hero";
@@ -34,48 +34,48 @@ import { ProfileSetupNameModal } from "@/components/setup/profile-setup-name-mod
 import { ProfileSetupStepContent } from "@/components/setup/profile-setup-step-content";
 import { TherapyReminderSettings } from "@/components/therapy/therapy-reminder-settings";
 import {
-  AppButton,
-  AppCard,
-  AppCardContent,
-  AppChip,
-  AppText,
-  BrandIconBadge,
-  BrandIntroCard,
-  PrimaryButton,
-  SecondaryButton,
+    AppButton,
+    AppCard,
+    AppCardContent,
+    AppChip,
+    AppText,
+    BrandIconBadge,
+    BrandIntroCard,
+    PrimaryButton,
+    SecondaryButton,
 } from "@/components/ui";
 import {
-  AIC_SCAN_TOUR_KEY,
-  AIC_TOUR_ANCHORS,
+    AIC_SCAN_TOUR_KEY,
+    AIC_TOUR_ANCHORS,
 } from "@/constants/aic-scanner-tour";
 import { type GuestSex } from "@/constants/profile";
 import { getProfileSetupStepMeta } from "@/constants/profile-setup-steps";
 import { THERAPY_FORM_PREVIEW } from "@/constants/therapy-form-preview";
 import {
-  saveSetupMedications,
-  type SetupTherapyMedication,
+    saveSetupMedications,
+    type SetupTherapyMedication,
 } from "@/lib/app-data/save-setup-medications";
 import {
-  ensureVisibleInScroll,
-  TOUR_TOOLTIP_BOTTOM_RESERVE,
+    ensureVisibleInScroll,
+    TOUR_TOOLTIP_BOTTOM_RESERVE,
 } from "@/lib/coachmark/scroll-anchor-into-view";
 import {
-  buildScannedMedicationFormValues,
-  therapyDoseFromFormValues,
-  type ScannedMedicationFormValues,
+    buildScannedMedicationFormValues,
+    therapyDoseFromFormValues,
+    type ScannedMedicationFormValues,
 } from "@/lib/farmaci/form-values";
 import { pickAndScanMedicine } from "@/lib/farmaci/scan";
 import { isValidGuestAge, saveGuestProfile } from "@/lib/profile/storage";
 import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
 import {
-  INITIAL_THERAPY_REMINDER_SETTINGS,
-  validateReminderSettings,
-  type TherapyReminderSettingsValue,
+    INITIAL_THERAPY_REMINDER_SETTINGS,
+    validateReminderSettings,
+    type TherapyReminderSettingsValue,
 } from "@/lib/therapy/reminder-settings";
 import {
-  setupScrollTherapy,
-  setupScrollTourFraming,
-  setupScrollTourResult,
+    setupScrollTherapy,
+    setupScrollTourFraming,
+    setupScrollTourResult,
 } from "@/theme/setup-layout";
 import { pillappLayout, pillappSpace } from "@/theme/tokens";
 
@@ -529,7 +529,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   ) : null;
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <YStack flex={1} backgroundColor="transparent">
       <ScreenSafeArea
         includeBottomInset
         edges={isTherapyStep && !isActive ? ["bottom"] : ["top", "bottom"]}
@@ -541,212 +541,270 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
         >
           {isTherapyStep ? (
             <YStack flex={1} width="100%">
-            <KeyboardAvoidingView
-              style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
-            >
-              <ScrollView
-                ref={therapyScrollRef}
-                contentContainerStyle={[
-                  setupScrollTherapy,
-                  isActive &&
-                    activeStep?.id === AIC_TOUR_ANCHORS.framingBox &&
-                    setupScrollTourFraming(),
-                  isActive &&
-                    activeStep?.id === AIC_TOUR_ANCHORS.resultCard &&
-                    setupScrollTourResult(),
-                ]}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                scrollEventThrottle={16}
-                onScroll={handleTherapyScroll}
+              <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
               >
-                {!isActive ? (
-                  <View
-                    style={{
-                      marginHorizontal: -pillappLayout.screenPaddingX,
-                      marginTop: -pillappSpace[6],
-                      alignSelf: "stretch",
-                    }}
-                  >
-                    <ProfileSetupHero meta={therapyHeroMeta} showCopy={false} />
-                  </View>
-                ) : null}
-                <CoachmarkAnchor
-                  id={AIC_TOUR_ANCHORS.intro}
-                  shape="rect"
-                  radius={16}
-                  padding={12}
-                  scrollRef={therapyScrollRef}
+                <ScrollView
+                  ref={therapyScrollRef}
+                  contentContainerStyle={[
+                    setupScrollTherapy,
+                    isActive &&
+                      activeStep?.id === AIC_TOUR_ANCHORS.framingBox &&
+                      setupScrollTourFraming(),
+                    isActive &&
+                      activeStep?.id === AIC_TOUR_ANCHORS.resultCard &&
+                      setupScrollTourResult(),
+                  ]}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  scrollEventThrottle={16}
+                  onScroll={handleTherapyScroll}
                 >
-                  <YStack width="100%" gap="$2" alignItems="center">
-                    <AppText variant="overline" color="secondary">
-                      {therapyHeroMeta.eyebrow}
-                    </AppText>
-                    <AppText variant="headline" color="secondary" textAlign="center">
-                      {therapyHeroMeta.title}
-                    </AppText>
-                    <AppText variant="body" muted textAlign="center">
-                      {therapyHeroMeta.subtitle}
-                    </AppText>
-                  </YStack>
-                </CoachmarkAnchor>
-                {!isActive ? (
-                <AppCard variant="brand">
-                  <YStack width="100%" gap="$3">
-                    <ProfileSetupChoiceCard
-                      label="Sì, impostiamola"
-                      description="Scansiona le confezioni e imposta i promemoria."
-                      selected={wantsTherapy === true}
-                      onPress={() => {
-                        setWantsTherapy(true);
-                        setErrorMessage("");
+                  {!isActive ? (
+                    <View
+                      style={{
+                        marginHorizontal: -pillappLayout.screenPaddingX,
+                        marginTop: -pillappSpace[6],
+                        alignSelf: "stretch",
                       }}
-                    />
-                    <ProfileSetupChoiceCard
-                      label="Per ora no"
-                      description="Potrai farlo più tardi da Home o dalla tab Farmaci."
-                      selected={wantsTherapy === false}
-                      onPress={() => {
-                        setWantsTherapy(false);
-                        resetScan();
-                        setConfiguredMedications([]);
-                        setErrorMessage("");
-                      }}
-                    />
-                    {wantsTherapy ? null : (
+                    >
+                      <ProfileSetupHero
+                        meta={therapyHeroMeta}
+                        showCopy={false}
+                      />
+                    </View>
+                  ) : null}
+                  <CoachmarkAnchor
+                    id={AIC_TOUR_ANCHORS.intro}
+                    shape="rect"
+                    radius={16}
+                    padding={12}
+                    scrollRef={therapyScrollRef}
+                  >
+                    <YStack alignItems="center" gap="$2" width="100%">
+                      <AppText variant="overline" color="secondary">
+                        {therapyHeroMeta.eyebrow}
+                      </AppText>
+                      <AppText
+                        variant="headline"
+                        color="secondary"
+                        textAlign="center"
+                      >
+                        {therapyHeroMeta.title}
+                      </AppText>
+                      <AppText variant="body" muted textAlign="center">
+                        {therapyHeroMeta.subtitle}
+                      </AppText>
+                    </YStack>
+                  </CoachmarkAnchor>
+                  {!isActive ? (
+                    <AppCard variant="brand">
                       <YStack width="100%" gap="$3">
-                        {errorMessage ? (
-                          <AppText variant="caption" color="error">
-                            {errorMessage}
-                          </AppText>
-                        ) : null}
-                        <SecondaryButton onPress={goBack} fullWidth>
-                          Indietro
-                        </SecondaryButton>
-                        <PrimaryButton
-                          onPress={handleTherapyContinue}
-                          fullWidth
-                        >
-                          Continua
-                        </PrimaryButton>
-                      </YStack>
-                    )}
-                  </YStack>
-                </AppCard>
-                ) : null}
-
-                {wantsTherapy ? (
-                  <AppCard variant="elevated">
-                    <AppCardContent gap="$4">
-                      <YStack width="100%" gap="$4">
-                        {configuredMedications.length > 0 ? (
-                          <YStack width="100%" gap="$2">
-                            <AppText variant="title" color="secondary" textAlign="center">
-                              Farmaci aggiunti ({configuredMedications.length})
-                            </AppText>
-                            <XStack
-                              flexWrap="wrap"
-                              gap="$2"
-                              justifyContent="center"
-                            >
-                              {configuredMedications.map((item, index) => (
-                                <AppChip
-                                  key={`${item.scanFormValues.aic}-${index}`}
-                                  label={item.scanFormValues.nome.trim()}
-                                  style={{ maxWidth: "100%" }}
-                                />
-                              ))}
-                            </XStack>
-                            <AppText variant="caption" muted textAlign="center">
-                              Puoi aggiungerne altri dopo aver completato il
-                              farmaco corrente.
-                            </AppText>
-                          </YStack>
-                        ) : null}
-
-                        {medicationPhase === "scan" ? (
-                          <>
-                            <XStack
-                              width="100%"
-                              alignItems="center"
-                              justifyContent="center"
-                              gap="$2"
-                            >
-                              <BrandIconBadge name="camera" size={40} iconSize={22} />
-                              <AppText variant="title" color="secondary" textAlign="center">
-                                Scansiona la confezione
-                              </AppText>
-                            </XStack>
-                            <AppText variant="body" textAlign="center">
-                              Scatta una foto nitida del codice AIC stampato
-                              sulla scatola.
-                            </AppText>
-
-                            <CoachmarkAnchor
-                              id={AIC_TOUR_ANCHORS.scanButton}
-                              shape="pill"
-                              padding={8}
-                              scrollRef={therapyScrollRef}
-                            >
-                              <PrimaryButton
-                                icon="camera"
-                                loading={isScanning}
-                                disabled={!canScan || isScanning}
-                                onPress={() => void handleScan("camera")}
-                                fullWidth
-                                accessibilityRole="button"
-                                accessibilityLabel="Scansiona codice AIC"
-                                accessibilityHint={
-                                  canScan
-                                    ? "Apre la fotocamera per fotografare il codice AIC"
-                                    : "Completa o salta la guida prima di scansionare"
-                                }
-                              >
-                                {isScanning
-                                  ? "Sto leggendo..."
-                                  : "Scatta foto alla confezione"}
-                              </PrimaryButton>
-                            </CoachmarkAnchor>
-
-                            <AppButton
-                              variant="ghost"
-                              icon="image"
-                              disabled={!canScan || isScanning}
-                              onPress={() => void handleScan("gallery")}
-                              fullWidth
-                            >
-                              Oppure scegli una foto dalla galleria
-                            </AppButton>
-
-                            <CoachmarkAnchor
-                              id={AIC_TOUR_ANCHORS.framingBox}
-                              shape="rect"
-                              radius={16}
-                              padding={8}
-                              scrollRef={therapyScrollRef}
-                            >
-                              <View ref={framingBoxRef} collapsable={false}>
-                                <AppCard variant="brand">
-                                  <YStack width="100%" gap="$3">
-                                    <AppText
-                                      variant="label"
-                                      style={{ textAlign: "center" }}
-                                    >
-                                      Esempio — dove trovare il codice AIC
-                                    </AppText>
-                                    <AicScanExampleImage size="full" />
-                                  </YStack>
-                                </AppCard>
-                              </View>
-                            </CoachmarkAnchor>
-
-                            {scanError ? (
+                        <ProfileSetupChoiceCard
+                          label="Sì, impostiamola"
+                          description="Scansiona le confezioni e imposta i promemoria."
+                          selected={wantsTherapy === true}
+                          onPress={() => {
+                            setWantsTherapy(true);
+                            setErrorMessage("");
+                          }}
+                        />
+                        <ProfileSetupChoiceCard
+                          label="Per ora no"
+                          description="Potrai farlo più tardi da Home o dalla tab Farmaci."
+                          selected={wantsTherapy === false}
+                          onPress={() => {
+                            setWantsTherapy(false);
+                            resetScan();
+                            setConfiguredMedications([]);
+                            setErrorMessage("");
+                          }}
+                        />
+                        {wantsTherapy ? null : (
+                          <YStack width="100%" gap="$3">
+                            {errorMessage ? (
                               <AppText variant="caption" color="error">
-                                {scanError}
+                                {errorMessage}
                               </AppText>
                             ) : null}
+                            <SecondaryButton onPress={goBack} fullWidth>
+                              Indietro
+                            </SecondaryButton>
+                            <PrimaryButton
+                              onPress={handleTherapyContinue}
+                              fullWidth
+                            >
+                              Continua
+                            </PrimaryButton>
+                          </YStack>
+                        )}
+                      </YStack>
+                    </AppCard>
+                  ) : null}
 
+                  {wantsTherapy ? (
+                    <AppCard variant="elevated">
+                      <AppCardContent gap="$4">
+                        <YStack width="100%" gap="$4">
+                          {configuredMedications.length > 0 ? (
+                            <YStack width="100%" gap="$2">
+                              <AppText
+                                variant="title"
+                                color="secondary"
+                                textAlign="center"
+                              >
+                                Farmaci aggiunti ({configuredMedications.length}
+                                )
+                              </AppText>
+                              <XStack
+                                flexWrap="wrap"
+                                gap="$2"
+                                justifyContent="center"
+                              >
+                                {configuredMedications.map((item, index) => (
+                                  <AppChip
+                                    key={`${item.scanFormValues.aic}-${index}`}
+                                    label={item.scanFormValues.nome.trim()}
+                                    style={{ maxWidth: "100%" }}
+                                  />
+                                ))}
+                              </XStack>
+                              <AppText
+                                variant="caption"
+                                muted
+                                textAlign="center"
+                              >
+                                Puoi aggiungerne altri dopo aver completato il
+                                farmaco corrente.
+                              </AppText>
+                            </YStack>
+                          ) : null}
+
+                          {medicationPhase === "scan" ? (
+                            <>
+                              <XStack
+                                width="100%"
+                                alignItems="center"
+                                justifyContent="center"
+                                gap="$2"
+                              >
+                                <BrandIconBadge
+                                  name="camera"
+                                  size={40}
+                                  iconSize={22}
+                                />
+                                <AppText
+                                  variant="title"
+                                  color="secondary"
+                                  textAlign="center"
+                                >
+                                  Scansiona la confezione
+                                </AppText>
+                              </XStack>
+                              <AppText variant="body" textAlign="center">
+                                Scatta una foto nitida del codice AIC stampato
+                                sulla scatola.
+                              </AppText>
+
+                              <CoachmarkAnchor
+                                id={AIC_TOUR_ANCHORS.scanButton}
+                                shape="pill"
+                                padding={8}
+                                scrollRef={therapyScrollRef}
+                              >
+                                <PrimaryButton
+                                  icon="camera"
+                                  loading={isScanning}
+                                  disabled={!canScan || isScanning}
+                                  onPress={() => void handleScan("camera")}
+                                  fullWidth
+                                  accessibilityRole="button"
+                                  accessibilityLabel="Scansiona codice AIC"
+                                  accessibilityHint={
+                                    canScan
+                                      ? "Apre la fotocamera per fotografare il codice AIC"
+                                      : "Completa o salta la guida prima di scansionare"
+                                  }
+                                >
+                                  {isScanning
+                                    ? "Sto leggendo..."
+                                    : "Scatta foto alla confezione"}
+                                </PrimaryButton>
+                              </CoachmarkAnchor>
+
+                              <AppButton
+                                variant="ghost"
+                                icon="image"
+                                disabled={!canScan || isScanning}
+                                onPress={() => void handleScan("gallery")}
+                                fullWidth
+                              >
+                                Oppure scegli una foto dalla galleria
+                              </AppButton>
+
+                              <CoachmarkAnchor
+                                id={AIC_TOUR_ANCHORS.framingBox}
+                                shape="rect"
+                                radius={16}
+                                padding={8}
+                                scrollRef={therapyScrollRef}
+                              >
+                                <View ref={framingBoxRef} collapsable={false}>
+                                  <AppCard variant="brand">
+                                    <YStack width="100%" gap="$3">
+                                      <AppText
+                                        variant="label"
+                                        style={{ textAlign: "center" }}
+                                      >
+                                        Esempio — dove trovare il codice AIC
+                                      </AppText>
+                                      <AicScanExampleImage size="full" />
+                                    </YStack>
+                                  </AppCard>
+                                </View>
+                              </CoachmarkAnchor>
+
+                              {scanError ? (
+                                <AppText variant="caption" color="error">
+                                  {scanError}
+                                </AppText>
+                              ) : null}
+
+                              <CoachmarkAnchor
+                                id={AIC_TOUR_ANCHORS.resultCard}
+                                shape="rect"
+                                radius={16}
+                                padding={10}
+                                scrollRef={therapyScrollRef}
+                              >
+                                <View ref={resultCardRef} collapsable={false}>
+                                  <AppCard>
+                                    <ScannedMedicationForm
+                                      key="scan-form-preview"
+                                      values={THERAPY_FORM_PREVIEW}
+                                      onChange={() => {}}
+                                      disabled
+                                    />
+                                    <AppText
+                                      variant="caption"
+                                      muted
+                                      style={{
+                                        textAlign: "center",
+                                        lineHeight: 20,
+                                      }}
+                                    >
+                                      Anteprima — dopo la scansione potrai
+                                      verificare i dati e impostare orari e
+                                      promemoria.
+                                    </AppText>
+                                  </AppCard>
+                                </View>
+                              </CoachmarkAnchor>
+                            </>
+                          ) : null}
+
+                          {medicationPhase === "verify" && scanFormValues ? (
                             <CoachmarkAnchor
                               id={AIC_TOUR_ANCHORS.resultCard}
                               shape="rect"
@@ -754,167 +812,137 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                               padding={10}
                               scrollRef={therapyScrollRef}
                             >
-                              <View ref={resultCardRef} collapsable={false}>
-                                <AppCard>
-                                  <ScannedMedicationForm
-                                    key="scan-form-preview"
-                                    values={THERAPY_FORM_PREVIEW}
-                                    onChange={() => {}}
-                                    disabled
-                                  />
+                              <YStack width="100%" gap="$4">
+                                <YStack gap="$3" width="100%">
                                   <AppText
-                                    variant="caption"
-                                    muted
-                                    style={{
-                                      textAlign: "center",
-                                      lineHeight: 20,
-                                    }}
+                                    variant="title"
+                                    color="secondary"
+                                    textAlign="center"
                                   >
-                                    Anteprima — dopo la scansione potrai
-                                    verificare i dati e impostare orari e
+                                    Verifica i dati del farmaco
+                                  </AppText>
+                                  <AppText
+                                    variant="body"
+                                    muted
+                                    textAlign="center"
+                                  >
+                                    Controlla che nome, codice AIC e quantità
+                                    siano corretti prima di impostare orari e
                                     promemoria.
                                   </AppText>
-                                </AppCard>
-                              </View>
-                            </CoachmarkAnchor>
-                          </>
-                        ) : null}
 
-                        {medicationPhase === "verify" && scanFormValues ? (
-                          <CoachmarkAnchor
-                            id={AIC_TOUR_ANCHORS.resultCard}
-                            shape="rect"
-                            radius={16}
-                            padding={10}
-                            scrollRef={therapyScrollRef}
-                          >
+                                  <AppCard>
+                                    <ScannedMedicationForm
+                                      key={`scan-form-${scanFormValues.aic}`}
+                                      values={scanFormValues}
+                                      onChange={setScanFormValues}
+                                      disabled={isScanning}
+                                    />
+                                  </AppCard>
+
+                                  <AppCard>
+                                    <MedicationQuantitySection
+                                      values={scanFormValues}
+                                      onChange={setScanFormValues}
+                                      disabled={isScanning}
+                                    />
+                                  </AppCard>
+
+                                  <YStack width="100%" gap="$3">
+                                    <PrimaryButton
+                                      onPress={handleVerifyNext}
+                                      fullWidth
+                                      accessibilityLabel="Passa a orari e promemoria"
+                                    >
+                                      Avanti
+                                    </PrimaryButton>
+                                    <SecondaryButton
+                                      onPress={handleTherapyMedBack}
+                                      fullWidth
+                                    >
+                                      Indietro
+                                    </SecondaryButton>
+                                  </YStack>
+                                </YStack>
+                              </YStack>
+                            </CoachmarkAnchor>
+                          ) : null}
+
+                          {medicationPhase === "schedule" && scanFormValues ? (
                             <YStack width="100%" gap="$4">
                               <YStack gap="$3" width="100%">
-                                <AppText variant="title" color="secondary" textAlign="center">
-                                  Verifica i dati del farmaco
-                                </AppText>
-                                <AppText
-                                  variant="body"
-                                  muted
-                                  textAlign="center"
-                                >
-                                  Controlla che nome, codice AIC e quantità
-                                  siano corretti prima di impostare orari e
-                                  promemoria.
-                                </AppText>
-
+                                <BrandIntroCard
+                                  icon="bell-ring-outline"
+                                  title={scanFormValues.nome.trim()}
+                                  description="Ultimo passo: scegli dosaggio, orari e promemoria per questo farmaco."
+                                />
                                 <AppCard>
-                                  <ScannedMedicationForm
-                                    key={`scan-form-${scanFormValues.aic}`}
-                                    values={scanFormValues}
-                                    onChange={setScanFormValues}
-                                    disabled={isScanning}
-                                  />
-                                </AppCard>
-
-                                <AppCard>
-                                  <MedicationQuantitySection
-                                    values={scanFormValues}
-                                    onChange={setScanFormValues}
-                                    disabled={isScanning}
+                                  <TherapyReminderSettings
+                                    value={reminderSettings}
+                                    onChange={setReminderSettings}
+                                    dose={dose}
+                                    onDoseChange={setDose}
+                                    unitaQuantita={scanFormValues.unitaQuantita}
                                   />
                                 </AppCard>
 
                                 <YStack width="100%" gap="$3">
                                   <PrimaryButton
-                                    onPress={handleVerifyNext}
+                                    icon="check-circle-outline"
+                                    onPress={handleScheduleFinishPlan}
                                     fullWidth
-                                    accessibilityLabel="Passa a orari e promemoria"
                                   >
-                                    Avanti
+                                    Termina piano terapeutico
                                   </PrimaryButton>
                                   <SecondaryButton
+                                    icon="plus"
+                                    onPress={handleScheduleScanAnother}
+                                    fullWidth
+                                  >
+                                    Scansiona un altro farmaco
+                                  </SecondaryButton>
+                                  <AppButton
+                                    variant="ghost"
                                     onPress={handleTherapyMedBack}
                                     fullWidth
                                   >
                                     Indietro
-                                  </SecondaryButton>
+                                  </AppButton>
                                 </YStack>
                               </YStack>
                             </YStack>
-                          </CoachmarkAnchor>
+                          ) : null}
+                        </YStack>
+
+                        {errorMessage ? (
+                          <AppText variant="caption" color="error">
+                            {errorMessage}
+                          </AppText>
                         ) : null}
 
-                        {medicationPhase === "schedule" && scanFormValues ? (
-                          <YStack width="100%" gap="$4">
-                            <YStack gap="$3" width="100%">
-                              <BrandIntroCard
-                                icon="bell-ring-outline"
-                                title={scanFormValues.nome.trim()}
-                                description="Ultimo passo: scegli dosaggio, orari e promemoria per questo farmaco."
-                              />
-                              <AppCard>
-                                <TherapyReminderSettings
-                                  value={reminderSettings}
-                                  onChange={setReminderSettings}
-                                  dose={dose}
-                                  onDoseChange={setDose}
-                                  unitaQuantita={scanFormValues.unitaQuantita}
-                                />
-                              </AppCard>
-
-                              <YStack width="100%" gap="$3">
-                                <PrimaryButton
-                                  icon="check-circle-outline"
-                                  onPress={handleScheduleFinishPlan}
-                                  fullWidth
-                                >
-                                  Termina piano terapeutico
-                                </PrimaryButton>
-                                <SecondaryButton
-                                  icon="plus"
-                                  onPress={handleScheduleScanAnother}
-                                  fullWidth
-                                >
-                                  Scansiona un altro farmaco
-                                </SecondaryButton>
-                                <AppButton
-                                  variant="ghost"
-                                  onPress={handleTherapyMedBack}
-                                  fullWidth
-                                >
-                                  Indietro
-                                </AppButton>
-                              </YStack>
-                            </YStack>
+                        {medicationPhase === "scan" ? (
+                          <YStack width="100%" gap="$3">
+                            <SecondaryButton
+                              onPress={handleTherapyMedBack}
+                              fullWidth
+                            >
+                              Indietro
+                            </SecondaryButton>
+                            {configuredMedications.length > 0 ? (
+                              <PrimaryButton
+                                onPress={handleTherapyContinue}
+                                fullWidth
+                              >
+                                Continua
+                              </PrimaryButton>
+                            ) : null}
                           </YStack>
                         ) : null}
-                      </YStack>
-
-                    {errorMessage ? (
-                      <AppText variant="caption" color="error">
-                        {errorMessage}
-                      </AppText>
-                    ) : null}
-
-                    {medicationPhase === "scan" ? (
-                      <YStack width="100%" gap="$3">
-                        <SecondaryButton
-                          onPress={handleTherapyMedBack}
-                          fullWidth
-                        >
-                          Indietro
-                        </SecondaryButton>
-                        {configuredMedications.length > 0 ? (
-                          <PrimaryButton
-                            onPress={handleTherapyContinue}
-                            fullWidth
-                          >
-                            Continua
-                          </PrimaryButton>
-                        ) : null}
-                      </YStack>
-                    ) : null}
-                    </AppCardContent>
-                  </AppCard>
-                ) : null}
-              </ScrollView>
-            </KeyboardAvoidingView>
+                      </AppCardContent>
+                    </AppCard>
+                  ) : null}
+                </ScrollView>
+              </KeyboardAvoidingView>
             </YStack>
           ) : (
             <ProfileSetupLayout hero={profileHero} scrollable={false}>

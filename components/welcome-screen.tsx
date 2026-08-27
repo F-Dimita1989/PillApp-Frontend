@@ -14,7 +14,7 @@ import { YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { onboardingHeroEmblemLayout } from "@/components/ui/intro-hero-arc";
-import { pillappBrandGradient, pillappColors, pillappLayout } from "@/theme/tokens";
+import { pillappBrandGradient, pillappColors, pillappLayout, pillappShadows } from "@/theme/tokens";
 
 type WelcomeScreenProps = {
   onContinue: () => void;
@@ -229,6 +229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     backgroundColor: pillappColors.surface,
+    ...pillappShadows.sm,
   },
   secondaryButton: {
     minHeight: 48,
@@ -240,6 +241,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.88)",
     backgroundColor: "transparent",
+    ...pillappShadows.sm,
   },
   buttonPressed: {
     opacity: 0.9,

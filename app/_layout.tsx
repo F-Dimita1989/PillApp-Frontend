@@ -1,8 +1,8 @@
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import * as NavigationBar from "expo-navigation-bar";
 import * as SystemUI from "expo-system-ui";
 import { useCallback, useEffect, useState } from "react";
 import { Platform, View } from "react-native";
@@ -11,6 +11,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppEntryFlow } from "@/components/app-entry-flow";
 import { StartupSplash } from "@/components/startup-splash";
+import { AppPatternBackground } from "@/components/ui/app-pattern-background";
 import { AppDataProvider } from "@/features/store/app-data-context";
 import { getHasCompletedAccessSetup } from "@/lib/access-setup/storage";
 import { initializeNotifications } from "@/lib/notifications/setup";
@@ -32,7 +33,9 @@ void initializeNotifications();
 function applyPhoneSystemBars(): void {
   void SystemUI.setBackgroundColorAsync(pillappColors.surface);
   if (Platform.OS !== "android") return;
-  void NavigationBar.setBackgroundColorAsync(pillappColors.surface).catch(() => {});
+  void NavigationBar.setBackgroundColorAsync(pillappColors.surface).catch(
+    () => {},
+  );
   void NavigationBar.setButtonStyleAsync("dark").catch(() => {});
   void NavigationBar.setPositionAsync("relative").catch(() => {});
   void NavigationBar.setVisibilityAsync("visible").catch(() => {});
@@ -43,7 +46,7 @@ const navigationTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: pillappColors.primary,
-    background: pillappColors.background,
+    background: "transparent",
     card: pillappColors.surface,
     text: pillappColors.textPrimary,
     border: pillappColors.border,
@@ -109,16 +112,22 @@ export default function RootLayout() {
         <PillAppCoachmarkProvider>
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
-              <AppEntryFlow
-                hasSeenOnboarding={hasSeenOnboarding}
-                needsAccessSetup={needsAccessSetup}
-                needsSetup={needsSetup}
-                startAtAccessSetup={hasSeenOnboarding && needsAccessSetup}
-                onAccessSetupComplete={handleAccessSetupComplete}
-                onProfileSetupComplete={() => setNeedsSetup(false)}
-                onSkipProfileSetup={handleSkipProfileSetup}
+              <AppPatternBackground>
+                <AppEntryFlow
+                  hasSeenOnboarding={hasSeenOnboarding}
+                  needsAccessSetup={needsAccessSetup}
+                  needsSetup={needsSetup}
+                  startAtAccessSetup={hasSeenOnboarding && needsAccessSetup}
+                  onAccessSetupComplete={handleAccessSetupComplete}
+                  onProfileSetupComplete={() => setNeedsSetup(false)}
+                  onSkipProfileSetup={handleSkipProfileSetup}
+                />
+              </AppPatternBackground>
+              <StatusBar
+                style="dark"
+                backgroundColor="#FFFFFF"
+                translucent={false}
               />
-              <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
             </ThemeProvider>
           </SafeAreaProvider>
         </PillAppCoachmarkProvider>
@@ -132,8 +141,9 @@ export default function RootLayout() {
         <PillAppCoachmarkProvider>
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
+              <AppPatternBackground>
               <View
-                style={{ flex: 1, backgroundColor: pillappColors.background }}
+                style={{ flex: 1, backgroundColor: "transparent" }}
               >
                 <Stack
                   screenOptions={{
@@ -146,7 +156,12 @@ export default function RootLayout() {
                   />
                 </Stack>
               </View>
-              <StatusBar style="dark" backgroundColor="#FFFFFF" translucent={false} />
+              </AppPatternBackground>
+              <StatusBar
+                style="dark"
+                backgroundColor="#FFFFFF"
+                translucent={false}
+              />
             </ThemeProvider>
           </SafeAreaProvider>
         </PillAppCoachmarkProvider>

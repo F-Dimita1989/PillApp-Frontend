@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ActivityIndicator, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, View, useWindowDimensions } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { BrandIconBadge, SecondaryButton } from "@/components/ui";
@@ -31,6 +31,13 @@ function permissionStatusLabel(status: AppPermissionState["status"]): string {
       return "—";
   }
 }
+
+const TEXT_SIZES = {
+  title: { fontSize: 19, lineHeight: 26 },
+  body: { fontSize: 15, lineHeight: 22 },
+  label: { fontSize: 13, lineHeight: 18 },
+  caption: { fontSize: 12, lineHeight: 16 },
+} as const;
 
 function permissionStatusColor(status: AppPermissionState["status"]): string {
   switch (status) {
@@ -74,22 +81,69 @@ export function AccessSetupSlideView({
         gap={dense ? "$2" : compact ? "$2.5" : "$3"}
         accessibilityRole="summary"
       >
-        <YStack width="100%" gap={dense ? "$1.5" : "$2"}>
-          <AppText variant="title" color="secondary" textAlign="center">
-            {slide.title}
-          </AppText>
-          <AppText
-            variant={dense ? "label" : "body"}
-            color="primary"
-            textAlign="center"
-            lineHeight={dense ? 18 : undefined}
-          >
-            {slide.subtitle}
-          </AppText>
-        </YStack>
+        {slide.id === "privacy" ? (
+          <YStack gap={dense ? "$2" : "$3"} width="100%">
+            <YStack alignItems="center" gap={dense ? "$1.5" : "$2"} width="100%">
+              <AppText
+                variant="title"
+                color="secondary"
+                textAlign="center"
+                {...TEXT_SIZES.title}
+              >
+                {slide.title}
+              </AppText>
+              <AppText
+                variant={dense ? "label" : "body"}
+                color="primary"
+                textAlign="center"
+                {...(dense ? TEXT_SIZES.label : TEXT_SIZES.body)}
+              >
+                {slide.subtitle}
+              </AppText>
+              <AppText
+                variant={dense ? "label" : "body"}
+                color="primary"
+                textAlign="center"
+                {...(dense ? TEXT_SIZES.label : TEXT_SIZES.body)}
+              >
+                • Niente email o password{"\n"}• Dati solo sul telefono{"\n"}•
+                Niente server esterni{"\n"}• Scansioni solo in app
+              </AppText>
+            </YStack>
+
+            <SecondaryButton
+              size="md"
+              icon="file-document-outline"
+              fullWidth
+              onPress={onOpenTerms}
+              accessibilityLabel="Leggi condizioni e termini"
+            >
+              Leggi condizioni e termini
+            </SecondaryButton>
+          </YStack>
+        ) : null}
 
         {slide.id === "permissions" ? (
           <YStack gap={dense ? "$1.5" : "$2"} width="100%">
+            <YStack width="100%" gap="$1" alignItems="center">
+              <AppText
+                variant="title"
+                color="secondary"
+                textAlign="center"
+                {...TEXT_SIZES.title}
+              >
+                {slide.title}
+              </AppText>
+              <AppText
+                variant={dense ? "label" : "body"}
+                color="primary"
+                textAlign="center"
+                {...(dense ? TEXT_SIZES.label : TEXT_SIZES.body)}
+              >
+                {slide.subtitle}
+              </AppText>
+            </YStack>
+
             {isLoadingPermissions ? (
               <YStack alignItems="center" paddingVertical="$1">
                 <ActivityIndicator color={pillappColors.secondary} />
@@ -106,13 +160,24 @@ export function AccessSetupSlideView({
                       size={iconSize}
                       iconSize={dense ? 16 : 18}
                     />
-                    <XStack flex={1} justifyContent="space-between" alignItems="center" gap="$2">
-                      <AppText variant="label" color="secondary" fontWeight="600">
+                    <XStack
+                      flex={1}
+                      justifyContent="space-between"
+                      alignItems="center"
+                      gap="$2"
+                    >
+                      <AppText
+                        variant="label"
+                        color="secondary"
+                        fontWeight="600"
+                        {...TEXT_SIZES.label}
+                      >
                         {copy.title}
                       </AppText>
                       <AppText
                         variant="caption"
                         style={{ color: permissionStatusColor(entry.status) }}
+                        {...TEXT_SIZES.caption}
                       >
                         {permissionStatusLabel(entry.status)}
                       </AppText>
@@ -123,42 +188,17 @@ export function AccessSetupSlideView({
             )}
 
             {hasRequestedPermissions && !permissionsGranted ? (
-              <AppText variant="caption" color="primary" textAlign="center" opacity={0.85}>
+              <AppText
+                variant="caption"
+                color="primary"
+                textAlign="center"
+                opacity={0.85}
+                {...TEXT_SIZES.caption}
+              >
                 Alcuni accessi sono negati: riprova o apri le impostazioni.
               </AppText>
             ) : null}
           </YStack>
-        ) : null}
-
-        {slide.id === "privacy" ? (
-          <ScrollView
-            style={{ flex: 1, width: "100%" }}
-            contentContainerStyle={{ paddingBottom: 8 }}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-          >
-            <YStack gap={dense ? "$2" : "$3"} width="100%">
-              <AppText
-                variant={dense ? "label" : "body"}
-                color="primary"
-                textAlign="center"
-                lineHeight={dense ? 18 : 22}
-              >
-                • Niente email o password{"\n"}• Dati solo sul telefono{"\n"}• Niente
-                server esterni{"\n"}• Scansioni solo in app
-              </AppText>
-
-              <SecondaryButton
-                size="md"
-                icon="file-document-outline"
-                fullWidth
-                onPress={onOpenTerms}
-                accessibilityLabel="Leggi condizioni e termini"
-              >
-                Leggi condizioni e termini
-              </SecondaryButton>
-            </YStack>
-          </ScrollView>
         ) : null}
       </YStack>
     </View>

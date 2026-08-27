@@ -109,18 +109,18 @@ export const HealthcareCard = styled(FullWidthStack, {
         backgroundColor: "$surface",
         borderWidth: 1,
         borderColor: "$border",
-        ...pillappShadows.none,
+        ...pillappShadows.md,
       },
       muted: {
         backgroundColor: "$surfaceMuted",
         borderWidth: 0,
-        ...pillappShadows.none,
+        ...pillappShadows.md,
       },
       highlight: {
         backgroundColor: "$secondarySoft",
         borderWidth: 1,
         borderColor: "$secondary",
-        ...pillappShadows.sm,
+        ...pillappShadows.md,
       },
     },
     pressable: {
@@ -147,7 +147,7 @@ export const HealthcareButtonFrame = styled(XStack, {
   flexShrink: 0,
   gap: "$2",
   borderRadius: "$pill",
-  overflow: "hidden",
+  ...pillappShadows.sm,
   pressStyle: {
     opacity: 0.92,
     scale: 0.98,
