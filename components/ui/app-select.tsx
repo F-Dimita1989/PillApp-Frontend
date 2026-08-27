@@ -63,6 +63,7 @@ export function AppSelect({
           if (speechEnabled) {
             speakAppText(
               [label, selected?.label ?? placeholder].filter(Boolean).join(". "),
+              { force: true },
             );
           }
         }}
@@ -85,6 +86,7 @@ export function AppSelect({
             muted={!selected}
             style={styles.triggerText}
             numberOfLines={1}
+            speakOnPress={false}
           >
             {selected?.label ?? placeholder}
           </AppText>
@@ -119,7 +121,7 @@ export function AppSelect({
                   <Pressable
                     onPress={() => {
                       onValueChange(item.value);
-                      if (speechEnabled) speakAppText(item.label);
+                      if (speechEnabled) speakAppText(item.label, { force: true });
                       setOpen(false);
                     }}
                     style={({ pressed }) => [
@@ -136,11 +138,12 @@ export function AppSelect({
                         variant="body"
                         color={isSelected ? "secondary" : undefined}
                         fontWeight={isSelected ? "700" : undefined}
+                        speakOnPress={false}
                       >
                         {item.label}
                       </AppText>
                       {item.description ? (
-                        <AppText variant="caption" muted>
+                        <AppText variant="caption" muted speakOnPress={false}>
                           {item.description}
                         </AppText>
                       ) : null}

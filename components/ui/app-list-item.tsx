@@ -45,9 +45,11 @@ export function AppListItem({
         <BrandIconBadge name={icon} size={40} iconSize={20} radius={12} />
       ) : null}
       <YStack flex={1} gap="$1">
-        <AppText variant="bodyStrong">{title}</AppText>
+        <AppText variant="bodyStrong" speakOnPress={!onPress}>
+          {title}
+        </AppText>
         {description ? (
-          <AppText variant="caption" muted>
+          <AppText variant="caption" muted speakOnPress={!onPress}>
             {description}
           </AppText>
         ) : null}
@@ -65,7 +67,9 @@ export function AppListItem({
       onPress={() => {
         void playAppHaptic(hapticsEnabled);
         if (speechEnabled) {
-          speakAppText([title, description].filter(Boolean).join(". "));
+          speakAppText([title, description].filter(Boolean).join(". "), {
+            force: true,
+          });
         }
         onPress();
       }}

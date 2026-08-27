@@ -270,7 +270,7 @@ export function ProfileScreen() {
             />
             <AppListItem
               title="Lettura vocale"
-              description="Legge titoli e pulsanti. Tieni premuto un testo per ascoltarlo."
+              description="Tocca un testo o un pulsante per ascoltarlo."
               icon="volume-high"
               trailing={
                 <AppSwitch
@@ -280,7 +280,7 @@ export function ProfileScreen() {
                     updateProfile({ speechEnabled });
                     if (speechEnabled) {
                       speakAppText(
-                        "Lettura vocale attiva. All'apertura di una schermata leggerò il titolo. Tieni premuto un testo per ascoltarlo.",
+                        "Lettura vocale attiva. All'apertura di una schermata leggerò il titolo. Tocca un testo per ascoltarlo.",
                         { force: true },
                       );
                     } else {
@@ -298,7 +298,8 @@ export function ProfileScreen() {
                   fullWidth
                   onPress={() =>
                     speakAppText(
-                      "Questa è una prova di lettura vocale. Tieni premuto qualsiasi testo nell'app per ascoltarlo di nuovo.",
+                      "Questa è una prova di lettura vocale. Tocca qualsiasi testo nell'app per ascoltarlo di nuovo.",
+                      { force: true },
                     )
                   }
                 >

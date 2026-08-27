@@ -35,19 +35,19 @@ export function MedicationCard({
         <XStack width="100%" alignItems="center" gap="$3">
           <BrandIconBadge name="pill" size={48} iconSize={24} radius={16} />
           <YStack flex={1} gap="$1.5" minWidth={0}>
-            <AppText variant="bodyStrong" numberOfLines={2}>
+            <AppText variant="bodyStrong" numberOfLines={2} speakOnPress={!onPress}>
               {name}
             </AppText>
-            <AppText variant="body" muted>
+            <AppText variant="body" muted speakOnPress={!onPress}>
               {dose} · {formLabel}
             </AppText>
             {nextTime ? (
-              <AppText variant="overline" color="secondary">
+              <AppText variant="overline" color="secondary" speakOnPress={!onPress}>
                 Prossima dose · {nextTime}
               </AppText>
             ) : null}
             {aic ? (
-              <AppText variant="caption" muted>
+              <AppText variant="caption" muted speakOnPress={!onPress}>
                 AIC {aic}
               </AppText>
             ) : null}
@@ -76,6 +76,7 @@ export function MedicationCard({
             [name, dose, formLabel, nextTime ? `Prossima dose ${nextTime}` : ""]
               .filter(Boolean)
               .join(". "),
+            { force: true },
           );
         }
         onPress();

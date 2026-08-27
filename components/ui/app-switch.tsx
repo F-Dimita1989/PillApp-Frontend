@@ -31,7 +31,9 @@ export function AppSwitch({
         void playAppHaptic(hapticsEnabled, next ? "success" : "light");
         const name = String(rest.accessibilityLabel ?? label ?? "").trim();
         if (speechEnabled && name) {
-          speakAppText(`${name} ${next ? "attivata" : "disattivata"}`);
+          speakAppText(`${name} ${next ? "attivata" : "disattivata"}`, {
+            force: true,
+          });
         }
         onValueChange?.(next);
       }}

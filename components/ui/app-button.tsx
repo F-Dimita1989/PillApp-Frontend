@@ -168,7 +168,7 @@ export function AppButton({
   const handlePress = () => {
     if (isDisabled) return;
     void playAppHaptic(hapticsEnabled, variant === "danger" ? "warning" : "light");
-    if (speechEnabled && label) speakAppText(label);
+    if (speechEnabled && label) speakAppText(label, { force: true });
     onPress?.();
   };
 

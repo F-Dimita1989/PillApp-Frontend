@@ -77,6 +77,7 @@ export function AppChip({
         muted={!onBrand && !selected}
         flexShrink={0}
         textAlign="center"
+        speakOnPress={!onPress}
       >
         {label}
       </AppText>

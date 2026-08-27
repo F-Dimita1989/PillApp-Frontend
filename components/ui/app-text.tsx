@@ -1,9 +1,14 @@
 import type { ReactNode } from "react";
+import type { GestureResponderEvent } from "react-native";
 import type { GetProps } from "tamagui";
 
 import { useCardSurface } from "@/components/ui/card-surface";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { scaleFontSize } from "@/lib/accessibility/prefs";
+import {
+  childrenToSpeakableText,
+  speakAppText,
+} from "@/lib/accessibility/speech";
 import { HealthcareText } from "@/theme/tamagui-primitives";
 
 export type AppTextVariant =
@@ -34,6 +39,8 @@ type AppTextProps = Omit<HealthcareTextProps, "variant" | "tone"> & {
   muted?: boolean;
   color?: "primary" | "secondary" | "success" | "error" | "inverse";
   children: ReactNode;
+  /** Se false, il tap non legge (es. testo dentro un pulsante o una riga già parlante). */
+  speakOnPress?: boolean;
 };
 
 export function AppText({
@@ -42,13 +49,15 @@ export function AppText({
   color,
   children,
   opacity,
+  onPress,
   onLongPress,
+  speakOnPress = true,
   fontSize: fontSizeOverride,
   lineHeight: lineHeightOverride,
   ...rest
 }: AppTextProps) {
   const surface = useCardSurface();
-  const { fontScale, highContrast, largeText } = useAccessibility();
+  const { fontScale, highContrast, largeText, speechEnabled } = useAccessibility();
   const onBrand = surface === "brand";
   const resolvedColor = color ?? (onBrand ? "inverse" : undefined);
   const resolvedMuted = onBrand || highContrast ? false : muted;
@@ -59,6 +68,20 @@ export function AppText({
     typeof fontSizeOverride === "number" ? fontSizeOverride : sizes.fontSize;
   const baseLineHeight =
     typeof lineHeightOverride === "number" ? lineHeightOverride : sizes.lineHeight;
+  const readable = childrenToSpeakableText(children);
+  const canSpeak = speechEnabled && speakOnPress && readable.length > 0;
+
+  const speak = () => speakAppText(readable, { force: true });
+
+  const handlePress = (event: GestureResponderEvent) => {
+    if (canSpeak) speak();
+    onPress?.(event);
+  };
+
+  const handleLongPress = (event: GestureResponderEvent) => {
+    if (canSpeak) speak();
+    onLongPress?.(event);
+  };
 
   return (
     <HealthcareText
@@ -80,7 +103,9 @@ export function AppText({
           ? "700"
           : undefined)
       }
-      onLongPress={onLongPress}
+      onPress={canSpeak || onPress ? handlePress : undefined}
+      onLongPress={canSpeak || onLongPress ? handleLongPress : undefined}
+      accessibilityHint={canSpeak ? "Tocca per ascoltare" : rest.accessibilityHint}
     >
       {children}
     </HealthcareText>

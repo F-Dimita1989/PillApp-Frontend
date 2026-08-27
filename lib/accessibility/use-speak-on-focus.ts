@@ -17,7 +17,7 @@ export function useSpeakOnFocus(text: string): void {
       if (!enabledRef.current) return;
       const toSpeak = textRef.current.replace(/\s+/g, " ").trim();
       if (!toSpeak) return;
-      speakAppText(toSpeak);
+      speakAppText(toSpeak, { force: true });
     }, []),
   );
 }

@@ -67,6 +67,7 @@ export function AppMultiSelect({
         const selected = next.includes(value);
         speakAppText(
           `${option?.label ?? value} ${selected ? "selezionato" : "deselezionato"}`,
+          { force: true },
         );
       }
       return next;
@@ -86,7 +87,9 @@ export function AppMultiSelect({
         onPress={openPicker}
         onLongPress={() => {
           if (speechEnabled) {
-            speakAppText([label, summary].filter(Boolean).join(". "));
+            speakAppText([label, summary].filter(Boolean).join(". "), {
+              force: true,
+            });
           }
         }}
         delayLongPress={400}
@@ -109,6 +112,7 @@ export function AppMultiSelect({
             muted={values.length === 0}
             style={styles.triggerText}
             numberOfLines={2}
+            speakOnPress={false}
           >
             {summary}
           </AppText>
@@ -161,6 +165,7 @@ export function AppMultiSelect({
                         color={isSelected ? "secondary" : undefined}
                         fontWeight={isSelected ? "700" : undefined}
                         style={styles.optionLabel}
+                        speakOnPress={false}
                       >
                         {item.label}
                       </AppText>

@@ -54,7 +54,7 @@ export function AppSegmentedControl({
             key={option.value}
             disabled={option.disabled}
             onPress={() => {
-              if (speechEnabled) speakAppText(option.label);
+              if (speechEnabled) speakAppText(option.label, { force: true });
               onValueChange(option.value);
             }}
             style={styles.segment}
@@ -96,6 +96,7 @@ export function AppSegmentedControl({
                 muted={!selected && !onBrand}
                 textAlign="center"
                 numberOfLines={1}
+                speakOnPress={false}
               >
                 {option.label}
               </AppText>
