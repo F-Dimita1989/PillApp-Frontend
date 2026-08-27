@@ -5,7 +5,6 @@ export {
   getOnboardingHeroZoneHeight,
   introHeroEmblemLayout,
   onboardingHeroEmblemLayout,
-  onboardingIntroArcHeight,
   onboardingIntroHeroLayout,
   appScreenHeroLayout,
 } from "@/components/ui/intro-hero-arc";

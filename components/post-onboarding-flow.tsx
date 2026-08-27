@@ -405,12 +405,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
     goBack();
   };
 
-  const removeConfiguredMedication = (index: number) => {
-    setConfiguredMedications((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index),
-    );
-  };
-
   const handleScan = async (source: "camera" | "gallery") => {
     setIsScanning(true);
     setScanError("");
@@ -660,10 +654,6 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                 <AppChip
                                   key={`${item.scanFormValues.aic}-${index}`}
                                   label={item.scanFormValues.nome.trim()}
-                                  icon="pill"
-                                  onClose={() =>
-                                    removeConfiguredMedication(index)
-                                  }
                                   style={{ maxWidth: "100%" }}
                                 />
                               ))}

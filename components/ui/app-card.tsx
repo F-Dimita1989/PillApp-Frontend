@@ -25,7 +25,7 @@ export function AppCard({
   pressable,
   ...rest
 }: AppCardProps) {
-  const { highContrast } = useAccessibility();
+  const { highContrast, reduceMotion } = useAccessibility();
 
   if (isBrandVariant(variant)) {
     return (
@@ -54,7 +54,10 @@ export function AppCard({
         variant={lightVariant}
         pressable={pressable}
         {...(highContrast
-          ? { borderWidth: 2, borderColor: "$textPrimary" }
+          ? { borderWidth: 2.5, borderColor: "$textPrimary" }
+          : {})}
+        {...(reduceMotion && pressable
+          ? { pressStyle: { opacity: 1, scale: 1 } }
           : {})}
         {...rest}
         padding={0}

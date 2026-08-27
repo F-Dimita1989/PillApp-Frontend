@@ -5,6 +5,7 @@ import { AppText } from "@/components/ui/app-text";
 import { useCardSurface } from "@/components/ui/card-surface";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { playAppHaptic } from "@/lib/accessibility/haptics";
+import { speakAppText } from "@/lib/accessibility/speech";
 import { pillappColors } from "@/theme/tokens";
 
 type AppSwitchProps = SwitchProps & {
@@ -22,15 +23,19 @@ export function AppSwitch({
   ...rest
 }: AppSwitchProps) {
   const onBrand = useCardSurface() === "brand";
-  const { easyTap, hapticsEnabled } = useAccessibility();
+  const { easyTap, hapticsEnabled, speechEnabled } = useAccessibility();
   const switchControl = (
     <Switch
       value={value}
       onValueChange={(next) => {
         void playAppHaptic(hapticsEnabled, next ? "success" : "light");
+        const name = String(rest.accessibilityLabel ?? label ?? "").trim();
+        if (speechEnabled && name) {
+          speakAppText(`${name} ${next ? "attivata" : "disattivata"}`);
+        }
         onValueChange?.(next);
       }}
-      style={easyTap ? { transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] } : undefined}
+      style={easyTap ? { transform: [{ scaleX: 1.28 }, { scaleY: 1.28 }] } : undefined}
       trackColor={{
         false: onBrand ? "rgba(255,255,255,0.35)" : pillappColors.border,
         true: onBrand ? "rgba(255,255,255,0.55)" : pillappColors.secondary,

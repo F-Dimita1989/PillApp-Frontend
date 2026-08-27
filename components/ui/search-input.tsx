@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Platform } from "react-native";
 import { Input, XStack, type InputProps } from "tamagui";
 
+import { useAccessibility } from "@/lib/accessibility/context";
+import { scaleFontSize } from "@/lib/accessibility/prefs";
 import { pillappColors } from "@/theme/tokens";
 
 type SearchInputProps = Omit<InputProps, "value" | "onChangeText"> & {
@@ -19,22 +21,26 @@ export function SearchInput({
   ...rest
 }: SearchInputProps) {
   const showClear = value.length > 0;
+  const { easyTap, fontScale, highContrast, largeText, reduceMotion } = useAccessibility();
+  const fieldHeight = easyTap ? 60 : 52;
+  const inputFont = largeText ? scaleFontSize(16, fontScale) : 16;
 
   return (
     <XStack
       width="100%"
       alignItems="center"
       backgroundColor="rgba(255,255,255,0.94)"
-      borderWidth={1.5}
-      borderColor="rgba(42, 171, 160, 0.35)"
+      borderWidth={highContrast ? 2 : 1.5}
+      borderColor={highContrast ? pillappColors.textPrimary : "rgba(42, 171, 160, 0.35)"}
       borderRadius="$3"
       paddingLeft="$4"
       paddingRight="$2"
-      height={52}
+      height={fieldHeight}
+      minHeight={fieldHeight}
       gap="$2"
       focusStyle={{
         borderColor: "$secondary",
-        borderWidth: 1.5,
+        borderWidth: 2,
       }}
     >
       <MaterialCommunityIcons
@@ -52,9 +58,9 @@ export function SearchInput({
         placeholder={placeholder}
         placeholderTextColor="$textMuted"
         color="$textPrimary"
-        fontSize={16}
-        lineHeight={22}
-        height={50}
+        fontSize={inputFont}
+        lineHeight={largeText ? scaleFontSize(22, fontScale) : 22}
+        height={fieldHeight - 2}
         paddingVertical={Platform.OS === "android" ? 14 : 12}
         backgroundColor="transparent"
         borderWidth={0}
@@ -71,7 +77,7 @@ export function SearchInput({
           accessibilityRole="button"
           accessibilityLabel="Cancella ricerca"
           padding="$2"
-          pressStyle={{ opacity: 0.6 }}
+          pressStyle={reduceMotion ? undefined : { opacity: 0.6 }}
         >
           <MaterialCommunityIcons
             name="close-circle"

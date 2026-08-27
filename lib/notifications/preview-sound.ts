@@ -7,6 +7,8 @@ import {
   getNotificationSoundPayload,
 } from "@/lib/notifications/setup";
 
+const PREVIEW_NOTIFICATION_ID = "pillapp-sound-preview";
+
 export async function previewReminderSound(
   soundId: string,
   playSound: boolean,
@@ -16,10 +18,18 @@ export async function previewReminderSound(
     throw new Error("Permesso notifiche non concesso. Attivalo dalle impostazioni del telefono.");
   }
 
+  await Notifications.cancelScheduledNotificationAsync(PREVIEW_NOTIFICATION_ID).catch(
+    () => undefined,
+  );
+  await Notifications.dismissNotificationAsync(PREVIEW_NOTIFICATION_ID).catch(
+    () => undefined,
+  );
+
   const option = getTherapyReminderSound(soundId);
   const sound = getNotificationSoundPayload(soundId, playSound);
 
   await Notifications.scheduleNotificationAsync({
+    identifier: PREVIEW_NOTIFICATION_ID,
     content: {
       title: playSound ? "Prova suoneria PillApp" : "Prova promemoria silenzioso",
       body: playSound
@@ -28,8 +38,6 @@ export async function previewReminderSound(
       sound: sound ?? undefined,
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 1,
       channelId: getNotificationChannelId(soundId, playSound),
     },
   });

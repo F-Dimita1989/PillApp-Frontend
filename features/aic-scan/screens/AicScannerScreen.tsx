@@ -25,6 +25,8 @@ import {
   SectionHeader,
   SuccessState,
 } from "@/components/ui";
+import { DEFAULT_NOTIFICATION_LEAD_ID } from "@/constants/therapy-notification-lead";
+import { DEFAULT_NOTIFICATION_REPEAT_ID } from "@/constants/therapy-notification-repeat";
 import { AppRoutes } from "@/features/navigation/routes";
 import { useAppData } from "@/features/store/app-data-context";
 import {
@@ -99,16 +101,18 @@ export function AicScannerScreen() {
       form: mapUnitaToMedicationForm(values.unitaQuantita),
       dose: doseValue.trim() || "1 dose",
       notes: formatScannedMedicationNotes(values) || undefined,
-      quantityRemaining: values.quantita.trim() || undefined,
-      quantityUnit: values.unitaQuantita,
-      schedule: {
-        times: ["08:00"],
-        daysActive: [true, true, true, true, true, true, true],
-      },
-      active: true,
-      createdAt: new Date().toISOString(),
-      source,
-    };
+    quantityRemaining: values.quantita.trim() || undefined,
+    quantityUnit: values.unitaQuantita,
+    schedule: {
+      times: ["08:00"],
+      daysActive: [true, true, true, true, true, true, true],
+    },
+    active: true,
+    createdAt: new Date().toISOString(),
+    source,
+    notificationLeadId: DEFAULT_NOTIFICATION_LEAD_ID,
+    notificationRepeatId: DEFAULT_NOTIFICATION_REPEAT_ID,
+  };
 
     addMedication(medication);
     setSavedName(medication.name);

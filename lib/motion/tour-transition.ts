@@ -1,7 +1,6 @@
 import { Easing } from "react-native-reanimated";
 
 /** Motion della guida AIC: overlay, tooltip, spotlight e intro. */
-export const TOUR_HOLE_MS = 400;
 export const TOUR_OVERLAY_MS = 320;
 export const TOUR_TOOLTIP_MS = 300;
 export const TOUR_INTRO_MS = 320;

@@ -7,11 +7,14 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { Label, YStack } from "tamagui";
+import { YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
-import { CardSurfaceProvider, useCardSurface } from "@/components/ui/card-surface";
+import { CardSurfaceProvider } from "@/components/ui/card-surface";
+import { SoundPreviewButton } from "@/components/ui/sound-preview-button";
 import { layout, spacing } from "@/constants/spacing";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { speakAppText } from "@/lib/accessibility/speech";
 import { pillappColors } from "@/theme/tokens";
 
 export type SelectOption = {
@@ -28,6 +31,9 @@ type AppSelectProps = {
   placeholder?: string;
   disabled?: boolean;
   accessibilityLabel?: string;
+  /** Play/preview control on each option (e.g. notification sounds). */
+  onPreviewOption?: (value: string) => void;
+  previewingOption?: string | null;
 };
 
 export function AppSelect({
@@ -38,34 +44,37 @@ export function AppSelect({
   placeholder = "Seleziona…",
   disabled = false,
   accessibilityLabel,
+  onPreviewOption,
+  previewingOption,
 }: AppSelectProps) {
   const [open, setOpen] = useState(false);
-  const onBrand = useCardSurface() === "brand";
+  const { easyTap, highContrast, reduceMotion, speechEnabled } = useAccessibility();
   const selected = options.find((option) => option.value === value);
 
   return (
     <YStack width="100%" gap="$2" flexShrink={0}>
-      {label ? (
-        <Label
-          color={onBrand ? pillappColors.onPrimary : "$textPrimary"}
-          fontSize={14}
-          fontWeight="600"
-          lineHeight={20}
-        >
-          {label}
-        </Label>
-      ) : null}
+      {label ? <AppText variant="label">{label}</AppText> : null}
 
       <Pressable
         onPress={() => {
           if (!disabled) setOpen(true);
         }}
+        onLongPress={() => {
+          if (speechEnabled) {
+            speakAppText(
+              [label, selected?.label ?? placeholder].filter(Boolean).join(". "),
+            );
+          }
+        }}
+        delayLongPress={400}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label ?? "Menu a tendina"}
         accessibilityState={{ disabled, expanded: open }}
         style={({ pressed }) => [
           styles.trigger,
+          easyTap && styles.triggerEasyTap,
+          highContrast && styles.triggerHighContrast,
           disabled && styles.triggerDisabled,
           pressed && !disabled && styles.triggerPressed,
         ]}
@@ -90,7 +99,7 @@ export function AppSelect({
       <Modal
         visible={open}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? "none" : "fade"}
         onRequestClose={() => setOpen(false)}
       >
         <CardSurfaceProvider surface="light">
@@ -110,10 +119,12 @@ export function AppSelect({
                   <Pressable
                     onPress={() => {
                       onValueChange(item.value);
+                      if (speechEnabled) speakAppText(item.label);
                       setOpen(false);
                     }}
                     style={({ pressed }) => [
                       styles.option,
+                      easyTap && styles.optionEasyTap,
                       isSelected && styles.optionSelected,
                       pressed && styles.optionPressed,
                     ]}
@@ -134,6 +145,15 @@ export function AppSelect({
                         </AppText>
                       ) : null}
                     </View>
+                    {onPreviewOption ? (
+                      <View onStartShouldSetResponder={() => true}>
+                        <SoundPreviewButton
+                          loading={previewingOption === item.value}
+                          onPress={() => onPreviewOption(item.value)}
+                          accessibilityLabel={`Prova ${item.label}`}
+                        />
+                      </View>
+                    ) : null}
                     {isSelected ? (
                       <MaterialCommunityIcons
                         name="check"
@@ -165,6 +185,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.sm,
+  },
+  triggerEasyTap: {
+    minHeight: 60,
+  },
+  triggerHighContrast: {
+    borderWidth: 2,
+    borderColor: pillappColors.textPrimary,
   },
   triggerDisabled: {
     opacity: 0.55,
@@ -208,6 +235,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: 12,
+  },
+  optionEasyTap: {
+    minHeight: 56,
   },
   optionSelected: {
     backgroundColor: pillappColors.secondarySoft,

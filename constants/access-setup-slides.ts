@@ -8,14 +8,6 @@ export const accessSetupEmblemSize = 184;
 
 export const accessSetupSlides: OnboardingSlide[] = [
   {
-    id: "permissions",
-    title: "Accessi necessari",
-    subtitle: "Consenti questi permessi per usare PillApp al meglio.",
-    icon: "cellphone-check",
-    iconColor: pillappColors.primary,
-    cardBackground: pillappColors.primarySoft,
-  },
-  {
     id: "privacy",
     title: "La tua privacy, spiegata semplice",
     subtitle: "Tranquillità e rispetto dei tuoi dati personali.",
@@ -24,5 +16,13 @@ export const accessSetupSlides: OnboardingSlide[] = [
     cardBackground: pillappColors.secondarySoft,
     image: require("@/assets/onboarding/privacy-policy.png"),
     imageCoverScale: 1.22,
+  },
+  {
+    id: "permissions",
+    title: "Accessi necessari",
+    subtitle: "Consenti questi permessi per usare PillApp al meglio.",
+    icon: "cellphone-check",
+    iconColor: pillappColors.primary,
+    cardBackground: pillappColors.primarySoft,
   },
 ];

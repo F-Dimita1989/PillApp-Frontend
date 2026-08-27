@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Pressable } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { AppButton } from "@/components/ui/app-button";
@@ -7,6 +8,8 @@ import { AppCard, AppCardContent } from "@/components/ui/app-card";
 import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import { AppText } from "@/components/ui/app-text";
 import { pillappBrandGradient, pillappColors } from "@/theme/tokens";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { speakAppText } from "@/lib/accessibility/speech";
 
 type MedicationCardProps = {
   name: string;
@@ -25,8 +28,9 @@ export function MedicationCard({
   aic,
   onPress,
 }: MedicationCardProps) {
+  const { reduceMotion, speechEnabled } = useAccessibility();
   const content = (
-    <AppCard variant="elevated" pressable={Boolean(onPress)}>
+    <AppCard variant="elevated">
       <AppCardContent>
         <XStack width="100%" alignItems="center" gap="$3">
           <BrandIconBadge name="pill" size={48} iconSize={24} radius={16} />
@@ -65,14 +69,25 @@ export function MedicationCard({
   }
 
   return (
-    <YStack
-      onPress={onPress}
+    <Pressable
+      onPress={() => {
+        if (speechEnabled) {
+          speakAppText(
+            [name, dose, formLabel, nextTime ? `Prossima dose ${nextTime}` : ""]
+              .filter(Boolean)
+              .join(". "),
+          );
+        }
+        onPress();
+      }}
       accessibilityRole="button"
       accessibilityLabel={`Dettagli farmaco ${name}`}
-      pressStyle={{ opacity: 0.96 }}
+      style={({ pressed }) => [
+        { width: "100%", opacity: reduceMotion ? 1 : pressed ? 0.92 : 1 },
+      ]}
     >
       {content}
-    </YStack>
+    </Pressable>
   );
 }
 

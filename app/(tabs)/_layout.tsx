@@ -4,11 +4,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { BrandTabBarBackground } from "@/components/ui/brand-tab-bar-background";
+import { useAccessibility } from "@/lib/accessibility/context";
 import { tabBarTheme } from "@/theme/tab-bar";
 import { pillappColors } from "@/theme/tokens";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { easyTap, largeText } = useAccessibility();
+  const contentHeight =
+    easyTap || largeText
+      ? tabBarTheme.comfortableContentHeight
+      : tabBarTheme.contentHeight;
   const tabBarBottomInset = Math.max(insets.bottom, 8);
 
   return (
@@ -20,10 +26,10 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
         tabBarBackground: BrandTabBarBackground,
         tabBarHideOnKeyboard: false,
+        tabBarAllowFontScaling: false,
         tabBarStyle: {
           position: "relative",
-          display: "flex",
-          height: tabBarTheme.height + tabBarBottomInset,
+          height: contentHeight + tabBarBottomInset,
           paddingTop: tabBarTheme.paddingTop,
           paddingBottom: tabBarBottomInset,
           backgroundColor: tabBarTheme.backgroundColor,
@@ -32,7 +38,19 @@ export default function TabLayout() {
           elevation: tabBarTheme.elevation,
           shadowOpacity: tabBarTheme.shadowOpacity,
         },
-        tabBarLabelStyle: tabBarTheme.labelStyle,
+        tabBarItemStyle: {
+          paddingTop: 0,
+          paddingBottom: 0,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
+        },
+        tabBarLabelStyle: {
+          ...tabBarTheme.labelStyle,
+          ...(largeText
+            ? { fontSize: 12, lineHeight: 16 }
+            : {}),
+        },
         sceneStyle: {
           backgroundColor: pillappColors.background,
         },
@@ -42,11 +60,11 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "home" : "home-outline"}
               color={color}
-              size={size ?? 24}
+              size={tabBarTheme.iconSize}
             />
           ),
         }}
@@ -55,8 +73,12 @@ export default function TabLayout() {
         name="medications"
         options={{
           title: "Farmaci",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="pill" color={color} size={size ?? 24} />
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons
+              name="pill"
+              color={color}
+              size={tabBarTheme.iconSize}
+            />
           ),
         }}
       />
@@ -64,11 +86,11 @@ export default function TabLayout() {
         name="scan"
         options={{
           title: "Scansione",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons
-              name={focused ? "barcode-scan" : "barcode-scan"}
+              name="barcode-scan"
               color={color}
-              size={size ?? 24}
+              size={tabBarTheme.iconSize}
             />
           ),
         }}
@@ -77,11 +99,11 @@ export default function TabLayout() {
         name="journal"
         options={{
           title: "Diario",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "notebook" : "notebook-outline"}
               color={color}
-              size={size ?? 24}
+              size={tabBarTheme.iconSize}
             />
           ),
         }}
@@ -90,11 +112,11 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profilo",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "account" : "account-outline"}
               color={color}
-              size={size ?? 24}
+              size={tabBarTheme.iconSize}
             />
           ),
         }}

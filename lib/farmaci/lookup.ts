@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
-import { normalizeFarmacoRecord, pickFarmacoField } from "./normalize-record";
+import { normalizeFarmacoRecord } from "./normalize-record";
 
-export const LAST_SCANNED_FARMACO_KEY = "pillapp:lastScannedFarmaco";
+const LAST_SCANNED_FARMACO_KEY = "pillapp:lastScannedFarmaco";
 
 const FALLBACK_API_URL = "https://pillapp-backend.onrender.com";
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
@@ -38,75 +38,13 @@ function resolveFarmaciApiBase(): string {
   return `${FALLBACK_API_URL}/api/farmaci`;
 }
 
-export function createAicCandidates(aic: string): string[] {
+function createAicCandidates(aic: string): string[] {
   const onlyDigits = aic.replace(/\D/g, "");
   const withoutLeadingZero = onlyDigits.replace(/^0+/, "");
   return [...new Set([onlyDigits, withoutLeadingZero].filter(Boolean))];
 }
 
-export function getFarmacoDisplayName(
-  data: Record<string, unknown> | null,
-): string {
-  if (!data) {
-    return "";
-  }
-
-  const normalized = normalizeFarmacoRecord(data);
-
-  return (
-    pickFarmacoField(
-      normalized,
-      ["nome", "denominazione", "nome_commerciale", "denominazione_e_confezione"],
-      ["nome", "denominazione"],
-    ) || "Farmaco rilevato"
-  );
-}
-
-export function getFarmacoSummaryFields(
-  data: Record<string, unknown>,
-): { label: string; value: string }[] {
-  const priorityKeys = [
-    "codice_aic",
-    "aic",
-    "principio_attivo",
-    "forma",
-    "dosaggio",
-    "titolare",
-  ];
-
-  const rows: { label: string; value: string }[] = [];
-
-  priorityKeys.forEach((key) => {
-    const value = data[key];
-    if (value !== null && value !== undefined && String(value).trim()) {
-      rows.push({ label: key.replace(/_/g, " "), value: String(value) });
-    }
-  });
-
-  if (rows.length >= 4) {
-    return rows.slice(0, 4);
-  }
-
-  Object.entries(data).forEach(([key, value]) => {
-    if (rows.length >= 4) {
-      return;
-    }
-    if (value === null || value === undefined || typeof value === "object") {
-      return;
-    }
-    if (priorityKeys.includes(key)) {
-      return;
-    }
-    const text = String(value).trim();
-    if (text) {
-      rows.push({ label: key.replace(/_/g, " "), value: text });
-    }
-  });
-
-  return rows;
-}
-
-export async function saveLastScannedFarmaco(
+async function saveLastScannedFarmaco(
   aic: string,
   data: Record<string, unknown>,
 ): Promise<void> {

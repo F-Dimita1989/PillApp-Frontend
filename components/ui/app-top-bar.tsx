@@ -6,6 +6,8 @@ import {
   IntroHeroArc,
   appScreenHeroLayout,
 } from "@/components/ui/intro-hero-arc";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { useSpeakOnFocus } from "@/lib/accessibility/use-speak-on-focus";
 import { pillappColors, pillappLayout } from "@/theme/tokens";
 
 type HeroIcon = ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -31,7 +33,11 @@ export function AppTopBar({
   onBack,
   trailing,
 }: AppTopBarProps) {
+  const { easyTap } = useAccessibility();
   const layout = appScreenHeroLayout;
+  const backSize = easyTap ? 52 : 44;
+  const spoken = [eyebrow, title, subtitle].filter(Boolean).join(". ");
+  useSpeakOnFocus(spoken);
 
   return (
     <View style={styles.host}>
@@ -61,12 +67,15 @@ export function AppTopBar({
           accessibilityRole="button"
           accessibilityLabel="Indietro"
           accessibilityHint="Torna alla schermata precedente"
-          hitSlop={8}
-          style={[styles.backButton, { top: 8 }]}
+          hitSlop={easyTap ? 12 : 8}
+          style={[
+            styles.backButton,
+            { top: 8, width: backSize, height: backSize, borderRadius: backSize / 2 },
+          ]}
         >
           <MaterialCommunityIcons
             name="arrow-left"
-            size={24}
+            size={easyTap ? 28 : 24}
             color={pillappColors.onPrimary}
           />
         </Pressable>

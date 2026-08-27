@@ -4,6 +4,8 @@ import { XStack, type XStackProps } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { useCardSurface } from "@/components/ui/card-surface";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { speakAppText } from "@/lib/accessibility/speech";
 import { pillappBrandGradient, pillappRadius } from "@/theme/tokens";
 
 export type SegmentedOption = {
@@ -25,6 +27,7 @@ export function AppSegmentedControl({
   ...rest
 }: AppSegmentedControlProps) {
   const onBrand = useCardSurface() === "brand";
+  const { easyTap, highContrast, speechEnabled } = useAccessibility();
 
   return (
     <XStack
@@ -33,8 +36,14 @@ export function AppSegmentedControl({
       overflow="hidden"
       backgroundColor={onBrand ? "rgba(255,255,255,0.12)" : "$surfaceMuted"}
       borderRadius="$pill"
-      borderWidth={1}
-      borderColor={onBrand ? "rgba(255,255,255,0.4)" : "$border"}
+      borderWidth={highContrast ? 2 : 1}
+      borderColor={
+        highContrast
+          ? "$textPrimary"
+          : onBrand
+            ? "rgba(255,255,255,0.4)"
+            : "$border"
+      }
       padding={4}
       {...rest}
     >
@@ -44,7 +53,10 @@ export function AppSegmentedControl({
           <Pressable
             key={option.value}
             disabled={option.disabled}
-            onPress={() => onValueChange(option.value)}
+            onPress={() => {
+              if (speechEnabled) speakAppText(option.label);
+              onValueChange(option.value);
+            }}
             style={styles.segment}
             accessibilityRole="button"
             accessibilityState={{ selected, disabled: option.disabled }}
@@ -61,7 +73,7 @@ export function AppSegmentedControl({
             ) : null}
             <XStack
               width="100%"
-              height={40}
+              height={easyTap ? 48 : 40}
               alignItems="center"
               justifyContent="center"
               borderRadius="$pill"

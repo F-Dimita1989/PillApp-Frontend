@@ -1,75 +1,9 @@
-import { forwardRef, type ComponentRef, type ReactNode } from "react";
-import { Platform, Pressable, StyleSheet } from "react-native";
-import { Input, Label, XStack, YStack, type InputProps } from "tamagui";
+import type { ReactNode } from "react";
+import { Pressable, StyleSheet } from "react-native";
+import { XStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { pillappColors } from "@/theme/tokens";
-
-const FIELD_HEIGHT = 52;
-
-type ProfileSetupInputProps = InputProps & {
-  label?: string;
-  error?: string;
-  editable?: boolean;
-};
-
-export const ProfileSetupInput = forwardRef<
-  ComponentRef<typeof Input>,
-  ProfileSetupInputProps
->(function ProfileSetupInput(
-  { label, error, editable, disabled, ...rest },
-  ref,
-) {
-  const isDisabled = disabled ?? editable === false;
-
-  return (
-    <YStack width="100%" gap="$2" flexShrink={0}>
-      {label ? (
-        <Label
-          color={pillappColors.onPrimary}
-          fontSize={14}
-          fontWeight="600"
-          lineHeight={20}
-        >
-          {label}
-        </Label>
-      ) : null}
-      <Input
-        ref={ref}
-        width="100%"
-        alignSelf="stretch"
-        flexShrink={0}
-        backgroundColor="rgba(255,255,255,0.94)"
-        borderColor={error ? pillappColors.error : "rgba(255,255,255,0.5)"}
-        borderWidth={1.5}
-        borderRadius="$3"
-        color={pillappColors.textPrimary}
-        fontSize={16}
-        lineHeight={22}
-        height={FIELD_HEIGHT}
-        minHeight={FIELD_HEIGHT}
-        maxHeight={FIELD_HEIGHT}
-        paddingHorizontal="$4"
-        paddingTop={Platform.OS === "android" ? 14 : 12}
-        paddingBottom={Platform.OS === "android" ? 14 : 12}
-        placeholderTextColor="$textMuted"
-        disabled={isDisabled}
-        opacity={isDisabled ? 0.55 : 1}
-        showSoftInputOnFocus
-        focusStyle={{
-          borderColor: pillappColors.surface,
-          borderWidth: 2,
-        }}
-        {...rest}
-      />
-      {error ? (
-        <AppText variant="caption" color="inverse" opacity={0.95}>
-          {error}
-        </AppText>
-      ) : null}
-    </YStack>
-  );
-});
 
 type ProfileSetupButtonProps = {
   children: string;

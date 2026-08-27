@@ -7,6 +7,14 @@ import { formatDateKey } from "@/lib/calendar/week-utils";
 
 const THERAPY_DAY_KEYS = THERAPY_DAYS as readonly TherapyDayKey[];
 
+export function daysActiveToTherapyDayPlan(daysActive: boolean[]): TherapyDayPlan {
+  return THERAPY_DAY_KEYS.reduce((plan, day) => {
+    const weekday = THERAPY_DAY_TO_WEEKDAY[day];
+    plan[day] = Boolean(daysActive[weekday - 1]);
+    return plan;
+  }, {} as TherapyDayPlan);
+}
+
 export function therapyDayPlanToDaysActive(dayPlan: TherapyDayPlan): boolean[] {
   const daysActive = [false, false, false, false, false, false, false];
   for (const day of THERAPY_DAY_KEYS) {
@@ -16,17 +24,6 @@ export function therapyDayPlanToDaysActive(dayPlan: TherapyDayPlan): boolean[] {
     }
   }
   return daysActive;
-}
-
-export function isTherapyDayActiveToday(dayPlan: TherapyDayPlan): boolean {
-  const today = new Date().getDay();
-  const weekday = today + 1;
-  for (const day of THERAPY_DAY_KEYS) {
-    if (THERAPY_DAY_TO_WEEKDAY[day] === weekday && dayPlan[day]) {
-      return true;
-    }
-  }
-  return false;
 }
 
 export function medicationFromTherapyPlan(plan: TherapyPlan): Medication {
@@ -46,6 +43,8 @@ export function medicationFromTherapyPlan(plan: TherapyPlan): Medication {
     active: true,
     createdAt: plan.updatedAt,
     source: plan.aic ? "aic_scan" : "manual",
+    notificationLeadId: plan.notificationLeadId,
+    notificationRepeatId: plan.notificationRepeatId,
   };
 }
 

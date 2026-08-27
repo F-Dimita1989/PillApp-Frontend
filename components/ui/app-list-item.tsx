@@ -7,6 +7,7 @@ import { AppText } from "@/components/ui/app-text";
 import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { playAppHaptic } from "@/lib/accessibility/haptics";
+import { speakAppText } from "@/lib/accessibility/speech";
 
 type AppListItemProps = XStackProps & {
   title: string;
@@ -30,7 +31,7 @@ export function AppListItem({
   accessibilityState,
   ...rest
 }: AppListItemProps) {
-  const { easyTap, hapticsEnabled } = useAccessibility();
+  const { easyTap, hapticsEnabled, speechEnabled } = useAccessibility();
   const content = (
     <XStack
       width="100%"
@@ -63,12 +64,16 @@ export function AppListItem({
     <Pressable
       onPress={() => {
         void playAppHaptic(hapticsEnabled);
+        if (speechEnabled) {
+          speakAppText([title, description].filter(Boolean).join(". "));
+        }
         onPress();
       }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={accessibilityHint}
       accessibilityState={accessibilityState}
+      style={{ width: "100%" }}
     >
       {content}
     </Pressable>

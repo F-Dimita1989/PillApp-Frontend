@@ -4,7 +4,6 @@ import { formatDateKey } from "@/lib/calendar/week-utils";
 import { DEFAULT_PROFILE_AVATAR_ID } from "@/constants/profile-avatars";
 import type {
   DoseEvent,
-  DoseStatus,
   JournalNote,
   MeasurementEntry,
   Medication,
@@ -25,6 +24,7 @@ export type ProfilePrefs = Pick<
   | "reduceMotion"
   | "easyTap"
   | "hapticsEnabled"
+  | "speechEnabled"
   | "scanHintsEnabled"
 >;
 
@@ -47,6 +47,7 @@ export const DEFAULT_PROFILE_PREFS: ProfilePrefs = {
   reduceMotion: false,
   easyTap: false,
   hapticsEnabled: true,
+  speechEnabled: false,
   scanHintsEnabled: true,
 };
 
@@ -99,5 +100,3 @@ export function mergeDoseStatuses(
     };
   });
 }
-
-export type DoseStatusPatch = Pick<DoseEvent, "id" | "status" | "note" | "confirmedAt">;

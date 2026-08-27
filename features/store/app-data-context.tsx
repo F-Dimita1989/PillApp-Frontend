@@ -39,6 +39,7 @@ type AppDataAction =
   | { type: "UPDATE_DOSE_STATUS"; doseId: string; status: DoseStatus; note?: string }
   | { type: "ADD_MEDICATION"; medication: Medication }
   | { type: "UPDATE_MEDICATION"; medication: Medication }
+  | { type: "REMOVE_MEDICATION"; medicationId: string }
   | { type: "ADD_MEASUREMENT"; entry: MeasurementEntry }
   | { type: "ADD_SYMPTOM"; entry: SymptomEntry }
   | { type: "ADD_JOURNAL_NOTE"; entry: JournalNote }
@@ -86,6 +87,11 @@ function appDataReducer(state: AppDataState, action: AppDataAction): AppDataStat
           m.id === action.medication.id ? action.medication : m,
         ),
       );
+    case "REMOVE_MEDICATION":
+      return withRecalculatedDoses(
+        state,
+        state.medications.filter((m) => m.id !== action.medicationId),
+      );
     case "ADD_MEASUREMENT":
       return { ...state, measurements: [action.entry, ...state.measurements] };
     case "ADD_SYMPTOM":
@@ -106,6 +112,7 @@ type AppDataContextValue = AppDataState & {
   snoozeDose: (doseId: string) => void;
   addMedication: (medication: Medication) => void;
   updateMedication: (medication: Medication) => void;
+  removeMedication: (medicationId: string) => void;
   addMeasurement: (entry: MeasurementEntry) => void;
   addSymptom: (entry: SymptomEntry) => void;
   addJournalNote: (entry: JournalNote) => void;
@@ -205,6 +212,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "UPDATE_MEDICATION", medication });
   }, []);
 
+  const removeMedication = useCallback((medicationId: string) => {
+    dispatch({ type: "REMOVE_MEDICATION", medicationId });
+  }, []);
+
   const addMeasurement = useCallback((entry: MeasurementEntry) => {
     dispatch({ type: "ADD_MEASUREMENT", entry });
   }, []);
@@ -257,6 +268,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       snoozeDose,
       addMedication,
       updateMedication,
+      removeMedication,
       addMeasurement,
       addSymptom,
       addJournalNote,
@@ -273,6 +285,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       snoozeDose,
       addMedication,
       updateMedication,
+      removeMedication,
       addMeasurement,
       addSymptom,
       addJournalNote,

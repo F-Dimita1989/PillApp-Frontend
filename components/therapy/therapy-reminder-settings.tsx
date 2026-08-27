@@ -1,6 +1,7 @@
-import { useMemo } from "react";
-import { XStack, YStack } from "tamagui";
+import { useMemo, useState } from "react";
+import { YStack } from "tamagui";
 
+import { SecondaryButton } from "@/components/ui/app-button";
 import { AppDivider } from "@/components/ui/app-divider";
 import { AppMultiSelect } from "@/components/ui/app-multi-select";
 import { AppSegmentedControl } from "@/components/ui/app-segmented-control";
@@ -11,6 +12,10 @@ import {
   THERAPY_NOTIFICATION_LEAD_OPTIONS,
   type TherapyNotificationLeadId,
 } from "@/constants/therapy-notification-lead";
+import {
+  THERAPY_NOTIFICATION_REPEAT_OPTIONS,
+  type TherapyNotificationRepeatId,
+} from "@/constants/therapy-notification-repeat";
 import { THERAPY_REMINDER_SOUNDS } from "@/constants/therapy-reminder-sounds";
 import {
   nearestTherapyDoseOption,
@@ -25,6 +30,7 @@ import {
   THERAPY_TIME_OPTIONS,
 } from "@/lib/therapy/time-options";
 import { THERAPY_DAYS, type TherapyDayKey } from "@/lib/therapy/types";
+import { previewReminderSound } from "@/lib/notifications/preview-sound";
 import type { QuantitaUnit } from "@/types/domain";
 
 type TherapyReminderSettingsProps = {
@@ -34,6 +40,8 @@ type TherapyReminderSettingsProps = {
   onDoseChange: (dose: string) => void;
   unitaQuantita?: QuantitaUnit;
   readOnly?: boolean;
+  hideIntro?: boolean;
+  showNotificationSettings?: boolean;
 };
 
 const TIMES_PER_DAY_OPTIONS = [
@@ -70,6 +78,8 @@ export function TherapyReminderSettings({
   onDoseChange,
   unitaQuantita = "pillole",
   readOnly = false,
+  hideIntro = false,
+  showNotificationSettings = true,
 }: TherapyReminderSettingsProps) {
   const doseOptions = useMemo(
     () => therapyDoseOptionsForUnit(unitaQuantita),
@@ -102,17 +112,37 @@ export function TherapyReminderSettings({
     });
   };
 
+  const [previewingSoundId, setPreviewingSoundId] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState("");
+
+  const playSoundPreview = async (soundId: string) => {
+    if (readOnly) return;
+    setPreviewError("");
+    setPreviewingSoundId(soundId);
+    try {
+      await previewReminderSound(soundId, true);
+    } catch (error) {
+      setPreviewError(
+        error instanceof Error ? error.message : "Impossibile provare la suoneria.",
+      );
+    } finally {
+      setPreviewingSoundId(null);
+    }
+  };
+
   return (
     <YStack width="100%" gap="$3">
-      <YStack width="100%" gap="$1" alignItems="center">
-        <AppText variant="title" textAlign="center">
-          Orario e promemoria
-        </AppText>
-        <AppText variant="body" muted textAlign="center">
-          Scegli dosaggio, orari e giorni. Puoi attivare le notifiche e personalizzare
-          suoneria e anticipo.
-        </AppText>
-      </YStack>
+      {hideIntro ? null : (
+        <YStack width="100%" gap="$1" alignItems="center">
+          <AppText variant="title" textAlign="center">
+            Orario e promemoria
+          </AppText>
+          <AppText variant="body" muted textAlign="center">
+            Scegli dosaggio, orari e giorni. Puoi attivare le notifiche e personalizzare
+            suoneria e anticipo.
+          </AppText>
+        </YStack>
+      )}
 
       <AppSelect
         label="Dosaggio per assunzione"
@@ -164,56 +194,100 @@ export function TherapyReminderSettings({
         Giorni attivi: {selectedDays.length}/7
       </AppText>
 
-      <AppDivider />
-
-      <AppSwitch
-        label="Notifiche promemoria"
-        description="Ricevi un avviso sugli orari programmati"
-        value={value.notificationsEnabled}
-        onValueChange={(notificationsEnabled) =>
-          onChange({ ...value, notificationsEnabled })
-        }
-        disabled={readOnly}
-        accessibilityLabel="Attiva o disattiva le notifiche promemoria"
-      />
-
-      {value.notificationsEnabled ? (
+      {showNotificationSettings ? (
         <>
-          <AppSelect
-            label="Anticipo notifica"
-            value={value.notificationLeadId}
-            options={THERAPY_NOTIFICATION_LEAD_OPTIONS.map((option) => ({
-              value: option.id,
-              label: option.label,
-            }))}
-            onValueChange={(notificationLeadId) =>
-              onChange({
-                ...value,
-                notificationLeadId: notificationLeadId as TherapyNotificationLeadId,
-              })
+          <AppDivider />
+
+          <AppSwitch
+            label="Notifiche promemoria"
+            description="Ricevi il primo avviso in anticipo e, se vuoi, i successivi fino all'orario di assunzione"
+            value={value.notificationsEnabled}
+            onValueChange={(notificationsEnabled) =>
+              onChange({ ...value, notificationsEnabled })
             }
             disabled={readOnly}
-            accessibilityLabel="Quanto tempo prima ricevere la notifica"
+            accessibilityLabel="Attiva o disattiva le notifiche promemoria"
           />
 
-          <AppSelect
-            label="Suoneria notifica"
-            value={value.notificationSoundId}
-            options={THERAPY_REMINDER_SOUNDS.map((sound) => ({
-              value: sound.id,
-              label: sound.label,
-              description: sound.description,
-            }))}
-            onValueChange={(notificationSoundId) =>
-              onChange({
-                ...value,
-                notificationSoundId:
-                  notificationSoundId as TherapyReminderSettingsValue["notificationSoundId"],
-              })
-            }
-            disabled={readOnly}
-            accessibilityLabel="Suoneria del promemoria"
-          />
+          {value.notificationsEnabled ? (
+            <>
+              <AppSelect
+                label="Anticipo notifica"
+                value={value.notificationLeadId}
+                options={THERAPY_NOTIFICATION_LEAD_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
+                onValueChange={(notificationLeadId) =>
+                  onChange({
+                    ...value,
+                    notificationLeadId: notificationLeadId as TherapyNotificationLeadId,
+                  })
+                }
+                disabled={readOnly}
+                accessibilityLabel="Quanto tempo prima ricevere la notifica"
+              />
+
+              <AppSelect
+                label="Ripeti avviso"
+                value={value.notificationRepeatId}
+                options={THERAPY_NOTIFICATION_REPEAT_OPTIONS.map((option) => ({
+                  value: option.id,
+                  label: option.label,
+                }))}
+                onValueChange={(notificationRepeatId) =>
+                  onChange({
+                    ...value,
+                    notificationRepeatId:
+                      notificationRepeatId as TherapyNotificationRepeatId,
+                  })
+                }
+                disabled={readOnly}
+                accessibilityLabel="Ogni quanti minuti ripetere l'avviso fino all'orario di assunzione"
+              />
+
+              <AppSelect
+                label="Suoneria notifica"
+                value={value.notificationSoundId}
+                options={THERAPY_REMINDER_SOUNDS.map((sound) => ({
+                  value: sound.id,
+                  label: sound.label,
+                  description: sound.description,
+                }))}
+                onValueChange={(notificationSoundId) => {
+                  onChange({
+                    ...value,
+                    notificationSoundId:
+                      notificationSoundId as TherapyReminderSettingsValue["notificationSoundId"],
+                  });
+                  void playSoundPreview(notificationSoundId);
+                }}
+                onPreviewOption={(soundId) => void playSoundPreview(soundId)}
+                previewingOption={previewingSoundId}
+                disabled={readOnly}
+                accessibilityLabel="Suoneria del promemoria"
+              />
+              {previewError ? (
+                <AppText variant="caption" color="error">
+                  {previewError}
+                </AppText>
+              ) : (
+                <AppText variant="caption" muted>
+                  Tocca play per ascoltare, o scegli una suoneria: la prova parte subito.
+                </AppText>
+              )}
+              <SecondaryButton
+                icon="play"
+                fullWidth
+                loading={previewingSoundId === value.notificationSoundId}
+                disabled={readOnly}
+                onPress={() => void playSoundPreview(value.notificationSoundId)}
+                accessibilityLabel="Prova la suoneria selezionata"
+              >
+                Prova suoneria
+              </SecondaryButton>
+            </>
+          ) : null}
         </>
       ) : null}
     </YStack>

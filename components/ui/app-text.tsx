@@ -3,6 +3,7 @@ import type { GetProps } from "tamagui";
 
 import { useCardSurface } from "@/components/ui/card-surface";
 import { useAccessibility } from "@/lib/accessibility/context";
+import { scaleFontSize } from "@/lib/accessibility/prefs";
 import { HealthcareText } from "@/theme/tamagui-primitives";
 
 export type AppTextVariant =
@@ -41,6 +42,9 @@ export function AppText({
   color,
   children,
   opacity,
+  onLongPress,
+  fontSize: fontSizeOverride,
+  lineHeight: lineHeightOverride,
   ...rest
 }: AppTextProps) {
   const surface = useCardSurface();
@@ -51,6 +55,10 @@ export function AppText({
   const resolvedOpacity =
     opacity ?? (onBrand && muted ? 0.88 : onBrand && color === "primary" ? 1 : undefined);
   const sizes = VARIANT_SIZES[variant];
+  const baseFontSize =
+    typeof fontSizeOverride === "number" ? fontSizeOverride : sizes.fontSize;
+  const baseLineHeight =
+    typeof lineHeightOverride === "number" ? lineHeightOverride : sizes.lineHeight;
 
   return (
     <HealthcareText
@@ -58,14 +66,21 @@ export function AppText({
       muted={resolvedMuted}
       tone={resolvedColor}
       opacity={resolvedOpacity}
-      {...(largeText
-        ? {
-            fontSize: Math.round(sizes.fontSize * fontScale),
-            lineHeight: Math.round(sizes.lineHeight * fontScale),
-          }
-        : {})}
-      fontWeight={highContrast && (variant === "body" || variant === "caption") ? "600" : undefined}
       {...rest}
+      fontSize={
+        largeText ? scaleFontSize(baseFontSize, fontScale) : fontSizeOverride
+      }
+      lineHeight={
+        largeText ? scaleFontSize(baseLineHeight, fontScale) : lineHeightOverride
+      }
+      fontWeight={
+        rest.fontWeight ??
+        (highContrast &&
+        (variant === "body" || variant === "caption" || variant === "label")
+          ? "700"
+          : undefined)
+      }
+      onLongPress={onLongPress}
     >
       {children}
     </HealthcareText>

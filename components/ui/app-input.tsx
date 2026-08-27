@@ -1,10 +1,14 @@
 import { Platform } from "react-native";
-import { Input, Label, YStack, type InputProps } from "tamagui";
+import { Input, YStack, type InputProps } from "tamagui";
 
+import { AppText } from "@/components/ui/app-text";
 import { useCardSurface } from "@/components/ui/card-surface";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { scaleFontSize } from "@/lib/accessibility/prefs";
 import { pillappColors } from "@/theme/tokens";
 
 const SINGLE_LINE_HEIGHT = 52;
+const EASY_TAP_LINE_HEIGHT = 60;
 
 function multilineHeight(rows: number, minHeight?: number | string) {
   if (typeof minHeight === "number") return minHeight;
@@ -33,29 +37,24 @@ export function AppInput({
   ...rest
 }: AppInputProps) {
   const onBrand = useCardSurface() === "brand";
+  const { easyTap, fontScale, highContrast, largeText } = useAccessibility();
   const isDisabled = disabled ?? editable === false;
   const isMultiline = Boolean(multiline);
   const rows = typeof numberOfLines === "number" ? numberOfLines : 4;
+  const singleHeight = easyTap ? EASY_TAP_LINE_HEIGHT : SINGLE_LINE_HEIGHT;
   const fieldHeight = isMultiline
     ? typeof height === "number"
       ? height
       : multilineHeight(rows, typeof minHeight === "number" ? minHeight : undefined)
     : typeof height === "number"
       ? height
-      : SINGLE_LINE_HEIGHT;
+      : singleHeight;
+  const inputFont = largeText ? scaleFontSize(16, fontScale) : 16;
+  const inputLine = largeText ? scaleFontSize(22, fontScale) : 22;
 
   return (
     <YStack width="100%" gap="$2" flexShrink={0} alignSelf="stretch">
-      {label ? (
-        <Label
-          color={onBrand ? pillappColors.onPrimary : "$textPrimary"}
-          fontSize={14}
-          fontWeight="600"
-          lineHeight={20}
-        >
-          {label}
-        </Label>
-      ) : null}
+      {label ? <AppText variant="label">{label}</AppText> : null}
       <Input
         width="100%"
         alignSelf="stretch"
@@ -63,12 +62,20 @@ export function AppInput({
         multiline={isMultiline}
         numberOfLines={isMultiline ? rows : 1}
         backgroundColor="rgba(255,255,255,0.94)"
-        borderColor={error ? "$error" : onBrand ? "rgba(255,255,255,0.5)" : "$border"}
-        borderWidth={1.5}
+        borderColor={
+          error
+            ? "$error"
+            : highContrast
+              ? pillappColors.textPrimary
+              : onBrand
+                ? "rgba(255,255,255,0.5)"
+                : "$border"
+        }
+        borderWidth={highContrast ? 2 : 1.5}
         borderRadius="$3"
         color="$textPrimary"
-        fontSize={16}
-        lineHeight={22}
+        fontSize={inputFont}
+        lineHeight={inputLine}
         height={fieldHeight}
         minHeight={fieldHeight}
         maxHeight={isMultiline ? undefined : fieldHeight}
@@ -76,7 +83,7 @@ export function AppInput({
         paddingTop={isMultiline ? 12 : Platform.OS === "android" ? 14 : 12}
         paddingBottom={isMultiline ? 12 : Platform.OS === "android" ? 14 : 12}
         textAlignVertical={textAlignVertical ?? (isMultiline ? "top" : "center")}
-        placeholderTextColor="$textMuted"
+        placeholderTextColor={highContrast ? "$textSecondary" : "$textMuted"}
         disabled={isDisabled}
         opacity={isDisabled ? 0.55 : 1}
         focusStyle={{
@@ -86,13 +93,13 @@ export function AppInput({
         {...rest}
       />
       {error ? (
-        <Label color="$error" fontSize={13} lineHeight={18}>
+        <AppText variant="caption" color="error">
           {error}
-        </Label>
+        </AppText>
       ) : hint ? (
-        <Label color="$textSecondary" fontSize={13} lineHeight={18}>
+        <AppText variant="caption" muted>
           {hint}
-        </Label>
+        </AppText>
       ) : null}
     </YStack>
   );

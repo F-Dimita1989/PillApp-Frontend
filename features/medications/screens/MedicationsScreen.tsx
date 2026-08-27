@@ -57,7 +57,7 @@ export function MedicationsScreen() {
       <BrandIntroCard
         icon="pill"
         title="La tua terapia"
-        description="Tocca un farmaco per orari, quantità e assunzioni di oggi. Aggiungi nuovi farmaci con la scansione AIC."
+        description="Tocca un farmaco per vedere tutta la terapia, modificare dosaggio e orari o eliminarlo."
       />
 
       {activeMeds.length > 0 ? (
@@ -70,7 +70,7 @@ export function MedicationsScreen() {
 
       <SectionHeader
         title={`Farmaci attivi (${activeMeds.length})`}
-        description="Tocca un farmaco per orari, note e assunzioni di oggi."
+        description="Tocca un farmaco per dettagli, modifica e rimozione dalla terapia."
       />
 
       {activeMeds.length === 0 ? (

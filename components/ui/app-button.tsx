@@ -7,6 +7,11 @@ import { XStack, type XStackProps } from "tamagui";
 import { useCardSurface } from "@/components/ui/card-surface";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { playAppHaptic } from "@/lib/accessibility/haptics";
+import { scaleFontSize } from "@/lib/accessibility/prefs";
+import {
+  childrenToSpeakableText,
+  speakAppText,
+} from "@/lib/accessibility/speech";
 import {
   HealthcareButtonFrame,
   HealthcareText,
@@ -96,8 +101,11 @@ function ButtonInner({
   onBrand: boolean;
   stretches: boolean;
 }) {
+  const { fontScale, largeText } = useAccessibility();
   const iconSize = size === "lg" ? 22 : 20;
   const color = iconColor(variant, onBrand);
+  const buttonFont = largeText ? scaleFontSize(16, fontScale) : 16;
+  const buttonLine = largeText ? scaleFontSize(22, fontScale) : 22;
 
   if (loading) {
     return <ActivityIndicator color={color} />;
@@ -117,6 +125,8 @@ function ButtonInner({
         variant="button"
         tone={textTone(variant, onBrand)}
         flexShrink={1}
+        fontSize={buttonFont}
+        lineHeight={buttonLine}
         style={
           Platform.OS === "android"
             ? { includeFontPadding: false, textAlignVertical: "center" }
@@ -144,17 +154,21 @@ export function AppButton({
   ...rest
 }: AppButtonProps) {
   const surface = useCardSurface();
-  const { easyTap, hapticsEnabled } = useAccessibility();
+  const { easyTap, hapticsEnabled, reduceMotion, speechEnabled } = useAccessibility();
   const onBrand = surface === "brand";
   const isDisabled = disabled || loading;
   const stretches = fullWidth || flex != null;
   const label =
-    accessibilityLabel ?? (typeof children === "string" ? children : undefined);
+    accessibilityLabel ??
+    (typeof children === "string"
+      ? children
+      : childrenToSpeakableText(children) || undefined);
   const easyTapStyle = easyTap ? styles.easyTap : undefined;
 
   const handlePress = () => {
     if (isDisabled) return;
     void playAppHaptic(hapticsEnabled, variant === "danger" ? "warning" : "light");
+    if (speechEnabled && label) speakAppText(label);
     onPress?.();
   };
 
@@ -186,7 +200,7 @@ export function AppButton({
           variant === "primary" ? styles.brandPrimary : styles.brandSecondary,
           stretches && styles.fullWidth,
           isDisabled && styles.disabled,
-          pressed && !isDisabled && styles.pressed,
+          pressed && !isDisabled && !reduceMotion && styles.pressed,
         ]}
       >
         {inner}
@@ -205,7 +219,7 @@ export function AppButton({
         style={({ pressed }) => [
           stretches && styles.fullWidth,
           isDisabled && styles.disabled,
-          pressed && !isDisabled && styles.pressed,
+          pressed && !isDisabled && !reduceMotion && styles.pressed,
         ]}
       >
         <LinearGradient
@@ -235,6 +249,7 @@ export function AppButton({
       flex={flex}
       onPress={isDisabled ? undefined : handlePress}
       minHeight={easyTap ? 60 : undefined}
+      pressStyle={reduceMotion ? { opacity: 1, scale: 1 } : undefined}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}

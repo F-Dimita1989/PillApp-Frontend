@@ -188,16 +188,27 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
 
   const handlePrimaryPress = useCallback(() => {
     if (isFirstSlide) {
-      if (!permissionsGranted) {
-        void handleRequestPermissions();
+      if (!termsAccepted) {
         return;
       }
       goNext();
       return;
     }
 
+    if (!permissionsGranted) {
+      void handleRequestPermissions();
+      return;
+    }
+
     void handleFinish();
-  }, [goNext, handleFinish, handleRequestPermissions, isFirstSlide, permissionsGranted]);
+  }, [
+    goNext,
+    handleFinish,
+    handleRequestPermissions,
+    isFirstSlide,
+    permissionsGranted,
+    termsAccepted,
+  ]);
 
   const openTerms = useCallback(() => {
     setTermsModalVisible(true);
@@ -214,16 +225,18 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
 
   const primaryLabel = useMemo(() => {
     if (isFirstSlide) {
-      if (isRequestingPermissions) {
-        return "Attendi...";
-      }
-      return permissionsGranted ? "Continua" : "Consenti gli accessi";
+      return "Continua";
     }
-    return isFinishing ? "Attendi..." : "Ho capito";
+    if (isRequestingPermissions || isFinishing) {
+      return "Attendi...";
+    }
+    return permissionsGranted ? "Ho capito" : "Consenti gli accessi";
   }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsGranted]);
 
   const primaryDisabled =
-    isRequestingPermissions || isFinishing || (isLastSlide && !termsAccepted);
+    isRequestingPermissions ||
+    isFinishing ||
+    (isFirstSlide && !termsAccepted);
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<OnboardingSlide>) => (
@@ -271,7 +284,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
           scrollEventThrottle={1}
           onMomentumScrollEnd={handleScrollEnd}
           onScrollEndDrag={handleScrollEnd}
-          scrollEnabled={currentIndex !== 0 || permissionsGranted}
+          scrollEnabled={currentIndex !== 0 || termsAccepted}
           getItemLayout={(_, index) => ({
             length: width,
             offset: width * index,

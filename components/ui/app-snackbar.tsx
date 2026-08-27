@@ -1,8 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pressable } from "react-native";
+import { useEffect, useRef } from "react";
+import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { XStack, YStack } from "tamagui";
 
+import { AppButton } from "@/components/ui/app-button";
+import { AppCard } from "@/components/ui/app-card";
 import { AppText } from "@/components/ui/app-text";
+import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
+import { layout } from "@/constants/spacing";
+import { useAccessibility } from "@/lib/accessibility/context";
 import { pillappColors } from "@/theme/tokens";
 
 type AppSnackbarProps = {
@@ -22,70 +29,100 @@ export function AppSnackbar({
   onAction,
   variant = "default",
 }: AppSnackbarProps) {
-  if (!visible || !message) {
-    return null;
-  }
+  const insets = useSafeAreaInsets();
+  const { easyTap, reduceMotion } = useAccessibility();
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
+  useEffect(() => {
+    if (!visible || !message) return;
+    const timeout = setTimeout(() => onDismissRef.current(), 5000);
+    return () => clearTimeout(timeout);
+  }, [visible, message]);
 
   const isError = variant === "error";
+  const open = visible && Boolean(message);
+  const closeSize = easyTap ? 52 : 44;
 
   return (
-    <YStack
-      position="absolute"
-      bottom="$6"
-      left="$4"
-      right="$4"
-      zIndex={1000}
-      pointerEvents="box-none"
+    <Modal
+      visible={open}
+      transparent
+      animationType={reduceMotion ? "none" : "fade"}
+      onRequestClose={onDismiss}
+      statusBarTranslucent
     >
-      <XStack
-        backgroundColor={isError ? "$errorSoft" : "$textPrimary"}
-        borderRadius="$3"
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        alignItems="center"
-        gap="$3"
-        shadowColor="$shadow"
-        shadowOpacity={0.15}
-        shadowRadius={12}
-        shadowOffset={{ width: 0, height: 4 }}
-        elevation={6}
+      <View
+        style={[
+          styles.overlay,
+          {
+            paddingHorizontal: layout.screenPaddingHorizontal,
+            paddingBottom: Math.max(insets.bottom, 12) + 16,
+          },
+        ]}
+        pointerEvents="box-none"
       >
-        <AppText
-          variant="body"
-          flex={1}
-          color={isError ? "error" : "inverse"}
-        >
-          {message}
-        </AppText>
-        <Pressable
-          onPress={() => {
-            onAction?.();
-            onDismiss();
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={actionLabel}
-        >
-          <AppText
-            variant="label"
-            color={isError ? "error" : "primary"}
-            fontWeight="700"
+        <AppCard variant={isError ? "outlined" : "elevated"}>
+          <XStack width="100%" alignItems="center" gap="$3">
+            <BrandIconBadge
+              name={isError ? "alert-circle-outline" : "information-outline"}
+              size={40}
+              iconSize={20}
+              radius={12}
+            />
+            <YStack flex={1} gap="$1" minWidth={0}>
+              <AppText variant="body" color={isError ? "error" : undefined}>
+                {message}
+              </AppText>
+            </YStack>
+            <Pressable
+              onPress={onDismiss}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Chiudi messaggio"
+              style={[
+                styles.close,
+                {
+                  width: closeSize,
+                  height: closeSize,
+                  borderRadius: closeSize / 2,
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="close"
+                size={easyTap ? 22 : 20}
+                color={pillappColors.textSecondary}
+              />
+            </Pressable>
+          </XStack>
+          <AppButton
+            variant={onAction ? "primary" : "secondary"}
+            size="md"
+            fullWidth
+            onPress={() => {
+              onAction?.();
+              onDismiss();
+            }}
+            accessibilityLabel={actionLabel}
           >
             {actionLabel}
-          </AppText>
-        </Pressable>
-        <Pressable
-          onPress={onDismiss}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Chiudi messaggio"
-        >
-          <MaterialCommunityIcons
-            name="close"
-            size={20}
-            color={isError ? pillappColors.error : pillappColors.textInverse}
-          />
-        </Pressable>
-      </XStack>
-    </YStack>
+          </AppButton>
+        </AppCard>
+      </View>
+    </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  close: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: pillappColors.surfaceMuted,
+    flexShrink: 0,
+  },
+});

@@ -18,6 +18,7 @@ if (-not (Test-Path $gradleHome)) {
 $env:GRADLE_USER_HOME = $gradleHome
 
 . (Join-Path $PSScriptRoot "install-long-path-ninja.ps1")
+. (Join-Path $PSScriptRoot "sync-android-notification-sounds.ps1")
 
 Set-Location $projectRoot
 

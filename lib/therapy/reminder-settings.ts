@@ -5,6 +5,10 @@ import {
   DEFAULT_NOTIFICATION_LEAD_ID,
   type TherapyNotificationLeadId,
 } from "@/constants/therapy-notification-lead";
+import {
+  DEFAULT_NOTIFICATION_REPEAT_ID,
+  type TherapyNotificationRepeatId,
+} from "@/constants/therapy-notification-repeat";
 
 export type TherapyReminderSettingsValue = {
   timesPerDay: number;
@@ -13,6 +17,7 @@ export type TherapyReminderSettingsValue = {
   notificationsEnabled: boolean;
   notificationSoundId: TherapyReminderSoundId;
   notificationLeadId: TherapyNotificationLeadId;
+  notificationRepeatId: TherapyNotificationRepeatId;
 };
 
 export const DEFAULT_ORARI_BY_TIMES_PER_DAY: readonly string[][] = [
@@ -29,6 +34,7 @@ export const INITIAL_THERAPY_REMINDER_SETTINGS: TherapyReminderSettingsValue = {
   notificationsEnabled: true,
   notificationSoundId: "default",
   notificationLeadId: DEFAULT_NOTIFICATION_LEAD_ID,
+  notificationRepeatId: DEFAULT_NOTIFICATION_REPEAT_ID,
 };
 
 export function defaultOrariForTimesPerDay(timesPerDay: number): string[] {

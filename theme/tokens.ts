@@ -102,32 +102,6 @@ export const pillappSize = {
   tabBarHeight: 56,
 } as const;
 
-export const pillappFontSize = {
-  true: 16,
-  1: 13,
-  2: 14,
-  3: 15,
-  4: 16,
-  5: 18,
-  6: 20,
-  7: 24,
-  8: 28,
-  9: 32,
-} as const;
-
-export const pillappLineHeight = {
-  true: 24,
-  1: 18,
-  2: 20,
-  3: 22,
-  4: 24,
-  5: 26,
-  6: 28,
-  7: 32,
-  8: 36,
-  9: 40,
-} as const;
-
 /** Ombre leggere — niente glow o profondità pesante */
 export const pillappShadows = {
   none: {
@@ -158,11 +132,6 @@ export const pillappShadows = {
     shadowOffset: { width: 0, height: 8 },
     elevation: 4,
   },
-} as const;
-
-export const pillappTouch = {
-  min: pillappSize.touchMin,
-  comfortable: pillappSize.touchComfortable,
 } as const;
 
 /** Gradiente brand (cupola intro, CTA onboarding, welcome) */

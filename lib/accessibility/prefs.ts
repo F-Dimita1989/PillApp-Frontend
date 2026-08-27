@@ -7,6 +7,7 @@ export type AccessibilityPrefs = {
   reduceMotion: boolean;
   easyTap: boolean;
   hapticsEnabled: boolean;
+  speechEnabled: boolean;
 };
 
 export const DEFAULT_ACCESSIBILITY_PREFS: AccessibilityPrefs = {
@@ -16,9 +17,15 @@ export const DEFAULT_ACCESSIBILITY_PREFS: AccessibilityPrefs = {
   reduceMotion: false,
   easyTap: false,
   hapticsEnabled: true,
+  speechEnabled: false,
 };
 
-const LARGE_TEXT_SCALE = 1.22;
+/** Scala in-app per «Testo più grande» (indipendente dal sistema). */
+export const LARGE_TEXT_SCALE = 1.32;
+
+export function scaleFontSize(size: number, fontScale: number): number {
+  return Math.round(size * fontScale);
+}
 
 export function accessibilityPrefsFromProfile(
   profile: Pick<
@@ -28,6 +35,7 @@ export function accessibilityPrefsFromProfile(
     | "reduceMotion"
     | "easyTap"
     | "hapticsEnabled"
+    | "speechEnabled"
   >,
 ): AccessibilityPrefs {
   return {
@@ -37,5 +45,6 @@ export function accessibilityPrefsFromProfile(
     reduceMotion: profile.reduceMotion,
     easyTap: profile.easyTap,
     hapticsEnabled: profile.hapticsEnabled,
+    speechEnabled: profile.speechEnabled === true,
   };
 }

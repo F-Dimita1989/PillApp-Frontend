@@ -1,3 +1,5 @@
+import { DEFAULT_NOTIFICATION_LEAD_ID } from "@/constants/therapy-notification-lead";
+import { DEFAULT_NOTIFICATION_REPEAT_ID } from "@/constants/therapy-notification-repeat";
 import { getGuestProfile } from "@/lib/profile/storage";
 import { getTherapyPlan } from "@/lib/therapy/plan-storage";
 
@@ -13,7 +15,7 @@ import {
   medicationFromTherapyPlan,
   mergeMedicationsWithTherapy,
 } from "@/lib/app-data/sync";
-import type { UserProfile } from "@/types/domain";
+import type { Medication, UserProfile } from "@/types/domain";
 
 import type { AppDataState } from "./types";
 
@@ -30,6 +32,7 @@ function prefsFromProfile(profile: UserProfile): ProfilePrefs {
     reduceMotion: profile.reduceMotion,
     easyTap: profile.easyTap,
     hapticsEnabled: profile.hapticsEnabled,
+    speechEnabled: profile.speechEnabled === true,
     scanHintsEnabled: profile.scanHintsEnabled,
   };
 }
@@ -45,6 +48,14 @@ export const EMPTY_APP_STATE: AppDataState = {
   symptoms: [],
   journalNotes: [],
 };
+
+function withNotificationDefaults(medications: Medication[]): Medication[] {
+  return medications.map((med) => ({
+    ...med,
+    notificationLeadId: med.notificationLeadId ?? DEFAULT_NOTIFICATION_LEAD_ID,
+    notificationRepeatId: med.notificationRepeatId ?? DEFAULT_NOTIFICATION_REPEAT_ID,
+  }));
+}
 
 export async function hydrateAppState(): Promise<AppDataState> {
   const [guest, therapyPlan, persisted] = await Promise.all([
@@ -68,9 +79,8 @@ export async function hydrateAppState(): Promise<AppDataState> {
   const therapyMed =
     therapyPlan?.farmacoNome?.trim() ? medicationFromTherapyPlan(therapyPlan) : null;
 
-  const medications = mergeMedicationsWithTherapy(
-    persisted?.medications ?? [],
-    therapyMed,
+  const medications = withNotificationDefaults(
+    mergeMedicationsWithTherapy(persisted?.medications ?? [], therapyMed),
   );
 
   const generatedDoses = buildDosesForToday(medications);

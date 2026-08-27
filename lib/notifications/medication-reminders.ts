@@ -1,6 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 
+import { getTherapyNotificationLeadMinutes } from "@/constants/therapy-notification-lead";
+import { getTherapyNotificationRepeatMinutes } from "@/constants/therapy-notification-repeat";
+import {
+  buildReminderFireSlots,
+  reminderNotificationCopy,
+} from "@/lib/notifications/reminder-schedule";
 import { ensureNotificationPermissions, getNotificationChannelId, getNotificationSoundPayload } from "@/lib/notifications/setup";
 import { buildWeeklyReminderTrigger } from "@/lib/notifications/schedule-weekly-trigger";
 import type { Medication } from "@/types/domain";
@@ -48,6 +54,9 @@ export async function syncMedicationReminders(
   const notificationIds: string[] = [];
 
   for (const med of activeMeds) {
+    const leadMinutes = getTherapyNotificationLeadMinutes(med.notificationLeadId);
+    const repeatMinutes = getTherapyNotificationRepeatMinutes(med.notificationRepeatId);
+
     for (const timeStr of med.schedule.times) {
       const time = parseTime(timeStr);
       if (!time) continue;
@@ -55,21 +64,44 @@ export async function syncMedicationReminders(
       for (let dayIndex = 0; dayIndex < med.schedule.daysActive.length; dayIndex++) {
         if (!med.schedule.daysActive[dayIndex]) continue;
 
-        const id = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Promemoria PillApp",
-            body: `${med.name} — ${med.dose} alle ${timeStr}`,
-            sound: sound ?? undefined,
-            data: { medicationId: med.id, type: "dose_reminder" },
-          },
-          trigger: buildWeeklyReminderTrigger({
+        const slots = buildReminderFireSlots(
+          {
             weekday: WEEKDAY_FROM_INDEX[dayIndex],
             hour: time.hour,
             minute: time.minute,
-            channelId,
-          }),
-        });
-        notificationIds.push(id);
+          },
+          leadMinutes,
+          repeatMinutes,
+        );
+
+        for (const slot of slots) {
+          const copy = reminderNotificationCopy(
+            med.name,
+            med.dose,
+            timeStr,
+            slot.minutesBefore,
+          );
+          const id = await Notifications.scheduleNotificationAsync({
+            content: {
+              title: copy.title,
+              body: copy.body,
+              sound: sound ?? undefined,
+              data: {
+                medicationId: med.id,
+                type: "dose_reminder",
+                scheduledTime: timeStr,
+                minutesBefore: slot.minutesBefore,
+              },
+            },
+            trigger: buildWeeklyReminderTrigger({
+              weekday: slot.weekday,
+              hour: slot.hour,
+              minute: slot.minute,
+              channelId,
+            }),
+          });
+          notificationIds.push(id);
+        }
       }
     }
   }

@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Linking, Platform } from "react-native";
-import { YStack } from "tamagui";
+import { XStack, YStack } from "tamagui";
 
 import { ProfileAvatarPicker } from "@/components/profile/profile-avatar-picker";
 import { ProfileSummaryCard } from "@/components/profile/profile-summary-card";
@@ -14,8 +14,10 @@ import {
   AppText,
   AppTopBar,
   PrimaryButton,
+  SecondaryButton,
   SectionHeader,
 } from "@/components/ui";
+import { SoundPreviewButton } from "@/components/ui/sound-preview-button";
 import { THERAPY_REMINDER_SOUNDS, type TherapyReminderSoundId } from "@/constants/therapy-reminder-sounds";
 import { useAppData } from "@/features/store/app-data-context";
 import {
@@ -25,8 +27,12 @@ import {
 import { previewReminderSound } from "@/lib/notifications/preview-sound";
 import {
   ensureNotificationPermissions,
-  getNotificationPermissionStatus,
+  reviewNotificationPermissions,
 } from "@/lib/notifications/setup";
+import {
+  setSpeechRuntimeEnabled,
+  speakAppText,
+} from "@/lib/accessibility/speech";
 import type { ProfileAvatarId } from "@/constants/profile-avatars";
 
 export function ProfileScreen() {
@@ -39,17 +45,33 @@ export function ProfileScreen() {
     journalNotes,
   } = useAppData();
   const [snack, setSnack] = useState("");
-  const [previewing, setPreviewing] = useState(false);
+  const [snackAction, setSnackAction] = useState<"settings" | null>(null);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+
+  const showSnack = useCallback((message: string, action: "settings" | null = null) => {
+    setSnackAction(action);
+    setSnack(message);
+  }, []);
+
+  const dismissSnack = useCallback(() => {
+    setSnack("");
+    setSnackAction(null);
+  }, []);
+
+  const openSystemSettings = useCallback(async () => {
+    await Linking.openSettings();
+  }, []);
 
   const handleNotificationsToggle = useCallback(
     async (enabled: boolean) => {
       if (enabled) {
         const granted = await ensureNotificationPermissions();
         if (!granted) {
-          setSnack(
+          showSnack(
             Platform.OS === "android"
               ? "Permesso negato. Abilita le notifiche nelle impostazioni di Android."
               : "Permesso negato. Abilita le notifiche nelle impostazioni di iOS.",
+            "settings",
           );
           updateProfile({ notificationsEnabled: false });
           return;
@@ -61,7 +83,7 @@ export function ProfileScreen() {
             soundId: profile.notificationSoundId,
             playSound: profile.notificationSoundEnabled,
           });
-          setSnack(
+          showSnack(
             count > 0
               ? `${count} promemoria programmati sul telefono.`
               : "Notifiche attive. Aggiungi farmaci per i promemoria.",
@@ -69,60 +91,80 @@ export function ProfileScreen() {
         } catch (error) {
           const message =
             error instanceof Error ? error.message : "Errore programmazione promemoria.";
-          setSnack(message);
+          showSnack(message);
         }
         return;
       }
 
       updateProfile({ notificationsEnabled: false });
       await cancelAllMedicationReminders();
-      setSnack("Promemoria disattivati.");
+      showSnack("Promemoria disattivati.");
     },
     [
       medications,
       profile.notificationSoundEnabled,
       profile.notificationSoundId,
+      showSnack,
       updateProfile,
     ],
   );
 
-  const openSystemSettings = useCallback(async () => {
-    await Linking.openSettings();
-  }, []);
-
   const checkPermission = useCallback(async () => {
-    const status = await getNotificationPermissionStatus();
-    if (status === "granted") {
-      setSnack("Notifiche già autorizzate.");
-    } else {
-      setSnack("Notifiche non autorizzate. Apri le impostazioni del telefono.");
-    }
-  }, []);
-
-  const previewSound = useCallback(async () => {
-    setPreviewing(true);
     try {
-      await previewReminderSound(
-        profile.notificationSoundId,
-        profile.notificationSoundEnabled,
-      );
-      setSnack(
-        profile.notificationSoundEnabled
-          ? "Ascolta: la prova arriverà tra un attimo."
-          : "Prova silenziosa in arrivo: solo vibrazione e avviso.",
+      const result = await reviewNotificationPermissions();
+      if (result.granted) {
+        showSnack("Notifiche autorizzate. PillApp può inviarti i promemoria.");
+        return;
+      }
+
+      if (!result.canAskAgain) {
+        showSnack(
+          "Permesso disattivato. Aprilo dalle impostazioni del telefono.",
+          "settings",
+        );
+        await Linking.openSettings();
+        return;
+      }
+
+      showSnack(
+        "Notifiche non autorizzate. Riprova oppure apri le impostazioni.",
+        "settings",
       );
     } catch (error) {
-      setSnack(
-        error instanceof Error ? error.message : "Impossibile provare la suoneria.",
+      showSnack(
+        error instanceof Error ? error.message : "Impossibile verificare i permessi.",
       );
-    } finally {
-      setPreviewing(false);
     }
-  }, [profile.notificationSoundEnabled, profile.notificationSoundId]);
+  }, [showSnack]);
+
+  const playPreview = useCallback(
+    async (soundId: TherapyReminderSoundId) => {
+      setPreviewingId(soundId);
+      try {
+        await previewReminderSound(soundId, profile.notificationSoundEnabled);
+        showSnack(
+          profile.notificationSoundEnabled
+            ? "Ascolta: è la prova della suoneria."
+            : "Prova silenziosa in arrivo: solo vibrazione e avviso.",
+        );
+      } catch (error) {
+        showSnack(
+          error instanceof Error ? error.message : "Impossibile provare la suoneria.",
+        );
+      } finally {
+        setPreviewingId(null);
+      }
+    },
+    [profile.notificationSoundEnabled, showSnack],
+  );
+
+  const previewSound = useCallback(async () => {
+    await playPreview(profile.notificationSoundId);
+  }, [playPreview, profile.notificationSoundId]);
 
   const setSound = (soundId: TherapyReminderSoundId) => {
     updateProfile({ notificationSoundId: soundId });
-    setSnack("Suoneria aggiornata. I prossimi promemoria useranno questo suono.");
+    void playPreview(soundId);
   };
 
   return (
@@ -162,7 +204,7 @@ export function ProfileScreen() {
       <YStack width="100%" gap="$3">
         <SectionHeader
           title="Accessibilità"
-          description="Opzioni pensate per lettura più chiara e tap più sicuri."
+          description="Testo più grande, contrasto, tap più sicuri e lettura vocale."
         />
         <AppCard>
           <AppCardContent gap="$0">
@@ -226,6 +268,44 @@ export function ProfileScreen() {
                 />
               }
             />
+            <AppListItem
+              title="Lettura vocale"
+              description="Legge titoli e pulsanti. Tieni premuto un testo per ascoltarlo."
+              icon="volume-high"
+              trailing={
+                <AppSwitch
+                  value={profile.speechEnabled}
+                  onValueChange={(speechEnabled) => {
+                    setSpeechRuntimeEnabled(speechEnabled);
+                    updateProfile({ speechEnabled });
+                    if (speechEnabled) {
+                      speakAppText(
+                        "Lettura vocale attiva. All'apertura di una schermata leggerò il titolo. Tieni premuto un testo per ascoltarlo.",
+                        { force: true },
+                      );
+                    } else {
+                      speakAppText("Lettura vocale disattivata.", { force: true });
+                    }
+                  }}
+                  accessibilityLabel="Lettura vocale"
+                />
+              }
+            />
+            {profile.speechEnabled ? (
+              <YStack paddingTop="$3" paddingBottom="$1">
+                <SecondaryButton
+                  icon="play-circle-outline"
+                  fullWidth
+                  onPress={() =>
+                    speakAppText(
+                      "Questa è una prova di lettura vocale. Tieni premuto qualsiasi testo nell'app per ascoltarlo di nuovo.",
+                    )
+                  }
+                >
+                  Prova lettura vocale
+                </SecondaryButton>
+              </YStack>
+            ) : null}
           </AppCardContent>
         </AppCard>
       </YStack>
@@ -286,11 +366,18 @@ export function ProfileScreen() {
                           : "bell-ring"
                     }
                     trailing={
-                      selected ? (
-                        <AppText variant="label" color="primary">
-                          Scelta
-                        </AppText>
-                      ) : undefined
+                      <XStack alignItems="center" gap="$2">
+                        <SoundPreviewButton
+                          loading={previewingId === sound.id}
+                          onPress={() => void playPreview(sound.id)}
+                          accessibilityLabel={`Prova ${sound.label}`}
+                        />
+                        {selected ? (
+                          <AppText variant="label" color="primary">
+                            Scelta
+                          </AppText>
+                        ) : null}
+                      </XStack>
                     }
                     onPress={() => setSound(sound.id)}
                     accessibilityLabel={`Scegli suoneria ${sound.label}`}
@@ -301,9 +388,9 @@ export function ProfileScreen() {
               <PrimaryButton
                 icon="play"
                 fullWidth
-                loading={previewing}
+                loading={previewingId === profile.notificationSoundId}
                 onPress={() => void previewSound()}
-                accessibilityHint="Invia una notifica di prova tra un secondo"
+                accessibilityHint="Invia subito una notifica di prova"
               >
                 Prova suoneria
               </PrimaryButton>
@@ -370,7 +457,11 @@ export function ProfileScreen() {
       <AppSnackbar
         visible={Boolean(snack)}
         message={snack}
-        onDismiss={() => setSnack("")}
+        onDismiss={dismissSnack}
+        actionLabel={snackAction === "settings" ? "Apri" : "OK"}
+        onAction={
+          snackAction === "settings" ? () => void openSystemSettings() : undefined
+        }
       />
     </AppScreen>
   );

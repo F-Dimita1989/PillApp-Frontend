@@ -3,6 +3,8 @@
 import type { GuestSex } from "@/constants/profile";
 import type { ProfileAvatarId } from "@/constants/profile-avatars";
 import type { TherapyReminderSoundId } from "@/constants/therapy-reminder-sounds";
+import type { TherapyNotificationLeadId } from "@/constants/therapy-notification-lead";
+import type { TherapyNotificationRepeatId } from "@/constants/therapy-notification-repeat";
 
 export type MedicationFormType =
   | "compressa"
@@ -51,6 +53,10 @@ export type Medication = {
   active: boolean;
   createdAt: string;
   source: "manual" | "aic_scan";
+  /** Minuti di anticipo rispetto all'orario di assunzione */
+  notificationLeadId?: TherapyNotificationLeadId;
+  /** Ripeti l'avviso ogni N minuti fino all'orario esatto */
+  notificationRepeatId?: TherapyNotificationRepeatId;
 };
 
 export type DoseEvent = {
@@ -104,14 +110,8 @@ export type UserProfile = {
   reduceMotion: boolean;
   easyTap: boolean;
   hapticsEnabled: boolean;
+  speechEnabled: boolean;
   scanHintsEnabled: boolean;
-};
-
-export type AdherenceSummary = {
-  date: string;
-  taken: number;
-  total: number;
-  percentage: number;
 };
 
 export const MEDICATION_FORM_LABELS: Record<MedicationFormType, string> = {

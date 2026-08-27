@@ -45,6 +45,8 @@ function toMedication(item: SetupTherapyMedication, index: number): Medication {
     active: true,
     createdAt: new Date().toISOString(),
     source: scanFormValues.aic.trim() ? "aic_scan" : "manual",
+    notificationLeadId: reminderSettings.notificationLeadId,
+    notificationRepeatId: reminderSettings.notificationRepeatId,
   };
 }
 

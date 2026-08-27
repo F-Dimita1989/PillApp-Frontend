@@ -41,9 +41,3 @@ export async function downscaleForOcr(
 
   return result.uri;
 }
-
-/** Una sola variante JPEG, pronta per il primo passaggio OCR. */
-export async function preprocessImageForOcr(uri: string): Promise<string[]> {
-  const primary = await downscaleForOcr(uri, OCR_PRIMARY_MAX_WIDTH);
-  return [primary];
-}

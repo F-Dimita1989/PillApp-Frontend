@@ -8,9 +8,12 @@ import {
   getTherapyReminderSound,
 } from "@/constants/therapy-reminder-sounds";
 
-const THERAPY_CHANNEL_ID = THERAPY_REMINDER_SOUNDS[0].channelId;
+const ACTIVE_CHANNEL_IDS = new Set([
+  ...THERAPY_REMINDER_SOUNDS.map((option) => option.channelId),
+  SILENT_REMINDER_CHANNEL_ID,
+]);
 
-export function registerNotificationHandler(): void {
+function registerNotificationHandler(): void {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -19,6 +22,23 @@ export function registerNotificationHandler(): void {
       shouldSetBadge: false,
     }),
   });
+}
+
+async function removeStaleReminderChannels(): Promise<void> {
+  if (Platform.OS !== "android") {
+    return;
+  }
+
+  const channels = await Notifications.getNotificationChannelsAsync();
+  await Promise.all(
+    (channels ?? [])
+      .filter(
+        (channel) =>
+          channel.id.startsWith("therapy-reminders") &&
+          !ACTIVE_CHANNEL_IDS.has(channel.id),
+      )
+      .map((channel) => Notifications.deleteNotificationChannelAsync(channel.id)),
+  );
 }
 
 async function configureReminderChannel(
@@ -38,13 +58,19 @@ async function configureReminderChannel(
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern,
     lightColor: pillappColors.primary,
-    sound: sound ?? undefined,
+    sound,
     enableVibrate: true,
     showBadge: true,
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.NOTIFICATION,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
   });
 }
 
 export async function configureNotificationChannel(): Promise<void> {
+  await removeStaleReminderChannels();
+
   for (const option of THERAPY_REMINDER_SOUNDS) {
     await configureReminderChannel(
       option.channelId,
@@ -86,11 +112,49 @@ export function getNotificationSoundPayload(
 
 export type NotificationPermissionStatus = "granted" | "denied" | "undetermined";
 
-export async function getNotificationPermissionStatus(): Promise<NotificationPermissionStatus> {
+async function getNotificationPermissionStatus(): Promise<NotificationPermissionStatus> {
   const { status } = await Notifications.getPermissionsAsync();
   if (status === "granted") return "granted";
   if (status === "denied") return "denied";
   return "undetermined";
+}
+
+export type NotificationPermissionReview = {
+  granted: boolean;
+  status: NotificationPermissionStatus;
+  canAskAgain: boolean;
+};
+
+/** Controlla e, se possibile, richiede il permesso. Non apre le impostazioni. */
+export async function reviewNotificationPermissions(): Promise<NotificationPermissionReview> {
+  await configureNotificationChannel();
+
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === "granted") {
+    return { granted: true, status: "granted", canAskAgain: true };
+  }
+
+  if (current.canAskAgain !== false) {
+    const next = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
+    const granted = next.status === "granted";
+    return {
+      granted,
+      status: granted ? "granted" : next.status === "denied" ? "denied" : "undetermined",
+      canAskAgain: next.canAskAgain !== false,
+    };
+  }
+
+  return {
+    granted: false,
+    status: current.status === "denied" ? "denied" : "undetermined",
+    canAskAgain: false,
+  };
 }
 
 export async function ensureNotificationPermissions(): Promise<boolean> {
@@ -117,5 +181,3 @@ export async function initializeNotifications(): Promise<NotificationPermissionS
   await configureNotificationChannel();
   return getNotificationPermissionStatus();
 }
-
-export { THERAPY_CHANNEL_ID, THERAPY_REMINDER_SOUNDS };
