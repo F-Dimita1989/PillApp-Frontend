@@ -30,6 +30,7 @@ export function buildWeeklyReminderTrigger({
     weekday,
     hour,
     minute,
+    second: 0,
     repeats: true,
     channelId,
   };

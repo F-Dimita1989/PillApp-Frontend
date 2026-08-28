@@ -24,6 +24,7 @@ import {
   cancelAllMedicationReminders,
   syncMedicationReminders,
 } from "@/lib/notifications/medication-reminders";
+import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import { previewReminderSound } from "@/lib/notifications/preview-sound";
 import {
   ensureNotificationPermissions,
@@ -76,6 +77,8 @@ export function ProfileScreen() {
           updateProfile({ notificationsEnabled: false });
           return;
         }
+
+        await ensureExactAlarms({ prompt: true });
 
         updateProfile({ notificationsEnabled: true });
         try {

@@ -1,0 +1,14 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.exactalarm" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+7-->C:\Users\A753apulia\Desktop\PillApp_FrontEnd\pillapp\modules\exact-alarm\android\src\main\AndroidManifest.xml:2:3-77
+7-->C:\Users\A753apulia\Desktop\PillApp_FrontEnd\pillapp\modules\exact-alarm\android\src\main\AndroidManifest.xml:2:20-74
+8    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+8-->C:\Users\A753apulia\Desktop\PillApp_FrontEnd\pillapp\modules\exact-alarm\android\src\main\AndroidManifest.xml:3:3-72
+8-->C:\Users\A753apulia\Desktop\PillApp_FrontEnd\pillapp\modules\exact-alarm\android\src\main\AndroidManifest.xml:3:20-69
+9
+10</manifest>

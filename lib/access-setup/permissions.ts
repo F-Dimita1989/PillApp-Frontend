@@ -2,6 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Notifications from "expo-notifications";
 
 import { ensureCalendarPermission } from "@/lib/calendar/device-calendar";
+import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import { configureNotificationChannel } from "@/lib/notifications/setup";
 
 export type AppPermissionKind = "camera" | "gallery" | "notifications" | "calendar";
@@ -79,6 +80,9 @@ async function requestNotificationsPermission(): Promise<AppPermissionStatus> {
       allowSound: true,
     },
   });
+  if (status === "granted") {
+    await ensureExactAlarms({ prompt: true });
+  }
   return mapExpoStatus(status);
 }
 

@@ -3,12 +3,13 @@ import * as Notifications from "expo-notifications";
 
 import { getTherapyNotificationLeadMinutes } from "@/constants/therapy-notification-lead";
 import { getTherapyNotificationRepeatMinutes } from "@/constants/therapy-notification-repeat";
+import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import {
   buildReminderFireSlots,
   reminderNotificationCopy,
 } from "@/lib/notifications/reminder-schedule";
-import { ensureNotificationPermissions, getNotificationChannelId, getNotificationSoundPayload } from "@/lib/notifications/setup";
 import { buildWeeklyReminderTrigger } from "@/lib/notifications/schedule-weekly-trigger";
+import { ensureNotificationPermissions, getNotificationChannelId, getNotificationSoundPayload } from "@/lib/notifications/setup";
 import type { Medication } from "@/types/domain";
 
 const MEDICATION_NOTIFICATION_IDS_KEY = "pillapp:medicationNotificationIds";
@@ -44,6 +45,8 @@ export async function syncMedicationReminders(
   if (!granted) {
     throw new Error("Permesso notifiche non concesso. Attivalo dalle impostazioni del telefono.");
   }
+
+  await ensureExactAlarms();
 
   const soundId = options?.soundId ?? "default";
   const playSound = options?.playSound ?? true;
@@ -86,6 +89,7 @@ export async function syncMedicationReminders(
               title: copy.title,
               body: copy.body,
               sound: sound ?? undefined,
+              priority: Notifications.AndroidNotificationPriority.MAX,
               data: {
                 medicationId: med.id,
                 type: "dose_reminder",

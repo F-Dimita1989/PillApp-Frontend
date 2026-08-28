@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import { pillappColors } from "@/theme/tokens";
 import {
   SILENT_REMINDER_CHANNEL_ID,
@@ -125,12 +126,13 @@ export type NotificationPermissionReview = {
   canAskAgain: boolean;
 };
 
-/** Controlla e, se possibile, richiede il permesso. Non apre le impostazioni. */
+/** Controlla e, se possibile, richiede il permesso. Su Android può aprire gli allarmi esatti. */
 export async function reviewNotificationPermissions(): Promise<NotificationPermissionReview> {
   await configureNotificationChannel();
 
   const current = await Notifications.getPermissionsAsync();
   if (current.status === "granted") {
+    await ensureExactAlarms({ prompt: true });
     return { granted: true, status: "granted", canAskAgain: true };
   }
 
@@ -143,6 +145,9 @@ export async function reviewNotificationPermissions(): Promise<NotificationPermi
       },
     });
     const granted = next.status === "granted";
+    if (granted) {
+      await ensureExactAlarms({ prompt: true });
+    }
     return {
       granted,
       status: granted ? "granted" : next.status === "denied" ? "denied" : "undetermined",

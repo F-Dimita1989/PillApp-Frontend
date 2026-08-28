@@ -36,7 +36,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM"
       ],
       "package": "com.anonymous.pillapp"
     },
@@ -109,7 +111,8 @@
           }
         }
       ],
-      "./plugins/with-short-cmake-object-paths.js"
+      "./plugins/with-short-cmake-object-paths.js",
+      "./plugins/with-exact-notification-alarms.js"
     ],
     "experiments": {
       "typedRoutes": true,

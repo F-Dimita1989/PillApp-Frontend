@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AppState } from "react-native";
 
 import { AccessibilityProvider } from "@/lib/accessibility/context";
 import { accessibilityPrefsFromProfile } from "@/lib/accessibility/prefs";
@@ -181,9 +182,17 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         /* permesso negato o errore scheduling — gestito dal Profilo */
       }
     };
-    if (isReady) {
-      void sync();
+    if (!isReady) {
+      return;
     }
+
+    void sync();
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void sync();
+      }
+    });
+    return () => subscription.remove();
   }, [
     state.medications,
     state.profile.notificationsEnabled,
