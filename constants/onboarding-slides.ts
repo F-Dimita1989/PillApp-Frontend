@@ -42,8 +42,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "shield-check-outline",
     iconColor: pillappColors.secondary,
     cardBackground: pillappColors.secondarySoft,
-    image: require("@/assets/onboarding/privacy-policy.png"),
-    imageCoverScale: 1.28,
+    image: require("@/assets/onboarding/privacy_policyCut.png"),
+    imageCoverScale: 1,
   },
   {
     id: "reminders",
@@ -53,8 +53,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "bell-ring-outline",
     iconColor: pillappColors.primary,
     cardBackground: pillappColors.primarySoft,
-    image: require("@/assets/onboarding/push-notifications.png"),
-    imageCoverScale: 1.28,
+    image: require("@/assets/onboarding/notifiche_parcoCut.png"),
+    imageCoverScale: 1,
   },
   {
     id: "therapy",
@@ -64,8 +64,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "pill",
     iconColor: pillappColors.secondary,
     cardBackground: pillappColors.secondarySoft,
-    image: require("@/assets/onboarding/medical-prescription.png"),
-    imageCoverScale: 1.28,
+    image: require("@/assets/onboarding/medicoCut.png"),
+    imageCoverScale: 1,
   },
   {
     id: "aic-scan",
@@ -75,8 +75,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "barcode-scan",
     iconColor: pillappColors.primary,
     cardBackground: pillappColors.primarySoft,
-    image: require("@/assets/onboarding/aic-search.png"),
-    imageCoverScale: 1.28,
+    image: require("@/assets/onboarding/lente_aicCut.png"),
+    imageCoverScale: 1,
   },
   {
     id: "journal",
@@ -86,8 +86,8 @@ export const onboardingSlides: OnboardingSlide[] = [
     icon: "notebook-heart-outline",
     iconColor: pillappColors.successDark,
     cardBackground: pillappColors.successSoft,
-    image: require("@/assets/onboarding/diary.png"),
-    imageCoverScale: 1.28,
+    image: require("@/assets/onboarding/diarioCut.png"),
+    imageCoverScale: 1,
   },
 ];
 

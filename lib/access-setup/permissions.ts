@@ -14,6 +14,13 @@ export type AppPermissionState = {
   status: AppPermissionStatus;
 };
 
+export const INITIAL_PERMISSION_STATES: AppPermissionState[] = [
+  { kind: "camera", status: "undetermined" },
+  { kind: "gallery", status: "undetermined" },
+  { kind: "notifications", status: "undetermined" },
+  { kind: "calendar", status: "undetermined" },
+];
+
 function mapExpoStatus(status: string): AppPermissionStatus {
   if (status === "granted") {
     return "granted";
@@ -124,5 +131,8 @@ export async function requestAllAppPermissions(): Promise<AppPermissionState[]> 
 }
 
 export function allPermissionsGranted(states: AppPermissionState[]): boolean {
+  if (states.length === 0) {
+    return false;
+  }
   return states.every((entry) => entry.status === "granted");
 }

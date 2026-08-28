@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
     Pressable,
     StyleSheet,
@@ -33,8 +33,8 @@ import {
 } from "@/constants/access-setup-slides";
 import type { OnboardingSlide } from "@/constants/onboarding-slides";
 import {
+    INITIAL_PERMISSION_STATES,
     allPermissionsGranted,
-    getAppPermissionStates,
     requestAllAppPermissions,
     type AppPermissionState,
 } from "@/lib/access-setup/permissions";
@@ -92,8 +92,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [permissionStates, setPermissionStates] = useState<
     AppPermissionState[]
-  >([]);
-  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+  >(INITIAL_PERMISSION_STATES);
   const [isRequestingPermissions, setIsRequestingPermissions] = useState(false);
   const [hasRequestedPermissions, setHasRequestedPermissions] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
@@ -114,19 +113,8 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
   const isLastSlide = currentIndex === ACCESS_SETUP_SLIDE_COUNT - 1;
 
   const permissionsGranted = allPermissionsGranted(permissionStates);
-
-  const refreshPermissions = useCallback(async () => {
-    setIsLoadingPermissions(true);
-    try {
-      setPermissionStates(await getAppPermissionStates());
-    } finally {
-      setIsLoadingPermissions(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshPermissions();
-  }, [refreshPermissions]);
+  const permissionsConfirmed =
+    hasRequestedPermissions && permissionsGranted;
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -199,7 +187,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
       return;
     }
 
-    if (!permissionsGranted) {
+    if (!permissionsConfirmed) {
       void handleRequestPermissions();
       return;
     }
@@ -210,7 +198,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     handleFinish,
     handleRequestPermissions,
     isFirstSlide,
-    permissionsGranted,
+    permissionsConfirmed,
     termsAccepted,
   ]);
 
@@ -234,8 +222,8 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     if (isRequestingPermissions || isFinishing) {
       return "Attendi...";
     }
-    return permissionsGranted ? "Ho capito" : "Consenti gli accessi";
-  }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsGranted]);
+    return permissionsConfirmed ? "Ho capito" : "Consenti gli accessi";
+  }, [isFinishing, isFirstSlide, isRequestingPermissions, permissionsConfirmed]);
 
   const primaryDisabled =
     isRequestingPermissions || isFinishing || (isFirstSlide && !termsAccepted);
@@ -247,7 +235,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
         width={width}
         heroZoneHeight={heroZoneHeight}
         permissionStates={permissionStates}
-        isLoadingPermissions={isLoadingPermissions}
+        isLoadingPermissions={isRequestingPermissions}
         hasRequestedPermissions={hasRequestedPermissions}
         permissionsGranted={permissionsGranted}
         onOpenTerms={openTerms}
@@ -256,7 +244,7 @@ export function AccessSetupFlow({ onComplete }: AccessSetupFlowProps) {
     [
       hasRequestedPermissions,
       heroZoneHeight,
-      isLoadingPermissions,
+      isRequestingPermissions,
       openTerms,
       permissionStates,
       permissionsGranted,

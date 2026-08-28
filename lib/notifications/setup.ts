@@ -183,6 +183,5 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
 
 export async function initializeNotifications(): Promise<NotificationPermissionStatus> {
   registerNotificationHandler();
-  await configureNotificationChannel();
   return getNotificationPermissionStatus();
 }

@@ -1,6 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ActivityIndicator, View, useWindowDimensions } from "react-native";
-import { XStack, YStack } from "tamagui";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { YStack } from "tamagui";
 
 import { BrandIconBadge, SecondaryButton } from "@/components/ui";
 import { AppText } from "@/components/ui/app-text";
@@ -154,35 +160,29 @@ export function AccessSetupSlideView({
                 const iconSize = dense ? 30 : 34;
 
                 return (
-                  <XStack key={entry.kind} gap="$2.5" alignItems="center">
+                  <View key={entry.kind} style={styles.permissionRow}>
                     <BrandIconBadge
                       name={copy.icon}
                       size={iconSize}
                       iconSize={dense ? 16 : 18}
                     />
-                    <XStack
-                      flex={1}
-                      justifyContent="space-between"
-                      alignItems="center"
-                      gap="$2"
+                    <Text
+                      style={styles.permissionTitle}
+                      textBreakStrategy="simple"
                     >
-                      <AppText
-                        variant="label"
-                        color="secondary"
-                        fontWeight="600"
-                        {...TEXT_SIZES.label}
-                      >
-                        {copy.title}
-                      </AppText>
-                      <AppText
-                        variant="caption"
-                        style={{ color: permissionStatusColor(entry.status) }}
-                        {...TEXT_SIZES.caption}
-                      >
-                        {permissionStatusLabel(entry.status)}
-                      </AppText>
-                    </XStack>
-                  </XStack>
+                      {copy.title}
+                    </Text>
+                    <View style={styles.permissionSpacer} />
+                    <Text
+                      style={[
+                        styles.permissionStatus,
+                        { color: permissionStatusColor(entry.status) },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {permissionStatusLabel(entry.status)}
+                    </Text>
+                  </View>
                 );
               })
             )}
@@ -204,3 +204,33 @@ export function AccessSetupSlideView({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  permissionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    width: "100%",
+  },
+  permissionTitle: {
+    flexGrow: 0,
+    flexShrink: 0,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+    color: pillappColors.secondaryDark,
+    includeFontPadding: false,
+  },
+  permissionSpacer: {
+    flex: 1,
+    minWidth: 8,
+  },
+  permissionStatus: {
+    flexGrow: 0,
+    flexShrink: 0,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+    includeFontPadding: false,
+  },
+});

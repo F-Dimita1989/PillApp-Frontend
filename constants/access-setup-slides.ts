@@ -14,8 +14,8 @@ export const accessSetupSlides: OnboardingSlide[] = [
     icon: "shield-check-outline",
     iconColor: pillappColors.secondary,
     cardBackground: pillappColors.secondarySoft,
-    image: require("@/assets/onboarding/privacy-policy.png"),
-    imageCoverScale: 1.22,
+    image: require("@/assets/onboarding/privacy_policyCut.png"),
+    imageCoverScale: 1,
   },
   {
     id: "permissions",
