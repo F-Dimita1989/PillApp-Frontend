@@ -150,7 +150,8 @@ export function JournalScreen() {
     <AppScreen
       hero={
         <AppTopBar
-          icon="notebook-heart-outline"
+          image={require("@/assets/onboarding/diario-medico.png")}
+          imageCoverScale={0.76}
           eyebrow="Per te e per il medico"
           title="Diario salute"
           subtitle="Registra misurazioni e note, poi salva un PDF da inviare al tuo medico."

@@ -7,6 +7,7 @@ type ProfileSetupChoiceCardProps = {
   label: string;
   description?: string;
   selected?: boolean;
+  compact?: boolean;
   onPress: () => void;
 };
 
@@ -14,6 +15,7 @@ export function ProfileSetupChoiceCard({
   label,
   description,
   selected = false,
+  compact = false,
   onPress,
 }: ProfileSetupChoiceCardProps) {
   return (
@@ -26,14 +28,19 @@ export function ProfileSetupChoiceCard({
       <YStack
         width="100%"
         alignItems="center"
-        gap="$1"
-        padding="$4"
+        gap={compact ? "$0.5" : "$1"}
+        paddingVertical={compact ? "$2" : "$4"}
+        paddingHorizontal={compact ? "$3" : "$4"}
         borderRadius="$2"
         borderWidth={selected ? 2 : 1}
         borderColor={selected ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.55)"}
         backgroundColor={selected ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.1)"}
       >
-        <AppText variant="title" color="inverse" textAlign="center">
+        <AppText
+          variant={compact ? "bodyStrong" : "title"}
+          color="inverse"
+          textAlign="center"
+        >
           {label}
         </AppText>
         {description ? (

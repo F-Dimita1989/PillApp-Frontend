@@ -325,9 +325,11 @@ export function IntroHeroArc({
                 {eyebrow}
               </AppText>
             ) : null}
-            <AppText variant="headline" textAlign="center" color="primary">
-              {title}
-            </AppText>
+            {title ? (
+              <AppText variant="headline" textAlign="center" color="primary">
+                {title}
+              </AppText>
+            ) : null}
             {subtitle ? (
               <AppText variant="body" muted textAlign="center" maxWidth={340}>
                 {subtitle}

@@ -178,13 +178,13 @@ export function ProfileSetupStepContent({
 
     case "sex":
       return (
-        <ProfileSetupCard gap={12}>
+        <ProfileSetupCard gap={10}>
           {GUEST_SEX_OPTIONS.map((option) => (
             <ProfileSetupChoiceCard
               key={option.value}
               label={option.label}
-              description={option.description}
               selected={guestSex === option.value}
+              compact
               onPress={() => onGuestSexChange(option.value)}
             />
           ))}

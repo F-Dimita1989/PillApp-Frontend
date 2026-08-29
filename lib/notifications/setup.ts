@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { registerDoseReminderCategory } from "@/lib/notifications/categories";
 import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import { pillappColors } from "@/theme/tokens";
 import {
@@ -70,6 +71,7 @@ async function configureReminderChannel(
 }
 
 export async function configureNotificationChannel(): Promise<void> {
+  await registerDoseReminderCategory().catch(() => {});
   await removeStaleReminderChannels();
 
   for (const option of THERAPY_REMINDER_SOUNDS) {
@@ -183,5 +185,6 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
 
 export async function initializeNotifications(): Promise<NotificationPermissionStatus> {
   registerNotificationHandler();
+  await registerDoseReminderCategory().catch(() => {});
   return getNotificationPermissionStatus();
 }

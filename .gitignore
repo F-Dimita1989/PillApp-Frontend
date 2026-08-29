@@ -42,6 +42,10 @@ app-example
 /ios
 /android
 
+# output Gradle dei moduli nativi locali (path troppo lunghi su Windows)
+modules/**/android/build/
+modules/**/android/.cxx/
+
 # ninja scaricato dallo script di build Windows
 /tools/ninja/
 

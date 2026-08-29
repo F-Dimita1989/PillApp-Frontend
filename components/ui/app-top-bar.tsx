@@ -1,6 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import {
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import {
   IntroHeroArc,
@@ -19,6 +25,8 @@ type AppTopBarProps = {
   subtitle?: string;
   eyebrow?: string;
   icon?: HeroIcon;
+  image?: ImageSourcePropType;
+  imageCoverScale?: number;
   showLogo?: boolean;
   onBack?: () => void;
   trailing?: ReactNode;
@@ -29,6 +37,8 @@ export function AppTopBar({
   subtitle,
   eyebrow,
   icon,
+  image,
+  imageCoverScale = 1,
   showLogo = false,
   onBack,
   trailing,
@@ -37,7 +47,33 @@ export function AppTopBar({
   const layout = appScreenHeroLayout;
   const backSize = easyTap ? 52 : 44;
   const spoken = [eyebrow, title, subtitle].filter(Boolean).join(". ");
+  const imageSize = Math.round(layout.emblemSize * imageCoverScale);
   useSpeakOnFocus(spoken);
+
+  const emblem = image ? (
+    <View
+      style={[
+        styles.circularCrop,
+        {
+          width: layout.emblemSize,
+          height: layout.emblemSize,
+          borderRadius: layout.emblemSize / 2,
+        },
+      ]}
+    >
+      <Image
+        source={image}
+        style={{ width: imageSize, height: imageSize }}
+        resizeMode="cover"
+      />
+    </View>
+  ) : icon ? (
+    <MaterialCommunityIcons
+      name={icon}
+      size={HERO_ICON_SIZE}
+      color={pillappColors.secondary}
+    />
+  ) : undefined;
 
   return (
     <View style={styles.host}>
@@ -50,15 +86,7 @@ export function AppTopBar({
         arcHeight={layout.arcHeight}
         emblemSize={layout.emblemSize}
         emblemRaiseExtra={layout.emblemRaiseExtra}
-        emblem={
-          icon ? (
-            <MaterialCommunityIcons
-              name={icon}
-              size={HERO_ICON_SIZE}
-              color={pillappColors.secondary}
-            />
-          ) : undefined
-        }
+        emblem={emblem}
       />
 
       {onBack ? (
@@ -108,5 +136,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: pillappLayout.screenPaddingX,
     zIndex: 4,
+  },
+  circularCrop: {
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

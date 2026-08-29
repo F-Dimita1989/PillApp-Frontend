@@ -1,17 +1,30 @@
-import {
-  getMedicationStatusLabel,
-  type PillAppMedicationStatus,
-} from "@/constants/colors";
 import type { DoseStatus } from "@/types/domain";
 
 import { AppBadge } from "@/components/ui/app-badge";
 
 type StatusChipProps = {
-  status: PillAppMedicationStatus | DoseStatus;
+  status: DoseStatus;
 };
 
+function statusLabel(status: DoseStatus): string {
+  switch (status) {
+    case "taken":
+      return "Completato";
+    case "due_soon":
+      return "Tra poco";
+    case "overdue":
+      return "In ritardo";
+    case "snoozed":
+      return "Posticipato";
+    case "skipped":
+      return "Saltato";
+    default:
+      return "In attesa";
+  }
+}
+
 function toneForStatus(
-  status: PillAppMedicationStatus,
+  status: DoseStatus,
 ): "success" | "primary" | "error" | "secondary" | "neutral" | "warning" {
   switch (status) {
     case "taken":
@@ -30,12 +43,12 @@ function toneForStatus(
 }
 
 export function StatusChip({ status }: StatusChipProps) {
-  const normalized = status as PillAppMedicationStatus;
+  const label = statusLabel(status);
   return (
     <AppBadge
-      label={getMedicationStatusLabel(normalized)}
-      tone={toneForStatus(normalized)}
-      accessibilityLabel={`Stato: ${getMedicationStatusLabel(normalized)}`}
+      label={label}
+      tone={toneForStatus(status)}
+      accessibilityLabel={`Stato: ${label}`}
     />
   );
 }

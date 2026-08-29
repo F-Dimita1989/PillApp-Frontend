@@ -47,7 +47,8 @@ export function MedicationsScreen() {
       contentStyle={{ paddingBottom: 24 }}
       hero={
         <AppTopBar
-          icon="pill"
+          image={require("@/assets/onboarding/blister.png")}
+          imageCoverScale={0.76}
           title="I miei farmaci"
           subtitle="Terapia attiva, dosi e promemoria in un unico elenco."
         />

@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Image } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 
 import {
   IntroHeroArc,
@@ -19,6 +19,7 @@ type ProfileSetupHeroProps = {
   subtitle?: string;
   showLogo?: boolean;
   hideSubtitle?: boolean;
+  hideTitle?: boolean;
   /** Se false, mostra solo cupola e emblem (il titolo resta nel contenuto). */
   showCopy?: boolean;
 };
@@ -28,15 +29,18 @@ export function ProfileSetupHero({
   subtitle,
   showLogo = false,
   hideSubtitle = false,
+  hideTitle = false,
   showCopy = true,
 }: ProfileSetupHeroProps) {
   const intro = onboardingIntroHeroLayout;
+  const coverScale = meta.imageCoverScale ?? 1;
+  const imageSize = Math.round(intro.emblemSize * coverScale);
 
   return (
     <IntroHeroArc
       eyebrow={meta.eyebrow}
-      title={meta.title}
-      subtitle={hideSubtitle ? undefined : (subtitle ?? meta.subtitle)}
+      title={hideTitle ? "" : meta.title}
+      subtitle={hideSubtitle || hideTitle ? undefined : (subtitle ?? meta.subtitle)}
       showLogo={false}
       showCopy={showCopy}
       parentPaddingX={intro.parentPaddingX}
@@ -55,6 +59,23 @@ export function ProfileSetupHero({
             resizeMode="contain"
             accessibilityLabel="Logo PillApp"
           />
+        ) : meta.image ? (
+          <View
+            style={[
+              styles.circularCrop,
+              {
+                width: intro.emblemSize,
+                height: intro.emblemSize,
+                borderRadius: intro.emblemSize / 2,
+              },
+            ]}
+          >
+            <Image
+              source={meta.image}
+              style={{ width: imageSize, height: imageSize }}
+              resizeMode="cover"
+            />
+          </View>
         ) : (
           <MaterialCommunityIcons
             name={meta.icon}
@@ -66,3 +87,11 @@ export function ProfileSetupHero({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  circularCrop: {
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

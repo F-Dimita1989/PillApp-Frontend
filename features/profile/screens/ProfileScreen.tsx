@@ -174,7 +174,8 @@ export function ProfileScreen() {
     <AppScreen
       hero={
         <AppTopBar
-          icon="account-heart-outline"
+          image={require("@/assets/onboarding/profilo.png")}
+          imageCoverScale={0.76}
           eyebrow="Il tuo spazio"
           title="Profilo"
           subtitle="Riepilogo, accessibilità, avatar e suoni dei promemoria."

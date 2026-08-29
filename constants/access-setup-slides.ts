@@ -13,7 +13,6 @@ export const accessSetupSlides: OnboardingSlide[] = [
     subtitle: "Tranquillità e rispetto dei tuoi dati personali.",
     icon: "shield-check-outline",
     iconColor: pillappColors.secondary,
-    cardBackground: pillappColors.secondarySoft,
     image: require("@/assets/onboarding/privacy_policyCut.png"),
     imageCoverScale: 1,
   },
@@ -23,6 +22,7 @@ export const accessSetupSlides: OnboardingSlide[] = [
     subtitle: "Consenti questi permessi per usare PillApp al meglio.",
     icon: "cellphone-check",
     iconColor: pillappColors.primary,
-    cardBackground: pillappColors.primarySoft,
+    image: require("@/assets/onboarding/accessi-necessari.png"),
+    imageCoverScale: 0.76,
   },
 ];

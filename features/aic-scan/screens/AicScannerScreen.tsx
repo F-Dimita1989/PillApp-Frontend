@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, StyleSheet } from "react-native";
 import { YStack } from "tamagui";
 
+import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
 import {
     ManualMedicationForm,
     validateManualMedication,
@@ -17,7 +18,6 @@ import {
     AppText,
     AppTopBar,
     BottomActionBar,
-    BrandIconBadge,
     BrandIntroCard,
     ErrorState,
     PrimaryButton,
@@ -181,7 +181,12 @@ export function AicScannerScreen() {
           }
           hero={
             <AppTopBar
-              icon={isManual ? "pencil-outline" : "barcode-scan"}
+              image={
+                isManual
+                  ? require("@/assets/onboarding/matita.png")
+                  : require("@/assets/onboarding/lente.png")
+              }
+              imageCoverScale={0.76}
               eyebrow={isManual ? "Senza fotocamera" : "Funzione esclusiva"}
               title={isManual ? "Inserisci un farmaco" : "Scansione AIC"}
               subtitle={
@@ -204,7 +209,7 @@ export function AicScannerScreen() {
                 <AppCardContent alignItems="center">
                   <YStack
                     width="100%"
-                    minHeight={220}
+                    minHeight={phase === "loading" ? 220 : undefined}
                     borderRadius="$3"
                     overflow="hidden"
                   >
@@ -219,14 +224,14 @@ export function AicScannerScreen() {
                     />
                     <YStack
                       width="100%"
-                      minHeight={220}
+                      minHeight={phase === "loading" ? 220 : undefined}
                       borderRadius="$3"
                       borderWidth={2}
                       borderStyle="dashed"
                       borderColor="$secondary"
                       alignItems="center"
                       justifyContent="center"
-                      padding="$5"
+                      padding="$4"
                       gap="$3"
                       accessibilityLabel="Area di scansione codice AIC"
                     >
@@ -242,11 +247,9 @@ export function AicScannerScreen() {
                         </>
                       ) : (
                         <>
-                          <BrandIconBadge
-                            name="barcode-scan"
-                            size={64}
-                            iconSize={32}
-                          />
+                          <YStack width="100%">
+                            <AicScanExampleImage size="full" />
+                          </YStack>
                           <AppText variant="title" color="secondary">
                             Codice AIC
                           </AppText>

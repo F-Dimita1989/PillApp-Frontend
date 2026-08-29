@@ -14,7 +14,6 @@ export type OnboardingSlide = {
   subtitle: string;
   icon: OnboardingSlideIcon;
   iconColor: string;
-  cardBackground: string;
   badge?: string;
   showLogo?: boolean;
   image?: ImageSourcePropType;
@@ -31,7 +30,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "PillApp è il tuo compagno quotidiano per la terapia: semplice, chiaro e pensato per accompagnarti con serenità.",
     icon: "hand-wave",
     iconColor: pillappColors.primary,
-    cardBackground: pillappColors.primarySoft,
     showLogo: true,
   },
   {
@@ -41,7 +39,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "Niente registrazione né password: le tue informazioni restano sul telefono. Ti guideremo passo passo, al tuo ritmo.",
     icon: "shield-check-outline",
     iconColor: pillappColors.secondary,
-    cardBackground: pillappColors.secondarySoft,
     image: require("@/assets/onboarding/privacy_policyCut.png"),
     imageCoverScale: 1,
   },
@@ -52,7 +49,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "PillApp ti aiuta a ricordare cosa prendere e quando, con un’agenda chiara e tranquilla.",
     icon: "bell-ring-outline",
     iconColor: pillappColors.primary,
-    cardBackground: pillappColors.primarySoft,
     image: require("@/assets/onboarding/notifiche_parcoCut.png"),
     imageCoverScale: 1,
   },
@@ -63,7 +59,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "Promemoria, lista farmaci e aderenza di oggi: tutto in un unico posto, facile da consultare.",
     icon: "pill",
     iconColor: pillappColors.secondary,
-    cardBackground: pillappColors.secondarySoft,
     image: require("@/assets/onboarding/medicoCut.png"),
     imageCoverScale: 1,
   },
@@ -74,7 +69,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "Scansiona il codice sulla confezione: PillApp riconosce il medicinale e ti aiuta a configurarlo più in fretta.",
     icon: "barcode-scan",
     iconColor: pillappColors.primary,
-    cardBackground: pillappColors.primarySoft,
     image: require("@/assets/onboarding/lente_aicCut.png"),
     imageCoverScale: 1,
   },
@@ -85,7 +79,6 @@ export const onboardingSlides: OnboardingSlide[] = [
       "Registra pressione, glicemia, peso e come ti senti. Un diario semplice per te e per il tuo medico.",
     icon: "notebook-heart-outline",
     iconColor: pillappColors.successDark,
-    cardBackground: pillappColors.successSoft,
     image: require("@/assets/onboarding/diarioCut.png"),
     imageCoverScale: 1,
   },

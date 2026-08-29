@@ -43,7 +43,7 @@ export {
 export { InfoRow } from "@/components/ui/info-row";
 export {
     appScreenHeroLayout, getOnboardingArcLayout,
-    getOnboardingHeroZoneHeight, IntroHeroArc, introHeroEmblemLayout,
+    getOnboardingHeroZoneHeight, IntroHeroArc,
     onboardingHeroEmblemLayout,
     onboardingIntroHeroLayout
 } from "@/components/ui/intro-hero-arc";

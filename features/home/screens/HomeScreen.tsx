@@ -180,7 +180,8 @@ export function HomeScreen() {
     <AppScreen
       hero={
         <AppTopBar
-          icon="home-heart"
+          image={require("@/assets/onboarding/home.png")}
+          imageCoverScale={0.76}
           eyebrow={formatItalianDate(now)}
           title={greeting}
           subtitle={heroSubtitle}

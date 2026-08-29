@@ -11,6 +11,7 @@ import {
 } from "react";
 import { AppState } from "react-native";
 
+import { NotificationResponseHandler } from "@/components/notifications/notification-response-handler";
 import { AccessibilityProvider } from "@/lib/accessibility/context";
 import { accessibilityPrefsFromProfile } from "@/lib/accessibility/prefs";
 import {
@@ -23,6 +24,8 @@ import { savePersistedAppData, mergeDoseStatuses } from "@/lib/app-data/storage"
 import { buildDosesForToday } from "@/lib/app-data/sync";
 import {
   cancelAllMedicationReminders,
+  cancelFollowUpRemindersForDose,
+  syncDoseFollowUpReminders,
   syncMedicationReminders,
 } from "@/lib/notifications/medication-reminders";
 import type {
@@ -201,12 +204,51 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     isReady,
   ]);
 
+  useEffect(() => {
+    const syncFollowUps = async () => {
+      try {
+        if (state.profile.notificationsEnabled) {
+          await syncDoseFollowUpReminders(
+            state.medications,
+            state.dosesToday,
+            true,
+            {
+              soundId: state.profile.notificationSoundId,
+              playSound: state.profile.notificationSoundEnabled,
+            },
+          );
+        }
+      } catch {
+        /* permesso negato o errore scheduling — gestito dal Profilo */
+      }
+    };
+    if (!isReady) {
+      return;
+    }
+    void syncFollowUps();
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void syncFollowUps();
+      }
+    });
+    return () => subscription.remove();
+  }, [
+    state.dosesToday,
+    state.medications,
+    state.profile.notificationsEnabled,
+    state.profile.notificationSoundId,
+    state.profile.notificationSoundEnabled,
+    isReady,
+  ]);
+
   const markDoseTaken = useCallback((doseId: string) => {
     dispatch({ type: "UPDATE_DOSE_STATUS", doseId, status: "taken" });
+    void cancelFollowUpRemindersForDose(doseId);
   }, []);
 
   const markDoseSkipped = useCallback((doseId: string, note?: string) => {
     dispatch({ type: "UPDATE_DOSE_STATUS", doseId, status: "skipped", note });
+    void cancelFollowUpRemindersForDose(doseId);
   }, []);
 
   const snoozeDose = useCallback((doseId: string) => {
@@ -312,7 +354,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppDataContext.Provider value={value}>
-      <AccessibilityProvider value={accessibility}>{children}</AccessibilityProvider>
+      <AccessibilityProvider value={accessibility}>
+        <NotificationResponseHandler />
+        {children}
+      </AccessibilityProvider>
     </AppDataContext.Provider>
   );
 }

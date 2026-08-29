@@ -523,7 +523,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
     <ProfileSetupHero
       meta={profileHeroMeta}
       showLogo={step === "welcome"}
-      hideSubtitle={step === "welcome"}
+      hideSubtitle={step === "welcome" || step === "sex"}
       subtitle={profileDoneSubtitle}
     />
   ) : null;

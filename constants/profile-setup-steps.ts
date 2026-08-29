@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import type { ImageSourcePropType } from "react-native";
 
 export type ProfileSetupStepId =
   | "welcome"
@@ -16,6 +17,8 @@ export type ProfileSetupStepMeta = {
   title: string;
   subtitle: string;
   icon: ProfileSetupStepIcon;
+  image?: ImageSourcePropType;
+  imageCoverScale?: number;
 };
 
 export const PROFILE_SETUP_TOTAL_STEPS = 6;
@@ -40,6 +43,8 @@ function resolveMeta(
     title: string | ((name: string) => string);
     subtitle: string | ((name: string) => string);
     icon: ProfileSetupStepIcon;
+    image?: ImageSourcePropType;
+    imageCoverScale?: number;
   },
   guestName = "",
 ): ProfileSetupStepMeta {
@@ -47,6 +52,8 @@ function resolveMeta(
   return {
     eyebrow: meta.eyebrow,
     icon: meta.icon,
+    image: meta.image,
+    imageCoverScale: meta.imageCoverScale,
     title: typeof meta.title === "function" ? meta.title(name) : meta.title,
     subtitle:
       typeof meta.subtitle === "function" ? meta.subtitle(name) : meta.subtitle,
@@ -73,6 +80,8 @@ export function getProfileSetupStepMeta(
         subtitle:
           "Usa il nome che preferisci: quello vero o un nickname, come ti senti più a tuo agio.",
         icon: "account-edit-outline",
+        image: require("@/assets/onboarding/come-posso-chiamarti.png"),
+        imageCoverScale: 0.76,
       });
     case "age":
       return resolveMeta(
@@ -83,6 +92,8 @@ export function getProfileSetupStepMeta(
           subtitle:
             "Ci aiuta a proporti testi e pulsanti più chiari. L'informazione non esce mai dal telefono.",
           icon: "cake-variant-outline",
+          image: require("@/assets/onboarding/quanti-anni-hai.png"),
+          imageCoverScale: 0.76,
         },
         guestName,
       );
@@ -93,6 +104,8 @@ export function getProfileSetupStepMeta(
         subtitle:
           "Serve solo per adattare qualche messaggio. Se preferisci non rispondere, scegli l'ultima opzione.",
         icon: "account-heart-outline",
+        image: require("@/assets/onboarding/come-ti-identifichi.png"),
+        imageCoverScale: 0.76,
       });
     case "therapy":
       return resolveMeta({
@@ -101,6 +114,8 @@ export function getProfileSetupStepMeta(
         subtitle:
           "Hai farmaci da prendere con regolarità? Scansiona le confezioni una alla volta: puoi aggiungerne più di uno.",
         icon: "pill",
+        image: require("@/assets/onboarding/configuriamo-terapia.png"),
+        imageCoverScale: 0.76,
       });
     case "done":
       return resolveMeta(
@@ -110,6 +125,8 @@ export function getProfileSetupStepMeta(
           subtitle:
             "Il tuo profilo è completo. Un ultimo controllo e poi entriamo in PillApp.",
           icon: "check-circle-outline",
+          image: require("@/assets/onboarding/tutto-pronto.png"),
+          imageCoverScale: 0.76,
         },
         guestName,
       );

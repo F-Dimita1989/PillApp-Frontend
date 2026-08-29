@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { YStack } from "tamagui";
 
 import {
-  ProfileSetupButtonRow,
-  ProfileSetupPrimaryButton,
-  ProfileSetupSecondaryButton,
+    ProfileSetupButtonRow,
+    ProfileSetupPrimaryButton,
+    ProfileSetupSecondaryButton,
 } from "@/components/setup/profile-setup-controls";
-import { ProfileSetupInputModal } from "@/components/setup/profile-setup-input-modal";
 import { ProfileSetupGradientCard } from "@/components/setup/profile-setup-gradient-card";
+import { ProfileSetupInputModal } from "@/components/setup/profile-setup-input-modal";
 import { pillappColors, pillappRadius } from "@/theme/tokens";
 
 const FIELD_HEIGHT = 52;
