@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
@@ -8,6 +8,7 @@ import { useAccessibility } from "@/lib/accessibility/context";
 import { tabBarTheme } from "@/theme/tab-bar";
 
 export default function TabLayout() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { easyTap, largeText } = useAccessibility();
   const contentHeight =
@@ -68,6 +69,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="medications"
+        listeners={{
+          tabPress: () => {
+            router.navigate("/medications");
+          },
+        }}
         options={{
           title: "Farmaci",
           tabBarIcon: ({ color }) => (

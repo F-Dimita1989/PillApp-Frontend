@@ -71,6 +71,7 @@ export async function saveSetupMedications(
     const reminders = await syncMedicationReminders(medications, true, {
       soundId: existing?.profilePrefs.notificationSoundId,
       playSound: existing?.profilePrefs.notificationSoundEnabled,
+      dosesToday,
     });
     return { reminders };
   } catch (notificationError) {

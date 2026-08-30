@@ -1,3 +1,5 @@
+import { formatDateKey } from "@/lib/calendar/week-utils";
+
 export type WeeklyClock = {
   weekday: number;
   hour: number;
@@ -31,40 +33,27 @@ export function shiftWeeklyClock(
 }
 
 /**
- * Minuti prima dell'assunzione in cui far partire l'avviso.
- * Sempre orario esatto (0); se c'è anticipo, anche quello;
- * se c'è ripetizione, riempie i passi intermedi.
+ * Slot settimanali: orario esatto e, se c'è, un solo anticipo.
+ * La ripetizione serve ai reminder DOPO l'orario (follow-up), non a
+ * moltiplicare allarmi settimanali che Android scarica tutti insieme.
  */
-export function reminderMinutesBeforeDose(
-  leadMinutes: number,
-  repeatMinutes: number,
-): number[] {
+export function reminderMinutesBeforeDose(leadMinutes: number): number[] {
   const unique = new Set<number>([0]);
   const lead = Math.max(0, leadMinutes);
-
   if (lead > 0) {
     unique.add(lead);
-    if (repeatMinutes > 0) {
-      for (let minutes = lead - repeatMinutes; minutes > 0; minutes -= repeatMinutes) {
-        unique.add(minutes);
-      }
-    }
   }
-
   return [...unique].sort((a, b) => b - a);
 }
 
 export function buildReminderFireSlots(
   clock: WeeklyClock,
   leadMinutes: number,
-  repeatMinutes: number,
 ): ReminderFireSlot[] {
-  return reminderMinutesBeforeDose(leadMinutes, repeatMinutes).map(
-    (minutesBefore) => ({
-      ...shiftWeeklyClock(clock, -minutesBefore),
-      minutesBefore,
-    }),
-  );
+  return reminderMinutesBeforeDose(leadMinutes).map((minutesBefore) => ({
+    ...shiftWeeklyClock(clock, -minutesBefore),
+    minutesBefore,
+  }));
 }
 
 export function reminderNotificationCopy(
@@ -86,11 +75,6 @@ export function reminderNotificationCopy(
   };
 }
 
-/** Ripetizioni dopo l'orario, finché l'assunzione non è confermata. */
-export const DOSE_FOLLOW_UP_MAX_COUNT = 12;
-export const DOSE_FOLLOW_UP_WINDOW_MINUTES = 120;
-export const DOSE_FOLLOW_UP_MIN_INTERVAL_MINUTES = 5;
-
 export function parseDoseClock(
   rawTime: string,
 ): { hour: number; minute: number } | null {
@@ -107,45 +91,74 @@ export function scheduledDateOnDay(timeStr: string, day: Date): Date | null {
   return date;
 }
 
-/**
- * Secondi da ora per i reminder post-orario (one-shot).
- * Se l'orario non è ancora arrivato, partono dopo la dose;
- * se è già passato, ripartono da ora (così continuano finché non confermi
- * e l'app si risincronizza).
- */
-export function computeFollowUpDelaySeconds(
-  scheduledTime: string,
-  now: Date,
-  intervalMinutes: number,
-): number[] {
-  const interval = Math.max(
-    DOSE_FOLLOW_UP_MIN_INTERVAL_MINUTES,
-    intervalMinutes || DOSE_FOLLOW_UP_MIN_INTERVAL_MINUTES,
-  );
-  const doseAt = scheduledDateOnDay(scheduledTime, now);
-  if (!doseAt) return [];
+/** Massimo ore di insistenza dopo l'assunzione, nella stessa giornata. */
+export const DOSE_CONFIRM_FOLLOW_UP_MAX_HOURS = 16;
 
-  const firstMs =
-    now.getTime() < doseAt.getTime()
-      ? doseAt.getTime() + interval * 60_000
-      : now.getTime() + interval * 60_000;
-  const windowEndMs = Math.max(
-    doseAt.getTime() + DOSE_FOLLOW_UP_WINDOW_MINUTES * 60_000,
-    now.getTime() + DOSE_FOLLOW_UP_WINDOW_MINUTES * 60_000,
-  );
+/** Ultima ora del giorno in cui mandare il reminder di conferma (22:xx). */
+export const DOSE_CONFIRM_FOLLOW_UP_LAST_HOUR = 22;
 
-  const delays: number[] = [];
-  for (
-    let t = firstMs;
-    t <= windowEndMs && delays.length < DOSE_FOLLOW_UP_MAX_COUNT;
-    t += interval * 60_000
-  ) {
-    const seconds = Math.round((t - now.getTime()) / 1000);
-    if (seconds >= 60) {
-      delays.push(seconds);
-    }
+export function isSameLocalDay(a: Date, b: Date): boolean {
+  return formatDateKey(a) === formatDateKey(b);
+}
+
+export function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+/** Prossima occorrenza locale di weekday/ora/minuto (weekday Expo: 1 = domenica). */
+export function nextWeeklyOccurrence(clock: WeeklyClock, now: Date): Date {
+  const result = new Date(now);
+  result.setSeconds(0, 0);
+  result.setMilliseconds(0);
+  result.setHours(clock.hour, clock.minute, 0, 0);
+
+  const nowWeekday = now.getDay() + 1;
+  let dayDelta = clock.weekday - nowWeekday;
+  if (dayDelta < 0) {
+    dayDelta += 7;
   }
-  return delays;
+  if (dayDelta === 0 && result.getTime() <= now.getTime()) {
+    dayDelta = 7;
+  }
+  result.setDate(result.getDate() + dayDelta);
+  return result;
+}
+
+/** Prossima occorrenza locale di ora/minuto, oggi o domani. */
+export function nextDailyOccurrence(
+  hour: number,
+  minute: number,
+  now: Date,
+): Date {
+  const result = new Date(now);
+  result.setSeconds(0, 0);
+  result.setMilliseconds(0);
+  result.setHours(hour, minute, 0, 0);
+  if (result.getTime() <= now.getTime()) {
+    result.setDate(result.getDate() + 1);
+  }
+  return result;
+}
+
+/**
+ * Orari di conferma dopo la dose: ogni ora, stessa giornata, fino alle 22.
+ * Programmabili come WEEKLY: funzionano anche a app chiusa.
+ */
+export function buildHourlyConfirmClocks(doseClock: WeeklyClock): WeeklyClock[] {
+  const clocks: WeeklyClock[] = [];
+  for (let hoursAfter = 1; hoursAfter <= DOSE_CONFIRM_FOLLOW_UP_MAX_HOURS; hoursAfter++) {
+    const shifted = shiftWeeklyClock(doseClock, hoursAfter * 60);
+    if (shifted.weekday !== doseClock.weekday) {
+      break;
+    }
+    if (shifted.hour >= DOSE_CONFIRM_FOLLOW_UP_LAST_HOUR + 1) {
+      break;
+    }
+    clocks.push(shifted);
+  }
+  return clocks;
 }
 
 export function followUpNotificationCopy(
@@ -155,6 +168,6 @@ export function followUpNotificationCopy(
 ): { title: string; body: string } {
   return {
     title: "Conferma l'assunzione",
-    body: `Non hai ancora confermato ${medName} (${dose}), previsto alle ${timeStr}. Apri la scheda del farmaco e conferma.`,
+    body: `Non hai ancora confermato ${medName} (${dose}), previsto alle ${timeStr}. Conferma dall'avviso o dalla scheda del farmaco.`,
   };
 }

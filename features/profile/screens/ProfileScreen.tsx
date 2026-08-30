@@ -44,6 +44,7 @@ export function ProfileScreen() {
     medications,
     measurements,
     journalNotes,
+    dosesToday,
   } = useAppData();
   const [snack, setSnack] = useState("");
   const [snackAction, setSnackAction] = useState<"settings" | null>(null);
@@ -85,6 +86,7 @@ export function ProfileScreen() {
           const count = await syncMedicationReminders(medications, true, {
             soundId: profile.notificationSoundId,
             playSound: profile.notificationSoundEnabled,
+            dosesToday,
           });
           showSnack(
             count > 0
@@ -105,6 +107,7 @@ export function ProfileScreen() {
     },
     [
       medications,
+      dosesToday,
       profile.notificationSoundEnabled,
       profile.notificationSoundId,
       showSnack,

@@ -35,3 +35,27 @@ export function buildWeeklyReminderTrigger({
     channelId,
   };
 }
+
+export function buildDateReminderTrigger(
+  date: Date,
+  channelId: string,
+): Notifications.SchedulableNotificationTriggerInput {
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date,
+    channelId,
+  };
+}
+
+export function buildDailyReminderTrigger(
+  hour: number,
+  minute: number,
+  channelId: string,
+): Notifications.SchedulableNotificationTriggerInput {
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    hour,
+    minute,
+    channelId,
+  };
+}

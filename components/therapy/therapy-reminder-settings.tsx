@@ -12,10 +12,6 @@ import {
   THERAPY_NOTIFICATION_LEAD_OPTIONS,
   type TherapyNotificationLeadId,
 } from "@/constants/therapy-notification-lead";
-import {
-  THERAPY_NOTIFICATION_REPEAT_OPTIONS,
-  type TherapyNotificationRepeatId,
-} from "@/constants/therapy-notification-repeat";
 import { THERAPY_REMINDER_SOUNDS } from "@/constants/therapy-reminder-sounds";
 import {
   nearestTherapyDoseOption,
@@ -200,7 +196,7 @@ export function TherapyReminderSettings({
 
           <AppSwitch
             label="Notifiche promemoria"
-            description="Ricevi il primo avviso in anticipo e, se vuoi, i successivi fino all'orario di assunzione"
+            description="Avviso in anticipo e, dopo l'orario, un reminder ogni ora finché non confermi — anche a app chiusa"
             value={value.notificationsEnabled}
             onValueChange={(notificationsEnabled) =>
               onChange({ ...value, notificationsEnabled })
@@ -228,23 +224,10 @@ export function TherapyReminderSettings({
                 accessibilityLabel="Quanto tempo prima ricevere la notifica"
               />
 
-              <AppSelect
-                label="Ripeti avviso"
-                value={value.notificationRepeatId}
-                options={THERAPY_NOTIFICATION_REPEAT_OPTIONS.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                }))}
-                onValueChange={(notificationRepeatId) =>
-                  onChange({
-                    ...value,
-                    notificationRepeatId:
-                      notificationRepeatId as TherapyNotificationRepeatId,
-                  })
-                }
-                disabled={readOnly}
-                accessibilityLabel="Ogni quanti minuti ripetere l'avviso fino all'orario di assunzione"
-              />
+              <AppText variant="caption" muted>
+                Dopo l'orario di assunzione PillApp insiste ogni ora, fino alle 22,
+                chiedendo di confermare. Si ferma quando confermi o salti la dose.
+              </AppText>
 
               <AppSelect
                 label="Suoneria notifica"

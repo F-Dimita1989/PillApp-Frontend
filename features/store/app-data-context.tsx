@@ -25,7 +25,6 @@ import { buildDosesForToday } from "@/lib/app-data/sync";
 import {
   cancelAllMedicationReminders,
   cancelFollowUpRemindersForDose,
-  syncDoseFollowUpReminders,
   syncMedicationReminders,
 } from "@/lib/notifications/medication-reminders";
 import type {
@@ -177,6 +176,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           await syncMedicationReminders(state.medications, true, {
             soundId: state.profile.notificationSoundId,
             playSound: state.profile.notificationSoundEnabled,
+            dosesToday: state.dosesToday,
           });
         } else {
           await cancelAllMedicationReminders();
@@ -198,43 +198,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return () => subscription.remove();
   }, [
     state.medications,
-    state.profile.notificationsEnabled,
-    state.profile.notificationSoundId,
-    state.profile.notificationSoundEnabled,
-    isReady,
-  ]);
-
-  useEffect(() => {
-    const syncFollowUps = async () => {
-      try {
-        if (state.profile.notificationsEnabled) {
-          await syncDoseFollowUpReminders(
-            state.medications,
-            state.dosesToday,
-            true,
-            {
-              soundId: state.profile.notificationSoundId,
-              playSound: state.profile.notificationSoundEnabled,
-            },
-          );
-        }
-      } catch {
-        /* permesso negato o errore scheduling — gestito dal Profilo */
-      }
-    };
-    if (!isReady) {
-      return;
-    }
-    void syncFollowUps();
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") {
-        void syncFollowUps();
-      }
-    });
-    return () => subscription.remove();
-  }, [
     state.dosesToday,
-    state.medications,
     state.profile.notificationsEnabled,
     state.profile.notificationSoundId,
     state.profile.notificationSoundEnabled,

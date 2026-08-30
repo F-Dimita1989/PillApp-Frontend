@@ -1,31 +1,35 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
+} from "react-native";
 import { XStack, YStack } from "tamagui";
-import { CalendarProvider, WeekCalendar } from "react-native-calendars";
 
 import { AppText } from "@/components/ui/app-text";
 import { useCardSurface } from "@/components/ui/card-surface";
-import "@/lib/calendar/locale";
 import {
   getDeviceEventsMarkedDates,
-  getTherapyMarkedDates,
   type MarkedDates,
 } from "@/lib/calendar/device-calendar";
 import {
+  formatDateKey,
+  getWeekDateKeys,
   getWeekStart,
   parseDateKey,
 } from "@/lib/calendar/week-utils";
-import type { TherapyDayPlan } from "@/lib/therapy/types";
+import { dateToTherapyDayKey, type TherapyDayPlan } from "@/lib/therapy/types";
 import {
   formatItalianDate,
   formatItalianTime,
 } from "@/lib/time/datetime-labels";
 import { useNow } from "@/hooks/use-now";
-import {
-  pillappCalendarTheme,
-  pillappCalendarThemeBrand,
-} from "@/lib/calendar/calendar-theme";
 import { pillappColors } from "@/theme/tokens";
+
+const WEEK_WINDOW_PAST = 26;
+const WEEK_WINDOW_FUTURE = 26;
 
 type HomeWeekCalendarProps = {
   dayPlan: TherapyDayPlan;
@@ -33,44 +37,45 @@ type HomeWeekCalendarProps = {
   onSelectedDateChange: (date: string) => void;
 };
 
+function buildWeekStarts(anchor: Date): Date[] {
+  const origin = getWeekStart(anchor);
+  const total = WEEK_WINDOW_PAST + WEEK_WINDOW_FUTURE + 1;
+  return Array.from({ length: total }, (_, index) => {
+    const week = new Date(origin);
+    week.setDate(origin.getDate() + (index - WEEK_WINDOW_PAST) * 7);
+    week.setHours(12, 0, 0, 0);
+    return week;
+  });
+}
+
+function weekdayOffsetInWeek(dateKey: string): number {
+  const weekKeys = getWeekDateKeys(getWeekStart(parseDateKey(dateKey)));
+  const offset = weekKeys.indexOf(dateKey);
+  return offset >= 0 ? offset : 0;
+}
+
 export function HomeWeekCalendar({
   dayPlan,
   selectedDate,
   onSelectedDateChange,
 }: HomeWeekCalendarProps) {
   const onBrand = useCardSurface() === "brand";
-  const calendarTheme = onBrand ? pillappCalendarThemeBrand : pillappCalendarTheme;
-
-  const [deviceMarks, setDeviceMarks] = useState<
-    Awaited<ReturnType<typeof getDeviceEventsMarkedDates>>
-  >({});
+  const listRef = useRef<FlatList<Date>>(null);
+  const pageWidthRef = useRef(0);
+  const visibleIndexRef = useRef(-1);
+  const [pageWidth, setPageWidth] = useState(0);
+  const [deviceMarks, setDeviceMarks] = useState<MarkedDates>({});
   const [isLoadingDeviceEvents, setIsLoadingDeviceEvents] = useState(false);
   const [calendarError, setCalendarError] = useState("");
 
-  const weekStart = useMemo(
-    () => getWeekStart(parseDateKey(selectedDate)),
-    [selectedDate],
-  );
+  const now = useNow();
+  const todayKey = formatDateKey(now);
+  const weeks = useMemo(() => buildWeekStarts(parseDateKey(todayKey)), [todayKey]);
 
-  const therapyMarks = useMemo(
-    () => getTherapyMarkedDates(weekStart, dayPlan, selectedDate),
-    [weekStart, dayPlan, selectedDate],
-  );
-
-  const markedDates = useMemo(() => {
-    const merged: MarkedDates = { ...deviceMarks };
-
-    Object.entries(therapyMarks).forEach(([dateKey, mark]) => {
-      const existing = merged[dateKey];
-      merged[dateKey] = {
-        ...(existing ?? {}),
-        ...mark,
-        marked: Boolean(existing?.marked || mark.marked),
-      };
-    });
-
-    return merged;
-  }, [deviceMarks, therapyMarks]);
+  const selectedWeekIndex = useMemo(() => {
+    const weekKey = formatDateKey(getWeekStart(parseDateKey(selectedDate)));
+    return weeks.findIndex((week) => formatDateKey(week) === weekKey);
+  }, [selectedDate, weeks]);
 
   const loadDeviceWeekEvents = useCallback(async (anchorDate: string) => {
     setIsLoadingDeviceEvents(true);
@@ -96,7 +101,15 @@ export function HomeWeekCalendar({
     void loadDeviceWeekEvents(selectedDate);
   }, [loadDeviceWeekEvents, selectedDate]);
 
-  const now = useNow();
+  useEffect(() => {
+    if (pageWidth <= 0 || selectedWeekIndex < 0) return;
+    if (visibleIndexRef.current === selectedWeekIndex) return;
+    visibleIndexRef.current = selectedWeekIndex;
+    listRef.current?.scrollToIndex({
+      index: selectedWeekIndex,
+      animated: false,
+    });
+  }, [pageWidth, selectedWeekIndex]);
 
   const selectedLabel = useMemo(
     () => formatItalianDate(parseDateKey(selectedDate)),
@@ -106,6 +119,31 @@ export function HomeWeekCalendar({
   const hasTherapyDays = useMemo(
     () => Object.values(dayPlan).some(Boolean),
     [dayPlan],
+  );
+
+  const applyWeekAtIndex = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= weeks.length) return;
+      if (index === visibleIndexRef.current) return;
+      visibleIndexRef.current = index;
+      const offset = weekdayOffsetInWeek(selectedDate);
+      const nextKeys = getWeekDateKeys(weeks[index]);
+      const nextDate = nextKeys[offset] ?? nextKeys[0];
+      if (nextDate !== selectedDate) {
+        onSelectedDateChange(nextDate);
+      }
+    },
+    [onSelectedDateChange, selectedDate, weeks],
+  );
+
+  const onMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const width = pageWidthRef.current;
+      if (width <= 0) return;
+      const index = Math.round(event.nativeEvent.contentOffset.x / width);
+      applyWeekAtIndex(index);
+    },
+    [applyWeekAtIndex],
   );
 
   return (
@@ -128,25 +166,61 @@ export function HomeWeekCalendar({
           : "Blu: eventi del calendario del telefono"}
       </AppText>
 
-      <CalendarProvider
-        date={selectedDate}
-        onDateChanged={(date) => {
-          onSelectedDateChange(date);
-          void loadDeviceWeekEvents(date);
+      <YStack
+        width="100%"
+        onLayout={(event) => {
+          const width = Math.round(event.nativeEvent.layout.width);
+          if (width <= 0 || width === pageWidthRef.current) return;
+          pageWidthRef.current = width;
+          setPageWidth(width);
         }}
-        theme={calendarTheme}
       >
-        <WeekCalendar
-          firstDay={1}
-          markedDates={markedDates}
-          allowShadow={false}
-          theme={calendarTheme}
-          onDayPress={(day) => {
-            onSelectedDateChange(day.dateString);
-            void loadDeviceWeekEvents(day.dateString);
-          }}
-        />
-      </CalendarProvider>
+        {pageWidth > 0 ? (
+          <FlatList
+            ref={listRef}
+            data={weeks}
+            horizontal
+            pagingEnabled
+            nestedScrollEnabled
+            directionalLockEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(week) => formatDateKey(week)}
+            extraData={`${selectedDate}:${todayKey}:${Object.keys(deviceMarks).join(",")}`}
+            getItemLayout={(_, index) => ({
+              length: pageWidth,
+              offset: pageWidth * index,
+              index,
+            })}
+            initialScrollIndex={selectedWeekIndex >= 0 ? selectedWeekIndex : WEEK_WINDOW_PAST}
+            windowSize={5}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            snapToInterval={pageWidth}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            disableIntervalMomentum
+            onMomentumScrollEnd={onMomentumScrollEnd}
+            onScrollToIndexFailed={({ index }) => {
+              requestAnimationFrame(() => {
+                listRef.current?.scrollToIndex({ index, animated: false });
+              });
+            }}
+            renderItem={({ item: weekStart }) => (
+              <WeekPage
+                weekStart={weekStart}
+                pageWidth={pageWidth}
+                selectedDate={selectedDate}
+                todayKey={todayKey}
+                dayPlan={dayPlan}
+                deviceMarks={deviceMarks}
+                onSelectDate={onSelectedDateChange}
+              />
+            )}
+          />
+        ) : (
+          <YStack height={88} />
+        )}
+      </YStack>
 
       {isLoadingDeviceEvents ? (
         <XStack alignItems="center" gap="$2">
@@ -166,5 +240,141 @@ export function HomeWeekCalendar({
         </AppText>
       ) : null}
     </YStack>
+  );
+}
+
+function WeekPage({
+  weekStart,
+  pageWidth,
+  selectedDate,
+  todayKey,
+  dayPlan,
+  deviceMarks,
+  onSelectDate,
+}: {
+  weekStart: Date;
+  pageWidth: number;
+  selectedDate: string;
+  todayKey: string;
+  dayPlan: TherapyDayPlan;
+  deviceMarks: MarkedDates;
+  onSelectDate: (date: string) => void;
+}) {
+  const dateKeys = getWeekDateKeys(weekStart);
+
+  return (
+    <XStack width={pageWidth} alignItems="stretch">
+      {dateKeys.map((dateKey) => (
+        <DayCell
+          key={dateKey}
+          dateKey={dateKey}
+          selected={dateKey === selectedDate}
+          isToday={dateKey === todayKey}
+          hasTherapy={Boolean(dayPlan[dateToTherapyDayKey(parseDateKey(dateKey))])}
+          hasDeviceEvent={Boolean(deviceMarks[dateKey]?.marked)}
+          onPress={() => onSelectDate(dateKey)}
+        />
+      ))}
+    </XStack>
+  );
+}
+
+function DayCell({
+  dateKey,
+  selected,
+  isToday,
+  hasTherapy,
+  hasDeviceEvent,
+  onPress,
+}: {
+  dateKey: string;
+  selected: boolean;
+  isToday: boolean;
+  hasTherapy: boolean;
+  hasDeviceEvent: boolean;
+  onPress: () => void;
+}) {
+  const onBrand = useCardSurface() === "brand";
+  const date = parseDateKey(dateKey);
+  const weekday = dateToTherapyDayKey(date);
+  const dayNumber = String(date.getDate());
+
+  const a11yBits = [
+    formatItalianDate(date),
+    isToday ? "oggi" : null,
+    selected ? "selezionato" : null,
+    hasTherapy ? "giorno di terapia" : null,
+    hasDeviceEvent ? "eventi in calendario" : null,
+  ].filter(Boolean);
+
+  const selectedBg = onBrand ? pillappColors.surface : pillappColors.secondary;
+  const todayBorder = onBrand ? "rgba(255,255,255,0.9)" : pillappColors.primary;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={a11yBits.join(", ")}
+      style={{ flex: 1, minWidth: 0 }}
+    >
+      <YStack alignItems="center" gap="$1" paddingVertical="$1.5" paddingHorizontal={2}>
+        <AppText
+          variant="overline"
+          muted={!selected && !isToday}
+          color={selected ? (onBrand ? "inverse" : "secondary") : undefined}
+          speakOnPress={false}
+        >
+          {weekday}
+        </AppText>
+        <YStack
+          width={36}
+          height={36}
+          borderRadius={18}
+          alignItems="center"
+          justifyContent="center"
+          backgroundColor={selected ? selectedBg : "transparent"}
+          borderWidth={isToday && !selected ? 1.5 : 0}
+          borderColor={todayBorder}
+        >
+          <AppText
+            variant="label"
+            color={
+              selected
+                ? onBrand
+                  ? "primary"
+                  : "inverse"
+                : isToday
+                  ? onBrand
+                    ? "inverse"
+                    : "primary"
+                  : undefined
+            }
+            speakOnPress={false}
+            fontWeight={selected || isToday ? "700" : "500"}
+          >
+            {dayNumber}
+          </AppText>
+        </YStack>
+        <XStack minHeight={8} alignItems="center" gap={3}>
+          {hasTherapy ? (
+            <YStack
+              width={6}
+              height={6}
+              borderRadius={3}
+              backgroundColor={onBrand ? "rgba(255,255,255,0.92)" : pillappColors.secondary}
+            />
+          ) : null}
+          {hasDeviceEvent ? (
+            <YStack
+              width={6}
+              height={6}
+              borderRadius={3}
+              backgroundColor={onBrand ? "rgba(255,255,255,0.55)" : pillappColors.primary}
+            />
+          ) : null}
+        </XStack>
+      </YStack>
+    </Pressable>
   );
 }

@@ -27,10 +27,7 @@ import {
   DEFAULT_NOTIFICATION_LEAD_ID,
   THERAPY_NOTIFICATION_LEAD_OPTIONS,
 } from "@/constants/therapy-notification-lead";
-import {
-  DEFAULT_NOTIFICATION_REPEAT_ID,
-  THERAPY_NOTIFICATION_REPEAT_OPTIONS,
-} from "@/constants/therapy-notification-repeat";
+import { DEFAULT_NOTIFICATION_REPEAT_ID } from "@/constants/therapy-notification-repeat";
 import { AppRoutes } from "@/features/navigation/routes";
 import { useAppData } from "@/features/store/app-data-context";
 import {
@@ -86,7 +83,8 @@ function formatAddedAt(iso: string): string {
 }
 
 export function MedicationDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const router = useRouter();
   const {
     getMedicationById,
@@ -210,7 +208,11 @@ export function MedicationDetailsScreen() {
               cancelEdit();
               return;
             }
-            router.back();
+            if (router.canDismiss()) {
+              router.dismiss();
+              return;
+            }
+            router.replace(AppRoutes.medications);
           }}
         />
       }
@@ -301,12 +303,8 @@ export function MedicationDetailsScreen() {
               )}
             />
             <InfoRow
-              label="Ripeti avviso"
-              value={optionLabel(
-                THERAPY_NOTIFICATION_REPEAT_OPTIONS,
-                medication.notificationRepeatId,
-                "Ogni 5 minuti",
-              )}
+              label="Reminder conferma"
+              value="Ogni ora dopo l'orario, fino alle 22"
             />
             {medication.notes ? <InfoRow label="Note" value={medication.notes} /> : null}
             <InfoRow label="Aggiunto il" value={formatAddedAt(medication.createdAt)} />
