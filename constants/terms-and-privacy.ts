@@ -6,10 +6,10 @@ export type LegalSection = {
 export const TERMS_AND_PRIVACY_TITLE =
   "Termini e condizioni di utilizzo e informativa sulla privacy";
 
-export const TERMS_AND_PRIVACY_UPDATED_AT = "25 agosto 2026";
+export const TERMS_AND_PRIVACY_UPDATED_AT = "30 agosto 2026";
 
 export const TERMS_AND_PRIVACY_INTRO =
-  "Il presente documento disciplina l’utilizzo dell’applicazione PillApp e informa l’utente, in modo chiaro e trasparente, sulle modalità di trattamento dei dati. PillApp è concepita come strumento locale: non richiede un account, non raccoglie dati personali su server remoti e non cede informazioni a terzi.";
+  "Il presente documento disciplina l’utilizzo dell’applicazione PillApp e informa l’utente, in modo chiaro e trasparente, sulle modalità di trattamento dei dati. PillApp è concepita come strumento locale: non richiede un account, conserva i dati di terapia e di salute sul dispositivo, non li raccoglie su server remoti e non cede informazioni a terzi. La sola comunicazione verso l’esterno riguarda il codice AIC scansionato, utilizzato per consultare il catalogo dei medicinali.";
 
 export const TERMS_AND_PRIVACY_SECTIONS: LegalSection[] = [
   {
@@ -18,19 +18,19 @@ export const TERMS_AND_PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: "2. Assenza di registrazione e di raccolta dati",
-    body: "PillApp non richiede e-mail, password, profilo social o identificativi di accesso. Non vengono creati account presso il fornitore dell’applicazione. PillApp non raccoglie, non intercetta e non trasmette i dati dell’utente a server propri o di terzi per finalità di profilazione, marketing, analytics commerciali o vendita di informazioni. In assenza di un’infrastruttura di raccolta remota, non sussiste un trasferimento dei dati personali dell’utente verso sistemi esterni all’apparecchio.",
+    body: "PillApp non richiede e-mail, password, profilo social o identificativi di accesso. Non vengono creati account presso il fornitore dell’applicazione. PillApp non raccoglie, non intercetta e non trasmette i dati personali o sanitari dell’utente (nome, età, elenco farmaci, orari, diario, misurazioni, stato dei promemoria) a server propri o di terzi, né per finalità di profilazione, marketing, analytics commerciali o vendita di informazioni. L’unica comunicazione verso l’esterno è la consultazione del catalogo dei medicinali descritta al punto 5, che riguarda il solo codice AIC e non è associata all’identità dell’utente.",
   },
   {
     title: "3. Dove restano le informazioni",
-    body: "Le informazioni inserite o generate in PillApp (ad esempio nome scelto in locale, elenco farmaci, orari, quantità, note del diario e stato dei promemoria) sono memorizzate esclusivamente sulla memoria del telefono o del tablet, mediante gli strumenti di archiviazione del dispositivo. Tali informazioni non lasciano l’apparecchio per effetto del normale funzionamento dell’applicazione. La sicurezza materiale dei dati dipende dal dispositivo, dal blocco schermo e dalle copie di sicurezza eventualmente impostate dall’utente nel sistema operativo.",
+    body: "Le informazioni inserite o generate in PillApp (ad esempio nome scelto in locale, elenco farmaci, orari, quantità, note del diario e stato dei promemoria) sono memorizzate esclusivamente sulla memoria del telefono o del tablet, mediante gli strumenti di archiviazione del dispositivo. Tali informazioni non lasciano l’apparecchio per effetto del normale funzionamento dell’applicazione. PillApp è inoltre configurata per escludere i propri dati dalle copie di sicurezza sul cloud e dai trasferimenti da dispositivo a dispositivo: i contenuti non vengono quindi duplicati fuori dal telefono, ma per la stessa ragione non sono ripristinati automaticamente su un nuovo apparecchio, dove la terapia va reinserita. La sicurezza materiale dei dati dipende quindi dal dispositivo e dal suo blocco schermo.",
   },
   {
     title: "4. Permessi del dispositivo",
     body: "Alcune funzioni richiedono permessi del sistema operativo, concessi solo se l’utente li autorizza: fotocamera e galleria per la lettura del codice AIC sulla confezione; notifiche per i promemoria di assunzione; calendario per la visualizzazione della settimana terapeutica. Tali permessi sono utilizzati in locale, per le finalità sopra indicate, e non comportano l’invio dei contenuti (foto, eventi, notifiche) a un server di PillApp. L’utente può revocare i permessi in qualsiasi momento dalle impostazioni del dispositivo; in tal caso alcune funzioni potrebbero non essere disponibili.",
   },
   {
-    title: "5. Scansione del codice AIC",
-    body: "La scansione del codice AIC avviene sull’apparecchio, al fine di riconoscere il medicinale e agevolare la compilazione della terapia. Le immagini o i fotogrammi impiegati per la lettura restano nel contesto dell’applicazione e non vengono inviati a un archivio remoto di PillApp. L’utente è responsabile della correttezza del farmaco selezionato e della coerenza con la prescrizione medica.",
+    title: "5. Scansione del codice AIC e consultazione del catalogo",
+    body: "Il riconoscimento ottico del codice AIC avviene interamente sull’apparecchio: le immagini e i fotogrammi impiegati per la lettura restano nel contesto dell’applicazione e non vengono in alcun caso inviati a sistemi remoti. Per recuperare la denominazione, il principio attivo e le altre informazioni del medicinale, l’applicazione trasmette il solo codice AIC (una sequenza numerica che identifica la confezione, non l’utente) al servizio di catalogo farmaci di PillApp, tramite connessione cifrata. Non sono trasmessi il nome dell’utente, il diario, le misurazioni né alcun altro dato personale, e la richiesta non viene impiegata per creare profili. L’utente è responsabile della correttezza del farmaco selezionato e della coerenza con la prescrizione medica.",
   },
   {
     title: "6. Natura non medica del servizio",

@@ -83,19 +83,11 @@ export function parseDoseClock(
   return { hour: Number(match[1]), minute: Number(match[2]) };
 }
 
-export function scheduledDateOnDay(timeStr: string, day: Date): Date | null {
-  const clock = parseDoseClock(timeStr);
-  if (!clock) return null;
-  const date = new Date(day);
-  date.setHours(clock.hour, clock.minute, 0, 0);
-  return date;
-}
-
 /** Massimo ore di insistenza dopo l'assunzione, nella stessa giornata. */
-export const DOSE_CONFIRM_FOLLOW_UP_MAX_HOURS = 16;
+const DOSE_CONFIRM_FOLLOW_UP_MAX_HOURS = 16;
 
 /** Ultima ora del giorno in cui mandare il reminder di conferma (22:xx). */
-export const DOSE_CONFIRM_FOLLOW_UP_LAST_HOUR = 22;
+const DOSE_CONFIRM_FOLLOW_UP_LAST_HOUR = 22;
 
 export function isSameLocalDay(a: Date, b: Date): boolean {
   return formatDateKey(a) === formatDateKey(b);

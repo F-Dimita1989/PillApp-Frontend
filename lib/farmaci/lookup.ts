@@ -1,11 +1,24 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 
 import { normalizeFarmacoRecord } from "./normalize-record";
 
-const LAST_SCANNED_FARMACO_KEY = "pillapp:lastScannedFarmaco";
-
 const FALLBACK_API_URL = "https://pillapp-backend.onrender.com";
+const LOOKUP_TIMEOUT_MS = 12000;
+
+/** In produzione l'utente non deve vedere status code o corpo della risposta. */
+const GENERIC_LOOKUP_ERROR =
+  "Non riesco a leggere i dati del farmaco in questo momento. Controlla la connessione e riprova, oppure inserisci il farmaco manualmente.";
+
+const NOT_FOUND_LOOKUP_ERROR =
+  "Questo codice AIC non risulta nel catalogo. Controlla le cifre sulla confezione oppure inserisci il farmaco manualmente.";
+
+function lookupErrorMessage(detail: string, notFound = false): string {
+  if (__DEV__ && detail) {
+    return detail;
+  }
+  return notFound ? NOT_FOUND_LOOKUP_ERROR : GENERIC_LOOKUP_ERROR;
+}
+
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const SUPABASE_TABLE = process.env.EXPO_PUBLIC_SUPABASE_TABLE ?? "farmaci";
@@ -44,18 +57,15 @@ function createAicCandidates(aic: string): string[] {
   return [...new Set([onlyDigits, withoutLeadingZero].filter(Boolean))];
 }
 
-async function saveLastScannedFarmaco(
-  aic: string,
-  data: Record<string, unknown>,
-): Promise<void> {
-  await AsyncStorage.setItem(
-    LAST_SCANNED_FARMACO_KEY,
-    JSON.stringify({
-      aic,
-      data,
-      scannedAt: new Date().toISOString(),
-    }),
-  );
+/** Evita richieste appese a tempo indeterminato su rete lenta o backend fermo. */
+async function fetchWithTimeout(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LOOKUP_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function fetchFarmacoByAic(
@@ -80,30 +90,37 @@ export async function fetchFarmacoByAic(
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Supabase error: ${error.message}`);
+      throw new Error(lookupErrorMessage(`Supabase error: ${error.message}`));
     }
     if (data) {
-      const normalized = normalizeFarmacoRecord(data);
-      const result = {
+      return {
         aic: candidates[0],
-        data: normalized,
+        data: normalizeFarmacoRecord(data),
       };
-      await saveLastScannedFarmaco(result.aic, result.data);
-      return result;
     }
   }
 
   const farmaciApiBase = resolveFarmaciApiBase();
   let lastBackendError = "";
+  let everyAttemptWasNotFound = true;
 
   for (const candidate of candidates) {
-    const response = await fetch(`${farmaciApiBase}/${candidate}`);
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(`${farmaciApiBase}/${candidate}`);
+    } catch {
+      everyAttemptWasNotFound = false;
+      lastBackendError = `Backend Farmaci non raggiungibile entro ${LOOKUP_TIMEOUT_MS} ms.`;
+      continue;
+    }
+
     if (response.ok) {
       const backendData = (await response.json()) as Record<string, unknown>;
-      const normalized = normalizeFarmacoRecord(backendData);
-      const result = { aic: candidate, data: normalized };
-      await saveLastScannedFarmaco(result.aic, result.data);
-      return result;
+      return { aic: candidate, data: normalizeFarmacoRecord(backendData) };
+    }
+
+    if (response.status !== 404) {
+      everyAttemptWasNotFound = false;
     }
 
     const errorBody = (await response.text()).trim();
@@ -113,5 +130,5 @@ export async function fetchFarmacoByAic(
       : `Backend Farmaci status ${response.status}.`;
   }
 
-  throw new Error(lastBackendError || "Backend Farmaci non disponibile.");
+  throw new Error(lookupErrorMessage(lastBackendError, everyAttemptWasNotFound));
 }

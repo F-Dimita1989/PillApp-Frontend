@@ -277,18 +277,6 @@ export async function syncMedicationReminders(
   return enqueueSync(() => scheduleWeeklyAndFollowUps(medications, enabled, options));
 }
 
-export async function syncDoseFollowUpReminders(
-  medications: Medication[],
-  dosesToday: DoseEvent[],
-  enabled: boolean,
-  options?: ReminderSoundOptions,
-): Promise<number> {
-  return syncMedicationReminders(medications, enabled, {
-    ...options,
-    dosesToday,
-  });
-}
-
 export async function cancelFollowUpRemindersForDose(doseId: string): Promise<void> {
   await enqueueSync(async () => {
     await dismissPresentedForDose(doseId);

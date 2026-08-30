@@ -31,43 +31,6 @@ function mapExpoStatus(status: string): AppPermissionStatus {
   return "undetermined";
 }
 
-async function getCameraStatus(): Promise<AppPermissionStatus> {
-  const { status } = await ImagePicker.getCameraPermissionsAsync();
-  return mapExpoStatus(status);
-}
-
-async function getGalleryStatus(): Promise<AppPermissionStatus> {
-  const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
-  return mapExpoStatus(status);
-}
-
-async function getNotificationsStatus(): Promise<AppPermissionStatus> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return mapExpoStatus(status);
-}
-
-async function getCalendarStatus(): Promise<AppPermissionStatus> {
-  const Calendar = await import("expo-calendar");
-  const { status } = await Calendar.getCalendarPermissionsAsync();
-  return mapExpoStatus(status);
-}
-
-export async function getAppPermissionStates(): Promise<AppPermissionState[]> {
-  const [camera, gallery, notifications, calendar] = await Promise.all([
-    getCameraStatus(),
-    getGalleryStatus(),
-    getNotificationsStatus(),
-    getCalendarStatus(),
-  ]);
-
-  return [
-    { kind: "camera", status: camera },
-    { kind: "gallery", status: gallery },
-    { kind: "notifications", status: notifications },
-    { kind: "calendar", status: calendar },
-  ];
-}
-
 async function requestCameraPermission(): Promise<AppPermissionStatus> {
   const { status } = await ImagePicker.requestCameraPermissionsAsync();
   return mapExpoStatus(status);

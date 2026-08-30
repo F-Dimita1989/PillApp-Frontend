@@ -225,8 +225,7 @@ export function TherapyReminderSettings({
               />
 
               <AppText variant="caption" muted>
-                Dopo l'orario di assunzione PillApp insiste ogni ora, fino alle 22,
-                chiedendo di confermare. Si ferma quando confermi o salti la dose.
+                {"Dopo l'orario di assunzione PillApp insiste ogni ora, fino alle 22, chiedendo di confermare. Si ferma quando confermi o salti la dose."}
               </AppText>
 
               <AppSelect

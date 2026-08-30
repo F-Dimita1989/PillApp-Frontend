@@ -1,19 +1,20 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet } from "react-native";
 import { YStack } from "tamagui";
 
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
+import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
 import {
     ManualMedicationForm,
     validateManualMedication,
 } from "@/components/farmaci/manual-medication-form";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
+import { TherapyReminderSettings } from "@/components/therapy/therapy-reminder-settings";
 import {
     AppCard,
     AppCardContent,
-    AppInput,
     AppScreen,
     AppText,
     AppTopBar,
@@ -25,10 +26,9 @@ import {
     SectionHeader,
     SuccessState,
 } from "@/components/ui";
-import { DEFAULT_NOTIFICATION_LEAD_ID } from "@/constants/therapy-notification-lead";
-import { DEFAULT_NOTIFICATION_REPEAT_ID } from "@/constants/therapy-notification-repeat";
 import { AppRoutes } from "@/features/navigation/routes";
 import { useAppData } from "@/features/store/app-data-context";
+import { therapyDayPlanToDaysActive } from "@/lib/app-data/sync";
 import {
     EMPTY_SCANNED_MEDICATION_FORM,
     buildScannedMedicationFormValues,
@@ -39,160 +39,241 @@ import {
 } from "@/lib/farmaci/form-values";
 import { pickAndScanMedicine } from "@/lib/farmaci/scan";
 import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
+import {
+    INITIAL_THERAPY_REMINDER_SETTINGS,
+    normalizeOrariForTimesPerDay,
+    validateReminderSettings,
+    type TherapyReminderSettingsValue,
+} from "@/lib/therapy/reminder-settings";
 import { pillappColors } from "@/theme/tokens";
-import type { Medication } from "@/types/domain";
+import type { Medication, UserProfile } from "@/types/domain";
 
 type ScanPhase =
   | "idle"
   | "loading"
   | "confirm"
   | "manual"
+  | "schedule"
   | "error"
   | "success";
 
+function reminderFromProfile(profile: UserProfile): TherapyReminderSettingsValue {
+  return {
+    ...INITIAL_THERAPY_REMINDER_SETTINGS,
+    notificationsEnabled: profile.notificationsEnabled,
+    notificationSoundId: profile.notificationSoundId,
+  };
+}
+
 export function AicScannerScreen() {
   const router = useRouter();
-  const { addMedication } = useAppData();
+  const { addMedication, updateProfile, profile } = useAppData();
 
   const [phase, setPhase] = useState<ScanPhase>("idle");
+  const [entryMode, setEntryMode] = useState<"scan" | "manual">("scan");
   const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [scanFormValues, setScanFormValues] =
     useState<ScannedMedicationFormValues | null>(null);
   const [dose, setDose] = useState("1 compressa");
+  const [reminderSettings, setReminderSettings] = useState<TherapyReminderSettingsValue>(
+    () => reminderFromProfile(profile),
+  );
   const [savedName, setSavedName] = useState("");
   const [manualErrors, setManualErrors] = useState<{
     nome?: string;
     aic?: string;
   }>({});
 
-  const runScan = useCallback(async (source: "camera" | "gallery") => {
-    setPhase("loading");
-    setError("");
-    try {
-      const result = await pickAndScanMedicine(source);
-      if (!result) {
-        setPhase("idle");
-        return;
-      }
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
-      const formValues = buildScannedMedicationFormValues(
-        result.aic,
-        result.data,
-      );
-      setScanFormValues(formValues);
-      setDose(therapyDoseFromFormValues(formValues));
-      setPhase("confirm");
-    } catch (err) {
-      setPhase("error");
-      setError(err instanceof Error ? err.message : "Scansione non riuscita.");
-    }
-  }, []);
+  const resetToIdle = useCallback(() => {
+    setScanFormValues(null);
+    setManualErrors({});
+    setError("");
+    setFormError("");
+    setDose("1 compressa");
+    setReminderSettings(reminderFromProfile(profile));
+    setEntryMode("scan");
+    setPhase("idle");
+  }, [profile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (phaseRef.current === "success") {
+          resetToIdle();
+        }
+      };
+    }, [resetToIdle]),
+  );
+
+  const runScan = useCallback(
+    async (source: "camera" | "gallery") => {
+      setPhase("loading");
+      setError("");
+      setFormError("");
+      try {
+        const result = await pickAndScanMedicine(source);
+        if (!result) {
+          setPhase("idle");
+          return;
+        }
+
+        const formValues = buildScannedMedicationFormValues(
+          result.aic,
+          result.data,
+        );
+        setScanFormValues(formValues);
+        setDose(therapyDoseFromFormValues(formValues));
+        setReminderSettings(reminderFromProfile(profile));
+        setEntryMode("scan");
+        setPhase("confirm");
+      } catch (err) {
+        setPhase("error");
+        setError(err instanceof Error ? err.message : "Scansione non riuscita.");
+      }
+    },
+    [profile],
+  );
 
   const startManualEntry = () => {
     setError("");
+    setFormError("");
     setManualErrors({});
     setScanFormValues({ ...EMPTY_SCANNED_MEDICATION_FORM });
     setDose("1 compressa");
+    setReminderSettings(reminderFromProfile(profile));
+    setEntryMode("manual");
     setPhase("manual");
   };
 
-  const saveMedication = (
-    values: ScannedMedicationFormValues,
-    source: Medication["source"],
-    doseValue: string,
-  ) => {
-    const medication: Medication = {
-      id: `med-${Date.now()}`,
-      name: values.nome.trim(),
-      aic: values.aic.trim() || undefined,
-      form: mapUnitaToMedicationForm(values.unitaQuantita),
-      dose: doseValue.trim() || "1 dose",
-      notes: formatScannedMedicationNotes(values) || undefined,
-      quantityRemaining: values.quantita.trim() || undefined,
-      quantityUnit: values.unitaQuantita,
-      schedule: {
-        times: ["08:00"],
-        daysActive: [true, true, true, true, true, true, true],
-      },
-      active: true,
-      createdAt: new Date().toISOString(),
-      source,
-      notificationLeadId: DEFAULT_NOTIFICATION_LEAD_ID,
-      notificationRepeatId: DEFAULT_NOTIFICATION_REPEAT_ID,
-    };
+  const goToSchedule = () => {
+    if (!scanFormValues) {
+      return;
+    }
 
-    addMedication(medication);
-    setSavedName(medication.name);
-    setPhase("success");
-    setTimeout(() => router.replace(AppRoutes.medications), 1200);
-  };
-
-  const confirmMedication = () => {
-    if (!scanFormValues?.nome.trim()) {
+    if (entryMode === "manual") {
+      const nextErrors = validateManualMedication(scanFormValues);
+      setManualErrors(nextErrors);
+      if (nextErrors.nome || nextErrors.aic) {
+        return;
+      }
+    } else if (!scanFormValues.nome.trim()) {
       setError("Inserisci il nome del farmaco.");
       setPhase("error");
       return;
     }
 
-    saveMedication(
-      scanFormValues,
-      scanFormValues.aic.trim() ? "aic_scan" : "manual",
-      dose,
-    );
+    setFormError("");
+    setDose(nearestTherapyDoseOption(dose, scanFormValues.unitaQuantita));
+    setPhase("schedule");
   };
 
-  const confirmManualMedication = () => {
+  const saveMedication = () => {
     if (!scanFormValues) {
       return;
     }
 
-    const nextErrors = validateManualMedication(scanFormValues);
-    setManualErrors(nextErrors);
-    if (nextErrors.nome || nextErrors.aic) {
+    const validationError = validateReminderSettings(reminderSettings);
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
-    saveMedication(
-      scanFormValues,
-      "manual",
-      nearestTherapyDoseOption(dose, scanFormValues.unitaQuantita),
+    const orari = normalizeOrariForTimesPerDay(
+      reminderSettings.timesPerDay,
+      reminderSettings.orari,
     );
+    const doseValue = nearestTherapyDoseOption(
+      dose,
+      scanFormValues.unitaQuantita,
+    );
+    const medication: Medication = {
+      id: `med-${Date.now()}`,
+      name: scanFormValues.nome.trim(),
+      aic: scanFormValues.aic.trim() || undefined,
+      form: mapUnitaToMedicationForm(scanFormValues.unitaQuantita),
+      dose: doseValue.trim() || "1 dose",
+      notes: formatScannedMedicationNotes(scanFormValues) || undefined,
+      quantityRemaining: scanFormValues.quantita.trim() || undefined,
+      quantityUnit: scanFormValues.unitaQuantita,
+      schedule: {
+        times: orari.slice(0, reminderSettings.timesPerDay),
+        daysActive: therapyDayPlanToDaysActive(reminderSettings.dayPlan),
+      },
+      active: true,
+      createdAt: new Date().toISOString(),
+      source: entryMode === "manual" ? "manual" : "aic_scan",
+      notificationLeadId: reminderSettings.notificationLeadId,
+      notificationRepeatId: reminderSettings.notificationRepeatId,
+    };
+
+    addMedication(medication);
+
+    if (reminderSettings.notificationSoundId !== profile.notificationSoundId) {
+      updateProfile({ notificationSoundId: reminderSettings.notificationSoundId });
+    }
+    if (reminderSettings.notificationsEnabled !== profile.notificationsEnabled) {
+      updateProfile({ notificationsEnabled: reminderSettings.notificationsEnabled });
+    }
+
+    setSavedName(medication.name);
+    setPhase("success");
   };
 
-  const resetToIdle = () => {
-    setScanFormValues(null);
-    setManualErrors({});
-    setError("");
-    setPhase("idle");
+  const goToMedications = () => {
+    resetToIdle();
+    router.navigate(AppRoutes.medications);
+  };
+
+  const backFromSchedule = () => {
+    setFormError("");
+    setPhase(entryMode === "manual" ? "manual" : "confirm");
   };
 
   const isManual = phase === "manual";
+  const isSchedule = phase === "schedule";
   const showScanArea = phase === "idle" || phase === "loading";
+  const showBottomBar = phase === "confirm" || phase === "manual" || phase === "schedule";
 
   return (
     <YStack flex={1} backgroundColor="transparent" overflow="hidden">
       <YStack flex={1} minHeight={0}>
         <AppScreen
           scroll={phase !== "loading"}
-          contentStyle={
-            phase === "confirm" || phase === "manual"
-              ? { paddingBottom: 120 }
-              : undefined
-          }
+          contentStyle={showBottomBar ? { paddingBottom: 120 } : undefined}
           hero={
             <AppTopBar
               image={
-                isManual
-                  ? require("@/assets/onboarding/matita.png")
-                  : require("@/assets/onboarding/lente.png")
+                isSchedule
+                  ? require("@/assets/onboarding/configuriamo-terapia.png")
+                  : isManual
+                    ? require("@/assets/onboarding/matita.png")
+                    : require("@/assets/onboarding/lente.png")
               }
               imageCoverScale={0.76}
-              eyebrow={isManual ? "Senza fotocamera" : "Funzione esclusiva"}
-              title={isManual ? "Inserisci un farmaco" : "Scansione AIC"}
+              eyebrow={
+                isSchedule
+                  ? "Terapia"
+                  : isManual
+                    ? "Senza fotocamera"
+                    : "Funzione esclusiva"
+              }
+              title={
+                isSchedule
+                  ? "Orari e promemoria"
+                  : isManual
+                    ? "Inserisci un farmaco"
+                    : "Scansione AIC"
+              }
               subtitle={
-                isManual
-                  ? "Basta il nome; AIC e altri campi sono facoltativi."
-                  : "Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
+                isSchedule
+                  ? "Scegli dosaggio, orari e avvisi. Poi aggiungi il farmaco alla terapia."
+                  : isManual
+                    ? "Basta il nome; AIC e altri campi sono facoltativi."
+                    : "Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
               }
             />
           }
@@ -271,13 +352,13 @@ export function AicScannerScreen() {
               <BrandIntroCard
                 icon="check-decagram"
                 title="Controlla i dati"
-                description="Verifica nome e codice AIC prima di aggiungere il farmaco alla terapia."
+                description="Verifica nome, codice AIC e quantità. Al passo successivo imposti orari e promemoria."
               />
               <AppCard>
                 <AppCardContent>
                   <SectionHeader
                     title="Conferma dati"
-                    description="Verifica le informazioni prima di aggiungere il farmaco."
+                    description="Verifica le informazioni prima di impostare la terapia."
                   />
                   <ScannedMedicationForm
                     key={`scan-form-${scanFormValues.aic}`}
@@ -285,15 +366,15 @@ export function AicScannerScreen() {
                     onChange={setScanFormValues}
                     showHeading={false}
                   />
-                  <AppInput
-                    label="Dose giornaliera"
-                    value={dose}
-                    onChangeText={setDose}
+                </AppCardContent>
+              </AppCard>
+              <AppCard>
+                <AppCardContent>
+                  <MedicationQuantitySection
+                    values={scanFormValues}
+                    onChange={setScanFormValues}
+                    source="scan"
                   />
-                  <AppText variant="caption" muted>
-                    Potrai modificare orari e promemoria dalla scheda del
-                    farmaco.
-                  </AppText>
                 </AppCardContent>
               </AppCard>
             </YStack>
@@ -304,7 +385,7 @@ export function AicScannerScreen() {
               <BrandIntroCard
                 icon="pencil-outline"
                 title="Dati del farmaco"
-                description="Compila i campi sotto. Orari e promemoria si impostano dopo, dalla scheda del farmaco."
+                description="Compila i campi sotto. Al passo successivo imposti orari e promemoria."
               />
 
               <AppCard>
@@ -327,6 +408,32 @@ export function AicScannerScreen() {
             </YStack>
           ) : null}
 
+          {phase === "schedule" && scanFormValues ? (
+            <YStack width="100%" gap="$3">
+              <BrandIntroCard
+                icon="bell-ring-outline"
+                title={scanFormValues.nome.trim() || "Nuovo farmaco"}
+                description="Scegli dosaggio, orari e avvisi per questo farmaco."
+              />
+              <AppCard>
+                <AppCardContent>
+                  <TherapyReminderSettings
+                    value={reminderSettings}
+                    onChange={setReminderSettings}
+                    dose={dose}
+                    onDoseChange={setDose}
+                    unitaQuantita={scanFormValues.unitaQuantita}
+                  />
+                </AppCardContent>
+              </AppCard>
+              {formError ? (
+                <AppText variant="caption" color="error">
+                  {formError}
+                </AppText>
+              ) : null}
+            </YStack>
+          ) : null}
+
           {phase === "error" ? (
             <ErrorState
               description={error}
@@ -336,10 +443,22 @@ export function AicScannerScreen() {
           ) : null}
 
           {phase === "success" ? (
-            <SuccessState
-              title="Farmaco aggiunto"
-              description={`${savedName} è stato aggiunto alla tua terapia.`}
-            />
+            <YStack width="100%" gap="$3">
+              <SuccessState
+                title="Farmaco aggiunto"
+                description={`${savedName} è stato aggiunto alla tua terapia, con gli orari che hai impostato.`}
+              />
+              <PrimaryButton
+                icon="barcode-scan"
+                fullWidth
+                onPress={resetToIdle}
+              >
+                Scansiona un altro farmaco
+              </PrimaryButton>
+              <SecondaryButton icon="pill" fullWidth onPress={goToMedications}>
+                Vai ai farmaci
+              </SecondaryButton>
+            </YStack>
           ) : null}
 
           {phase === "idle" ? (
@@ -370,23 +489,23 @@ export function AicScannerScreen() {
         </AppScreen>
       </YStack>
 
-      {phase === "confirm" ? (
+      {phase === "confirm" || phase === "manual" ? (
         <BottomActionBar
-          primaryLabel="Aggiungi alla terapia"
-          primaryIcon="pill"
-          onPrimaryPress={confirmMedication}
-          secondaryLabel="Annulla"
+          primaryLabel="Avanti"
+          primaryIcon="arrow-right"
+          onPrimaryPress={goToSchedule}
+          secondaryLabel={phase === "manual" ? "Indietro" : "Annulla"}
           onSecondaryPress={resetToIdle}
         />
       ) : null}
 
-      {phase === "manual" ? (
+      {phase === "schedule" ? (
         <BottomActionBar
           primaryLabel="Aggiungi alla terapia"
           primaryIcon="pill"
-          onPrimaryPress={confirmManualMedication}
+          onPrimaryPress={saveMedication}
           secondaryLabel="Indietro"
-          onSecondaryPress={resetToIdle}
+          onSecondaryPress={backFromSchedule}
         />
       ) : null}
     </YStack>
