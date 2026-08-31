@@ -10,11 +10,6 @@ export const setupScrollBase: ViewStyle = {
   gap: pillappSpace[4],
 };
 
-export const setupScrollShort: ViewStyle = {
-  ...setupScrollBase,
-  justifyContent: "center",
-};
-
 export const setupScrollTherapy: ViewStyle = {
   ...setupScrollBase,
   justifyContent: "flex-start",

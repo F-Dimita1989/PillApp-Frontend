@@ -18,14 +18,11 @@ export { AppMultiSelect } from "@/components/ui/app-multi-select";
 export { AppProgress } from "@/components/ui/app-progress";
 export { AppPatternBackground } from "@/components/ui/app-pattern-background";
 export { AppScreen } from "@/components/ui/app-screen";
-export {
-    AppSegmentedControl,
-    type SegmentedOption
-} from "@/components/ui/app-segmented-control";
-export { AppSelect, type SelectOption } from "@/components/ui/app-select";
+export { AppSegmentedControl } from "@/components/ui/app-segmented-control";
+export { AppSelect } from "@/components/ui/app-select";
 export { AppSnackbar } from "@/components/ui/app-snackbar";
 export { AppSwitch } from "@/components/ui/app-switch";
-export { AppText, type AppTextVariant } from "@/components/ui/app-text";
+export { AppText } from "@/components/ui/app-text";
 export { AppTopBar } from "@/components/ui/app-top-bar";
 export { BrandGradientCard } from "@/components/ui/brand-gradient-card";
 export { BrandIconBadge } from "@/components/ui/brand-icon-badge";
@@ -42,10 +39,9 @@ export {
 } from "@/components/ui/empty-state";
 export { InfoRow } from "@/components/ui/info-row";
 export {
-    appScreenHeroLayout, getOnboardingArcLayout,
+    getOnboardingArcLayout,
     getOnboardingHeroZoneHeight, IntroHeroArc,
-    onboardingHeroEmblemLayout,
-    onboardingIntroHeroLayout
+    onboardingHeroEmblemLayout
 } from "@/components/ui/intro-hero-arc";
 export { MedicationScheduleCard } from "@/components/ui/medication-schedule-card";
 export { SearchInput } from "@/components/ui/search-input";

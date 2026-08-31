@@ -36,6 +36,7 @@ import type {
   SymptomEntry,
   UserProfile,
 } from "@/types/domain";
+import { refreshTherapyWidget } from "@/widgets/refresh-therapy-widget";
 
 type AppDataAction =
   | { type: "HYDRATE"; state: AppDataState }
@@ -166,7 +167,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (skipPersistRef.current || !isReady) return;
-    void savePersistedAppData(toPersistedData(state));
+
+    const persist = async () => {
+      await savePersistedAppData(toPersistedData(state));
+      await refreshTherapyWidget();
+    };
+
+    void persist();
   }, [state, isReady]);
 
   useEffect(() => {

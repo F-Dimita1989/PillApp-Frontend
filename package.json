@@ -1,6 +1,6 @@
 {
   "name": "pillapp",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "version": "1.0.0",
   "author": "Filippo Dimita <f.dimita1989@gmail.com>",
   "license": "UNLICENSED",
@@ -12,7 +12,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "icons": "node scripts/generate-app-icons.mjs && node scripts/generate-welcome-logo.mjs"
+    "icons": "node scripts/generate-app-icons.mjs && node scripts/generate-welcome-logo.mjs && node scripts/generate-widget-logo.mjs"
   },
   "dependencies": {
     "@edwardloopez/react-native-coachmark": "^0.5.4",
@@ -52,6 +52,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-android-widget": "^0.22.1",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",

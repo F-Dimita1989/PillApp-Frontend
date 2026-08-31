@@ -39,7 +39,9 @@
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.USE_EXACT_ALARM"
       ],
-      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "package": "com.anonymous.pillapp"
     },
     "web": {
@@ -107,13 +109,35 @@
           },
           "android": {
             "userInterfaceStyle": "light",
-            "buildArchs": ["arm64-v8a"]
+            "buildArchs": [
+              "arm64-v8a"
+            ]
           }
         }
       ],
       "./plugins/with-short-cmake-object-paths.js",
       "./plugins/with-exact-notification-alarms.js",
-      "./plugins/with-disabled-android-backup.js"
+      "./plugins/with-disabled-android-backup.js",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "TherapyToday",
+              "label": "PillApp — Terapia di oggi",
+              "description": "La prossima dose da assumere, con orario e farmaco.",
+              "minWidth": "250dp",
+              "minHeight": "170dp",
+              "targetCellWidth": 5,
+              "targetCellHeight": 2,
+              "maxResizeWidth": "500dp",
+              "maxResizeHeight": "280dp",
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 1800000
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
