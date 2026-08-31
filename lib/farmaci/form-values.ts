@@ -203,6 +203,33 @@ export function buildScannedMedicationFormValues(
   };
 }
 
+function preferCatalog(fromCatalog: string, current: string): string {
+  return fromCatalog.trim() || current;
+}
+
+/**
+ * Scelta di un suggerimento: i dati del catalogo riempiono i campi, ma non
+ * cancellano quello che l'utente aveva già scritto di suo.
+ */
+export function mergeScannedMedicationFormValues(
+  current: ScannedMedicationFormValues,
+  fromCatalog: ScannedMedicationFormValues,
+): ScannedMedicationFormValues {
+  return {
+    aic: preferCatalog(fromCatalog.aic, current.aic),
+    nome: preferCatalog(fromCatalog.nome, current.nome),
+    marca: preferCatalog(fromCatalog.marca, current.marca),
+    principioAttivo: preferCatalog(
+      fromCatalog.principioAttivo,
+      current.principioAttivo,
+    ),
+    quantita: preferCatalog(fromCatalog.quantita, current.quantita),
+    unitaQuantita: fromCatalog.unitaQuantita,
+    dosaggio: preferCatalog(fromCatalog.dosaggio, current.dosaggio),
+    note: preferCatalog(fromCatalog.note, current.note),
+  };
+}
+
 export function formatScannedMedicationNotes(
   values: ScannedMedicationFormValues,
 ): string {

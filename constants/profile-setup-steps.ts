@@ -112,7 +112,7 @@ export function getProfileSetupStepMeta(
         eyebrow: profileSetupStepEyebrow(5),
         title: "Configuriamo la tua terapia",
         subtitle:
-          "Hai farmaci da prendere con regolarità? Scansiona le confezioni una alla volta: puoi aggiungerne più di uno.",
+          "Hai farmaci da prendere con regolarità? Scansiona le confezioni o inseriscile a mano, una alla volta.",
         icon: "pill",
         image: require("@/assets/onboarding/configuriamo-terapia.png"),
         imageCoverScale: 0.76,

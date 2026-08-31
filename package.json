@@ -12,7 +12,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "icons": "node scripts/generate-app-icons.mjs && node scripts/generate-welcome-logo.mjs && node scripts/generate-widget-logo.mjs"
+    "icons": "node scripts/generate-app-icons.mjs && node scripts/generate-welcome-logo.mjs && node scripts/generate-widget-logo.mjs",
+    "dump:farmaci": "node scripts/dump-farmaci-catalog.mjs"
   },
   "dependencies": {
     "@edwardloopez/react-native-coachmark": "^0.5.4",

@@ -3,6 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { useMemo } from "react";
 import { XStack, YStack } from "tamagui";
 
+import { FarmacoNameField } from "@/components/farmaci/farmaco-name-field";
 import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
 import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import {
@@ -14,11 +15,14 @@ import {
   AppText,
 } from "@/components/ui";
 import {
+  buildScannedMedicationFormValues,
   isValidOptionalAic,
+  mergeScannedMedicationFormValues,
   sanitizeAicInput,
   updateScannedMedicationField,
   type ScannedMedicationFormValues,
 } from "@/lib/farmaci/form-values";
+import type { FarmacoSuggestion } from "@/lib/farmaci/search";
 import {
   nearestTherapyDoseOption,
   therapyDoseOptionsForUnit,
@@ -62,6 +66,7 @@ type ManualMedicationFormProps = {
   onDoseChange: (dose: string) => void;
   nomeError?: string;
   aicError?: string;
+  footer?: ReactNode;
 };
 
 export function ManualMedicationForm({
@@ -71,6 +76,7 @@ export function ManualMedicationForm({
   onDoseChange,
   nomeError,
   aicError,
+  footer,
 }: ManualMedicationFormProps) {
   const doseOptions = useMemo(
     () => therapyDoseOptionsForUnit(values.unitaQuantita),
@@ -86,17 +92,31 @@ export function ManualMedicationForm({
     onDoseChange(nearestTherapyDoseOption(dose, unit));
   };
 
+  const applySuggestion = (suggestion: FarmacoSuggestion) => {
+    const fromCatalog = buildScannedMedicationFormValues(
+      suggestion.aic,
+      suggestion.record,
+    );
+    /* Il nome del suggerimento è già ripulito dalla descrizione di confezione. */
+    const next = mergeScannedMedicationFormValues(values, {
+      ...fromCatalog,
+      nome: suggestion.nome,
+    });
+
+    onChange(next);
+    if (next.unitaQuantita !== values.unitaQuantita) {
+      onDoseChange(nearestTherapyDoseOption(dose, next.unitaQuantita));
+    }
+  };
+
   return (
     <YStack width="100%" gap="$4">
       <FormSection icon="pill" title="Dati principali">
-        <AppInput
-          label="Nome farmaco"
+        <FarmacoNameField
           value={values.nome}
           onChangeText={(value) => setField("nome", value)}
-          placeholder="Es. Tachipirina"
-          autoCapitalize="words"
+          onSelectSuggestion={applySuggestion}
           error={nomeError}
-          accessibilityLabel="Nome farmaco"
         />
         <AppInput
           label="Codice AIC"
@@ -173,6 +193,12 @@ export function ManualMedicationForm({
           accessibilityLabel="Note aggiuntive sul farmaco"
         />
       </FormSection>
+
+      {footer ? (
+        <YStack width="100%" gap="$2" paddingTop="$2">
+          {footer}
+        </YStack>
+      ) : null}
     </YStack>
   );
 }

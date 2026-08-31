@@ -20,6 +20,10 @@ import { AicScanTourTooltip } from "@/components/coachmark/aic-scan-tour-tooltip
 import { AicTourIntroModal } from "@/components/coachmark/aic-tour-intro-modal";
 import { AicTourOverlay } from "@/components/coachmark/aic-tour-overlay";
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
+import {
+    ManualMedicationForm,
+    validateManualMedication,
+} from "@/components/farmaci/manual-medication-form";
 import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
 import { ScreenSafeArea } from "@/components/screen-safe-area";
@@ -60,6 +64,7 @@ import {
     TOUR_TOOLTIP_BOTTOM_RESERVE,
 } from "@/lib/coachmark/scroll-anchor-into-view";
 import {
+    EMPTY_SCANNED_MEDICATION_FORM,
     buildScannedMedicationFormValues,
     therapyDoseFromFormValues,
     type ScannedMedicationFormValues,
@@ -115,6 +120,11 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   const [tourSkipped, setTourSkipped] = useState(false);
   const [medicationPhase, setMedicationPhase] =
     useState<MedicationConfigPhase>("scan");
+  const [entryMode, setEntryMode] = useState<"scan" | "manual">("scan");
+  const [manualErrors, setManualErrors] = useState<{
+    nome?: string;
+    aic?: string;
+  }>({});
 
   const therapyScrollRef = useRef<ScrollViewType>(null);
   const framingBoxRef = useRef<View>(null);
@@ -314,18 +324,45 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   const resetScan = () => {
     setScanFormValues(null);
     setScanError("");
+    setManualErrors({});
     setDose("1 compressa");
     setReminderSettings(INITIAL_THERAPY_REMINDER_SETTINGS);
+    setEntryMode("scan");
     setMedicationPhase("scan");
   };
 
+  const startManualEntry = () => {
+    setScanError("");
+    setErrorMessage("");
+    setManualErrors({});
+    setScanFormValues({ ...EMPTY_SCANNED_MEDICATION_FORM });
+    setDose("1 compressa");
+    setReminderSettings(INITIAL_THERAPY_REMINDER_SETTINGS);
+    setEntryMode("manual");
+    setMedicationPhase("verify");
+  };
+
   const validateVerifyStep = (): string | null => {
-    if (!scanFormValues?.aic.trim() || !scanFormValues.nome.trim()) {
+    if (!scanFormValues) {
+      return "Dati farmaco mancanti.";
+    }
+
+    if (entryMode === "manual") {
+      const nextErrors = validateManualMedication(scanFormValues);
+      setManualErrors(nextErrors);
+      if (nextErrors.nome) {
+        return nextErrors.nome;
+      }
+      if (nextErrors.aic) {
+        return nextErrors.aic;
+      }
+    } else if (!scanFormValues.aic.trim() || !scanFormValues.nome.trim()) {
       return "Controlla nome e codice AIC del farmaco.";
     }
 
     const aic = scanFormValues.aic.trim();
     if (
+      aic &&
       configuredMedications.some(
         (item) => item.scanFormValues.aic.trim() === aic,
       )
@@ -353,7 +390,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
     const validationError = validateCurrentMedication();
     if (validationError || !scanFormValues) {
       setErrorMessage(
-        validationError ?? "Scansiona la confezione del farmaco.",
+        validationError ?? "Aggiungi almeno un farmaco.",
       );
       return false;
     }
@@ -422,6 +459,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
       );
       setScanFormValues(formValues);
       setDose(therapyDoseFromFormValues(formValues));
+      setEntryMode("scan");
       setMedicationPhase("verify");
     } catch (error) {
       const message =
@@ -448,7 +486,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
       if (wantsTherapy) {
         if (configuredMedications.length === 0) {
-          throw new Error("Scansiona almeno un farmaco per continuare.");
+          throw new Error("Aggiungi almeno un farmaco per continuare.");
         }
 
         const { notificationWarning } = await saveSetupMedications(
@@ -491,7 +529,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
     }
 
     if (wantsTherapy && configuredMedications.length === 0) {
-      setErrorMessage("Scansiona almeno un farmaco per continuare.");
+      setErrorMessage("Aggiungi almeno un farmaco per continuare.");
       return;
     }
 
@@ -603,7 +641,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                       <YStack width="100%" gap="$3">
                         <ProfileSetupChoiceCard
                           label="Sì, impostiamola"
-                          description="Scansiona le confezioni e imposta i promemoria."
+                          description="Scansiona le confezioni o inseriscile a mano, poi imposta i promemoria."
                           selected={wantsTherapy === true}
                           onPress={() => {
                             setWantsTherapy(true);
@@ -664,7 +702,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                               >
                                 {configuredMedications.map((item, index) => (
                                   <AppChip
-                                    key={`${item.scanFormValues.aic}-${index}`}
+                                    key={`${item.scanFormValues.aic || item.scanFormValues.nome}-${index}`}
                                     label={item.scanFormValues.nome.trim()}
                                     style={{ maxWidth: "100%" }}
                                   />
@@ -743,6 +781,16 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                 Oppure scegli una foto dalla galleria
                               </AppButton>
 
+                              <AppButton
+                                variant="ghost"
+                                icon="pencil-outline"
+                                disabled={!canScan || isScanning}
+                                onPress={startManualEntry}
+                                fullWidth
+                              >
+                                Oppure inserisci il farmaco a mano
+                              </AppButton>
+
                               <CoachmarkAnchor
                                 id={AIC_TOUR_ANCHORS.framingBox}
                                 shape="rect"
@@ -819,50 +867,91 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                     color="secondary"
                                     textAlign="center"
                                   >
-                                    Verifica i dati del farmaco
+                                    {entryMode === "manual"
+                                      ? "Inserisci i dati del farmaco"
+                                      : "Verifica i dati del farmaco"}
                                   </AppText>
                                   <AppText
                                     variant="body"
                                     muted
                                     textAlign="center"
                                   >
-                                    Controlla che nome, codice AIC e quantità
-                                    siano corretti prima di impostare orari e
-                                    promemoria.
+                                    {entryMode === "manual"
+                                      ? "Scrivi il nome: ti suggerisco i farmaci del catalogo e compilo il resto."
+                                      : "Controlla che nome, codice AIC e quantità siano corretti prima di impostare orari e promemoria."}
                                   </AppText>
 
-                                  <AppCard>
-                                    <ScannedMedicationForm
-                                      key={`scan-form-${scanFormValues.aic}`}
-                                      values={scanFormValues}
-                                      onChange={setScanFormValues}
-                                      disabled={isScanning}
-                                    />
-                                  </AppCard>
+                                  {entryMode === "manual" ? (
+                                    <AppCard>
+                                      <ManualMedicationForm
+                                        values={scanFormValues}
+                                        onChange={(next) => {
+                                          setScanFormValues(next);
+                                          if (manualErrors.nome || manualErrors.aic) {
+                                            setManualErrors(
+                                              validateManualMedication(next),
+                                            );
+                                          }
+                                        }}
+                                        dose={dose}
+                                        onDoseChange={setDose}
+                                        nomeError={manualErrors.nome}
+                                        aicError={manualErrors.aic}
+                                        footer={
+                                          <>
+                                            <PrimaryButton
+                                              onPress={handleVerifyNext}
+                                              fullWidth
+                                              accessibilityLabel="Passa a orari e promemoria"
+                                            >
+                                              Avanti
+                                            </PrimaryButton>
+                                            <SecondaryButton
+                                              onPress={handleTherapyMedBack}
+                                              fullWidth
+                                            >
+                                              Indietro
+                                            </SecondaryButton>
+                                          </>
+                                        }
+                                      />
+                                    </AppCard>
+                                  ) : (
+                                    <>
+                                      <AppCard>
+                                        <ScannedMedicationForm
+                                          key={`scan-form-${scanFormValues.aic}`}
+                                          values={scanFormValues}
+                                          onChange={setScanFormValues}
+                                          disabled={isScanning}
+                                        />
+                                      </AppCard>
 
-                                  <AppCard>
-                                    <MedicationQuantitySection
-                                      values={scanFormValues}
-                                      onChange={setScanFormValues}
-                                      disabled={isScanning}
-                                    />
-                                  </AppCard>
+                                      <AppCard>
+                                        <MedicationQuantitySection
+                                          values={scanFormValues}
+                                          onChange={setScanFormValues}
+                                          disabled={isScanning}
+                                        />
+                                      </AppCard>
 
-                                  <YStack width="100%" gap="$3">
-                                    <PrimaryButton
-                                      onPress={handleVerifyNext}
-                                      fullWidth
-                                      accessibilityLabel="Passa a orari e promemoria"
-                                    >
-                                      Avanti
-                                    </PrimaryButton>
-                                    <SecondaryButton
-                                      onPress={handleTherapyMedBack}
-                                      fullWidth
-                                    >
-                                      Indietro
-                                    </SecondaryButton>
-                                  </YStack>
+                                      <YStack width="100%" gap="$3">
+                                        <PrimaryButton
+                                          onPress={handleVerifyNext}
+                                          fullWidth
+                                          accessibilityLabel="Passa a orari e promemoria"
+                                        >
+                                          Avanti
+                                        </PrimaryButton>
+                                        <SecondaryButton
+                                          onPress={handleTherapyMedBack}
+                                          fullWidth
+                                        >
+                                          Indietro
+                                        </SecondaryButton>
+                                      </YStack>
+                                    </>
+                                  )}
                                 </YStack>
                               </YStack>
                             </CoachmarkAnchor>
@@ -899,7 +988,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                     onPress={handleScheduleScanAnother}
                                     fullWidth
                                   >
-                                    Scansiona un altro farmaco
+                                    Aggiungi un altro farmaco
                                   </SecondaryButton>
                                   <AppButton
                                     variant="ghost"

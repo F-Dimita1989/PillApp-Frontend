@@ -100,17 +100,53 @@ export function parseQuantitaFromDbValue(
   return extractQuantitaFromPackageText(trimmed, unita);
 }
 
+/** Volume dichiarato: in «12 mg/5 ml» i ml sono la concentrazione, non il contenuto. */
 function extractMlQuantity(text: string): string {
-  const matches = [...text.matchAll(/\b(\d+(?:[.,]\d+)?)\s*ml\b/gi)];
-  if (matches.length === 0) {
+  const values = [...text.matchAll(/(\/)?\s*\b(\d+(?:[.,]\d+)?)\s*ml\b/gi)]
+    .filter((match) => !match[1])
+    .map((match) => Number.parseFloat(normalizeNumeric(match[2])))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  return values.length > 0 ? String(Math.max(...values)) : "";
+}
+
+/**
+ * Confezioni multiple: «6 fiale IM 3 ml» sono 18 ml in tutto. Qui la
+ * concentrazione vale, perché per le fiale coincide col contenuto della fiala.
+ */
+function extractMlFromContainers(text: string): string {
+  const match = text.match(
+    /\b(\d{1,3})\s*(?:fial\w*|flacon\w*|siring\w*|contenitor\w*|sacc\w*)\b.{0,40}?\b(\d+(?:[.,]\d+)?)\s*ml\b/i,
+  );
+  if (!match) {
     return "";
   }
 
-  const values = matches.map((match) =>
-    Number.parseFloat(normalizeNumeric(match[1])),
-  );
-  const max = Math.max(...values.filter((value) => Number.isFinite(value)));
-  return max > 0 ? String(max) : "";
+  const contenitori = Number.parseInt(match[1], 10);
+  const mlPerContenitore = Number.parseFloat(normalizeNumeric(match[2]));
+  if (!Number.isFinite(contenitori) || !Number.isFinite(mlPerContenitore)) {
+    return "";
+  }
+
+  const totale = contenitori * mlPerContenitore;
+  return totale > 0 ? String(Number(totale.toFixed(2))) : "";
+}
+
+/**
+ * Per i liquidi il numero dopo l'asterisco conta i contenitori, non i ml: conta
+ * il volume scritto nel testo. Fra confezione multipla e volume singolo si tiene
+ * il maggiore, così la siringa dosatrice non prende il posto del flacone.
+ */
+function extractMlFromText(text: string): string {
+  const candidates = [extractMlFromContainers(text), extractMlQuantity(text)]
+    .map((value) => Number.parseFloat(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  if (candidates.length > 0) {
+    return String(Math.max(...candidates));
+  }
+
+  return extractQuantitaFromAsterisk(text);
 }
 
 function extractUnitQuantity(text: string, unita: QuantitaUnit): string {
@@ -165,13 +201,13 @@ export function extractQuantitaFromPackageText(
     return "";
   }
 
+  if (unita === "ml") {
+    return extractMlFromText(text);
+  }
+
   const fromAsterisk = extractQuantitaFromAsterisk(text);
   if (fromAsterisk) {
     return fromAsterisk;
-  }
-
-  if (unita === "ml") {
-    return extractMlQuantity(text);
   }
 
   return extractUnitQuantity(text, unita);
@@ -264,9 +300,12 @@ export function extractQuantitaFromFarmacoRecord(
     scalarToString(data.descrizione),
   ];
   for (const source of asteriskSources) {
-    const fromAsterisk = extractQuantitaFromAsterisk(source);
-    if (fromAsterisk) {
-      return fromAsterisk;
+    const fromSource =
+      unita === "ml"
+        ? extractMlFromText(source)
+        : extractQuantitaFromAsterisk(source);
+    if (fromSource) {
+      return fromSource;
     }
   }
 

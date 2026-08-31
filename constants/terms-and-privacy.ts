@@ -6,10 +6,10 @@ export type LegalSection = {
 export const TERMS_AND_PRIVACY_TITLE =
   "Termini e condizioni di utilizzo e informativa sulla privacy";
 
-export const TERMS_AND_PRIVACY_UPDATED_AT = "30 agosto 2026";
+export const TERMS_AND_PRIVACY_UPDATED_AT = "31 agosto 2026";
 
 export const TERMS_AND_PRIVACY_INTRO =
-  "Il presente documento disciplina l’utilizzo dell’applicazione PillApp e informa l’utente, in modo chiaro e trasparente, sulle modalità di trattamento dei dati. PillApp è concepita come strumento locale: non richiede un account, conserva i dati di terapia e di salute sul dispositivo, non li raccoglie su server remoti e non cede informazioni a terzi. La sola comunicazione verso l’esterno riguarda il codice AIC scansionato, utilizzato per consultare il catalogo dei medicinali.";
+  "Il presente documento disciplina l’utilizzo dell’applicazione PillApp e informa l’utente, in modo chiaro e trasparente, sulle modalità di trattamento dei dati. PillApp è concepita come strumento locale: non richiede un account, conserva i dati di terapia e di salute sul dispositivo, non li raccoglie su server remoti e non cede informazioni a terzi. La sola comunicazione verso l’esterno riguarda la consultazione del catalogo dei medicinali (ricerca per nome o codice AIC), non associata all’identità dell’utente. Se il dispositivo è senza connessione, la stessa consultazione avviene su una copia locale del catalogo inclusa nell’applicazione.";
 
 export const TERMS_AND_PRIVACY_SECTIONS: LegalSection[] = [
   {
@@ -18,7 +18,7 @@ export const TERMS_AND_PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: "2. Assenza di registrazione e di raccolta dati",
-    body: "PillApp non richiede e-mail, password, profilo social o identificativi di accesso. Non vengono creati account presso il fornitore dell’applicazione. PillApp non raccoglie, non intercetta e non trasmette i dati personali o sanitari dell’utente (nome, età, elenco farmaci, orari, diario, misurazioni, stato dei promemoria) a server propri o di terzi, né per finalità di profilazione, marketing, analytics commerciali o vendita di informazioni. L’unica comunicazione verso l’esterno è la consultazione del catalogo dei medicinali descritta al punto 5, che riguarda il solo codice AIC e non è associata all’identità dell’utente.",
+    body: "PillApp non richiede e-mail, password, profilo social o identificativi di accesso. Non vengono creati account presso il fornitore dell’applicazione. PillApp non raccoglie, non intercetta e non trasmette i dati personali o sanitari dell’utente (nome, età, elenco farmaci, orari, diario, misurazioni, stato dei promemoria) a server propri o di terzi, né per finalità di profilazione, marketing, analytics commerciali o vendita di informazioni. L’unica comunicazione verso l’esterno è la consultazione del catalogo dei medicinali descritta al punto 5, che non è associata all’identità dell’utente.",
   },
   {
     title: "3. Dove restano le informazioni",
@@ -30,7 +30,7 @@ export const TERMS_AND_PRIVACY_SECTIONS: LegalSection[] = [
   },
   {
     title: "5. Scansione del codice AIC e consultazione del catalogo",
-    body: "Il riconoscimento ottico del codice AIC avviene interamente sull’apparecchio: le immagini e i fotogrammi impiegati per la lettura restano nel contesto dell’applicazione e non vengono in alcun caso inviati a sistemi remoti. Per recuperare la denominazione, il principio attivo e le altre informazioni del medicinale, l’applicazione trasmette il solo codice AIC (una sequenza numerica che identifica la confezione, non l’utente) al servizio di catalogo farmaci di PillApp, tramite connessione cifrata. Non sono trasmessi il nome dell’utente, il diario, le misurazioni né alcun altro dato personale, e la richiesta non viene impiegata per creare profili. L’utente è responsabile della correttezza del farmaco selezionato e della coerenza con la prescrizione medica.",
+    body: "Il riconoscimento ottico del codice AIC avviene interamente sull’apparecchio: le immagini e i fotogrammi impiegati per la lettura restano nel contesto dell’applicazione e non vengono in alcun caso inviati a sistemi remoti. Con connessione disponibile, per recuperare denominazione, principio attivo e altre informazioni del medicinale l’applicazione interroga il servizio di catalogo di PillApp (ricerca per nome in inserimento manuale, oppure solo il codice AIC in caso di scansione), tramite connessione cifrata. Se il dispositivo è senza rete, la stessa consultazione avviene su una copia locale del catalogo (lista di trasparenza AIFA) inclusa nell’applicazione: in quel caso non viene inviato alcun dato. Non sono trasmessi il nome dell’utente, il diario, le misurazioni né alcun altro dato personale, e la richiesta non viene impiegata per creare profili. L’utente è responsabile della correttezza del farmaco selezionato e della coerenza con la prescrizione medica.",
   },
   {
     title: "6. Natura non medica del servizio",

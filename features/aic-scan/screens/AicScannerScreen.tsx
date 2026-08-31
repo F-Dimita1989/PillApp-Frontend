@@ -236,7 +236,7 @@ export function AicScannerScreen() {
   const isManual = phase === "manual";
   const isSchedule = phase === "schedule";
   const showScanArea = phase === "idle" || phase === "loading";
-  const showBottomBar = phase === "confirm" || phase === "manual" || phase === "schedule";
+  const showBottomBar = phase === "confirm" || phase === "schedule";
 
   return (
     <YStack flex={1} backgroundColor="transparent" overflow="hidden">
@@ -272,7 +272,7 @@ export function AicScannerScreen() {
                 isSchedule
                   ? "Scegli dosaggio, orari e avvisi. Poi aggiungi il farmaco alla terapia."
                   : isManual
-                    ? "Basta il nome; AIC e altri campi sono facoltativi."
+                    ? "Scrivi il nome: ti suggerisco i farmaci del catalogo e compilo il resto."
                     : "Inquadra il codice a 9 cifre sulla confezione. PillApp riconosce il farmaco e lo aggiunge alla terapia."
               }
             />
@@ -402,6 +402,20 @@ export function AicScannerScreen() {
                     onDoseChange={setDose}
                     nomeError={manualErrors.nome}
                     aicError={manualErrors.aic}
+                    footer={
+                      <>
+                        <PrimaryButton
+                          icon="arrow-right"
+                          fullWidth
+                          onPress={goToSchedule}
+                        >
+                          Avanti
+                        </PrimaryButton>
+                        <SecondaryButton fullWidth onPress={resetToIdle}>
+                          Indietro
+                        </SecondaryButton>
+                      </>
+                    }
                   />
                 </AppCardContent>
               </AppCard>
@@ -489,12 +503,12 @@ export function AicScannerScreen() {
         </AppScreen>
       </YStack>
 
-      {phase === "confirm" || phase === "manual" ? (
+      {phase === "confirm" ? (
         <BottomActionBar
           primaryLabel="Avanti"
           primaryIcon="arrow-right"
           onPrimaryPress={goToSchedule}
-          secondaryLabel={phase === "manual" ? "Indietro" : "Annulla"}
+          secondaryLabel="Annulla"
           onSecondaryPress={resetToIdle}
         />
       ) : null}
