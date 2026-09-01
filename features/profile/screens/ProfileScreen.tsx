@@ -1,5 +1,6 @@
+import { Image } from "expo-image";
 import { useCallback, useState } from "react";
-import { Linking, Platform } from "react-native";
+import { Linking, Platform, StyleSheet } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { ProfileAvatarPicker } from "@/components/profile/profile-avatar-picker";
@@ -30,11 +31,11 @@ import {
   ensureNotificationPermissions,
   reviewNotificationPermissions,
 } from "@/lib/notifications/setup";
-import {
-  setSpeechRuntimeEnabled,
-  speakAppText,
-} from "@/lib/accessibility/speech";
+import { setSpeechRuntimeEnabled, speakAppText } from "@/lib/accessibility/speech";
+import { pillappRadius } from "@/theme/tokens";
 import type { ProfileAvatarId } from "@/constants/profile-avatars";
+
+const PROFILO_IMAGE = require("@/assets/onboarding/profilo-cuore.jpg");
 
 export function ProfileScreen() {
   const {
@@ -185,6 +186,14 @@ export function ProfileScreen() {
         />
       }
     >
+      <Image
+        source={PROFILO_IMAGE}
+        style={styles.heroImage}
+        contentFit="cover"
+        accessibilityRole="image"
+        accessibilityLabel="Illustrazione: profilo e cura di sé"
+      />
+
       <ProfileSummaryCard
         profile={profile}
         medicationCount={medications.filter((item) => item.active).length}
@@ -474,3 +483,12 @@ export function ProfileScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  heroImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: pillappRadius[3],
+    overflow: "hidden",
+  },
+});

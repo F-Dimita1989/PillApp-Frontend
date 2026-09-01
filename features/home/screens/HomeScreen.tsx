@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { StyleSheet } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { HomeWeekCalendar } from "@/components/home/home-week-calendar";
@@ -29,8 +31,10 @@ import {
 import { formatDateKey, parseDateKey } from "@/lib/calendar/week-utils";
 import { MEASUREMENT_ICONS } from "@/lib/journal/labels";
 import { formatItalianDate } from "@/lib/time/datetime-labels";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappRadius } from "@/theme/tokens";
 import type { DoseEvent } from "@/types/domain";
+
+const HOME_DIARY_IMAGE = require("@/assets/onboarding/home-diario.jpg");
 
 function AdherenceBar({ taken, total }: { taken: number; total: number }) {
   const progress = total ? taken / total : 0;
@@ -188,6 +192,14 @@ export function HomeScreen() {
         />
       }
     >
+      <Image
+        source={HOME_DIARY_IMAGE}
+        style={styles.diaryImage}
+        contentFit="cover"
+        accessibilityRole="image"
+        accessibilityLabel="Illustrazione: diario medico, benessere a casa"
+      />
+
       <YStack width="100%" gap="$3">
         <SectionHeader
           title="La tua settimana"
@@ -346,3 +358,12 @@ export function HomeScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  diaryImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: pillappRadius[3],
+    overflow: "hidden",
+  },
+});

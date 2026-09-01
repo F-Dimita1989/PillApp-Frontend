@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
@@ -45,8 +46,10 @@ import {
     validateReminderSettings,
     type TherapyReminderSettingsValue,
 } from "@/lib/therapy/reminder-settings";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappRadius } from "@/theme/tokens";
 import type { Medication, UserProfile } from "@/types/domain";
+
+const SCAN_HERO_IMAGE = require("@/assets/onboarding/scansione-aic.jpg");
 
 type ScanPhase =
   | "idle"
@@ -280,6 +283,13 @@ export function AicScannerScreen() {
         >
           {showScanArea ? (
             <YStack width="100%" gap="$3">
+              <Image
+                source={SCAN_HERO_IMAGE}
+                style={styles.heroImage}
+                contentFit="cover"
+                accessibilityRole="image"
+                accessibilityLabel="Illustrazione: riconoscimento del farmaco dalla confezione"
+              />
               <BrandIntroCard
                 icon="barcode-scan"
                 title="Dove trovare il codice"
@@ -525,3 +535,12 @@ export function AicScannerScreen() {
     </YStack>
   );
 }
+
+const styles = StyleSheet.create({
+  heroImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: pillappRadius[3],
+    overflow: "hidden",
+  },
+});

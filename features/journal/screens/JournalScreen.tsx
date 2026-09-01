@@ -1,5 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useMemo, useState } from "react";
+import { StyleSheet } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { JournalSectionHeading } from "@/components/journal/journal-section-heading";
@@ -33,9 +35,11 @@ import {
   MOOD_LABELS,
   moodBadgeTone,
 } from "@/lib/journal/labels";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappRadius } from "@/theme/tokens";
 import type { MeasurementKind, MoodLevel } from "@/types/domain";
 import { MEASUREMENT_LABELS } from "@/types/domain";
+
+const DIARIO_IMAGE = require("@/assets/onboarding/diario-sintomi.jpg");
 
 const MOOD_OPTIONS = (
   Object.entries(MOOD_LABELS) as [MoodLevel, string][]
@@ -158,6 +162,14 @@ export function JournalScreen() {
         />
       }
     >
+      <Image
+        source={DIARIO_IMAGE}
+        style={styles.heroImage}
+        contentFit="cover"
+        accessibilityRole="image"
+        accessibilityLabel="Illustrazione: diario medico per il monitoraggio dei sintomi"
+      />
+
       <JournalStripeCard
         actions={
           <PrimaryButton icon="content-save" fullWidth onPress={saveMeasurement}>
@@ -411,3 +423,12 @@ export function JournalScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  heroImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: pillappRadius[3],
+    overflow: "hidden",
+  },
+});

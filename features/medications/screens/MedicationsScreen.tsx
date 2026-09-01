@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
+import { StyleSheet } from "react-native";
 import { YStack } from "tamagui";
 
 import {
@@ -15,8 +17,10 @@ import {
 } from "@/components/ui";
 import { useAppData } from "@/features/store/app-data-context";
 import { AppRoutes } from "@/features/navigation/routes";
-import { pillappColors } from "@/theme/tokens";
+import { pillappColors, pillappRadius } from "@/theme/tokens";
 import { MEDICATION_FORM_LABELS } from "@/types/domain";
+
+const FARMACI_IMAGE = require("@/assets/onboarding/farmaci-organizzato.jpg");
 
 export function MedicationsScreen() {
   const router = useRouter();
@@ -54,6 +58,14 @@ export function MedicationsScreen() {
         />
       }
     >
+
+      <Image
+        source={FARMACI_IMAGE}
+        style={styles.heroImage}
+        contentFit="cover"
+        accessibilityRole="image"
+        accessibilityLabel="Illustrazione: armadietto dei farmaci organizzato"
+      />
 
       <BrandIntroCard
         icon="pill"
@@ -111,3 +123,12 @@ export function MedicationsScreen() {
     </AppScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  heroImage: {
+    width: "100%",
+    aspectRatio: 1,
+    borderRadius: pillappRadius[3],
+    overflow: "hidden",
+  },
+});
