@@ -53,3 +53,4 @@ modules/**/android/.cxx/
 # ignore agents files
 AGENTS.md
 CLAUDE.md
+guida-studio-esame-its.md
