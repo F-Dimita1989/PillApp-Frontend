@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { YStack } from "tamagui";
 
 import { AicScanExampleImage } from "@/components/farmaci/aic-scan-example-image";
@@ -11,10 +11,15 @@ import {
     ManualMedicationForm,
     validateManualMedication,
 } from "@/components/farmaci/manual-medication-form";
+import {
+    ScanProgressOverlay,
+    waitForUiPaint,
+} from "@/components/farmaci/scan-progress-overlay";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
 import { TherapyReminderSettings } from "@/components/therapy/therapy-reminder-settings";
 import {
     AppCard,
+    AppCardActions,
     AppCardContent,
     AppScreen,
     AppText,
@@ -38,7 +43,11 @@ import {
     therapyDoseFromFormValues,
     type ScannedMedicationFormValues,
 } from "@/lib/farmaci/form-values";
-import { pickAndScanMedicine } from "@/lib/farmaci/scan";
+import {
+    pickMedicineImage,
+    scanMedicinePack,
+    type MedicineScanProgress,
+} from "@/lib/farmaci/scan";
 import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
 import {
     INITIAL_THERAPY_REMINDER_SETTINGS,
@@ -73,6 +82,8 @@ export function AicScannerScreen() {
   const { addMedication, updateProfile, profile } = useAppData();
 
   const [phase, setPhase] = useState<ScanPhase>("idle");
+  const [scanStep, setScanStep] = useState<MedicineScanProgress>("ocr");
+  const [scanBusy, setScanBusy] = useState(false);
   const [entryMode, setEntryMode] = useState<"scan" | "manual">("scan");
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
@@ -114,16 +125,21 @@ export function AicScannerScreen() {
 
   const runScan = useCallback(
     async (source: "camera" | "gallery") => {
-      setPhase("loading");
+      setScanBusy(true);
       setError("");
       setFormError("");
       try {
-        const result = await pickAndScanMedicine(source);
-        if (!result) {
+        const imageUri = await pickMedicineImage(source);
+        if (!imageUri) {
           setPhase("idle");
           return;
         }
 
+        setScanStep("ocr");
+        setPhase("loading");
+        await waitForUiPaint();
+
+        const result = await scanMedicinePack(imageUri, setScanStep);
         const formValues = buildScannedMedicationFormValues(
           result.aic,
           result.data,
@@ -136,6 +152,8 @@ export function AicScannerScreen() {
       } catch (err) {
         setPhase("error");
         setError(err instanceof Error ? err.message : "Scansione non riuscita.");
+      } finally {
+        setScanBusy(false);
       }
     },
     [profile],
@@ -239,13 +257,12 @@ export function AicScannerScreen() {
   const isManual = phase === "manual";
   const isSchedule = phase === "schedule";
   const showScanArea = phase === "idle" || phase === "loading";
-  const showBottomBar = phase === "confirm" || phase === "schedule";
+  const showBottomBar = phase === "schedule";
 
   return (
     <YStack flex={1} backgroundColor="transparent" overflow="hidden">
       <YStack flex={1} minHeight={0}>
         <AppScreen
-          scroll={phase !== "loading"}
           contentStyle={showBottomBar ? { paddingBottom: 120 } : undefined}
           hero={
             <AppTopBar
@@ -300,7 +317,6 @@ export function AicScannerScreen() {
                 <AppCardContent alignItems="center">
                   <YStack
                     width="100%"
-                    minHeight={phase === "loading" ? 220 : undefined}
                     borderRadius="$3"
                     overflow="hidden"
                   >
@@ -315,7 +331,6 @@ export function AicScannerScreen() {
                     />
                     <YStack
                       width="100%"
-                      minHeight={phase === "loading" ? 220 : undefined}
                       borderRadius="$3"
                       borderWidth={2}
                       borderStyle="dashed"
@@ -326,30 +341,16 @@ export function AicScannerScreen() {
                       gap="$3"
                       accessibilityLabel="Area di scansione codice AIC"
                     >
-                      {phase === "loading" ? (
-                        <>
-                          <ActivityIndicator
-                            size="large"
-                            color={pillappColors.secondary}
-                          />
-                          <AppText variant="body" textAlign="center">
-                            Lettura in corso…
-                          </AppText>
-                        </>
-                      ) : (
-                        <>
-                          <YStack width="100%">
-                            <AicScanExampleImage size="full" />
-                          </YStack>
-                          <AppText variant="title" color="secondary">
-                            Codice AIC
-                          </AppText>
-                          <AppText variant="body" muted textAlign="center">
-                            Cerca «AIC N.» e le 9 cifre stampate sulla
-                            confezione
-                          </AppText>
-                        </>
-                      )}
+                      <YStack width="100%">
+                        <AicScanExampleImage size="full" />
+                      </YStack>
+                      <AppText variant="title" color="secondary">
+                        Codice AIC
+                      </AppText>
+                      <AppText variant="body" muted textAlign="center">
+                        Cerca «AIC N.» e le 9 cifre stampate sulla
+                        confezione
+                      </AppText>
                     </YStack>
                   </YStack>
                 </AppCardContent>
@@ -385,6 +386,18 @@ export function AicScannerScreen() {
                     onChange={setScanFormValues}
                     source="scan"
                   />
+                  <AppCardActions>
+                    <PrimaryButton
+                      icon="arrow-right"
+                      fullWidth
+                      onPress={goToSchedule}
+                    >
+                      Avanti
+                    </PrimaryButton>
+                    <SecondaryButton fullWidth onPress={resetToIdle}>
+                      Annulla
+                    </SecondaryButton>
+                  </AppCardActions>
                 </AppCardContent>
               </AppCard>
             </YStack>
@@ -485,11 +498,13 @@ export function AicScannerScreen() {
             </YStack>
           ) : null}
 
-          {phase === "idle" ? (
+          {phase === "idle" || phase === "loading" ? (
             <YStack width="100%" gap="$3">
               <PrimaryButton
                 icon="camera"
                 fullWidth
+                loading={scanBusy || phase === "loading"}
+                disabled={scanBusy || phase === "loading"}
                 onPress={() => void runScan("camera")}
               >
                 Apri fotocamera
@@ -497,6 +512,7 @@ export function AicScannerScreen() {
               <SecondaryButton
                 icon="image"
                 fullWidth
+                disabled={scanBusy || phase === "loading"}
                 onPress={() => void runScan("gallery")}
               >
                 Scegli da galleria
@@ -504,6 +520,7 @@ export function AicScannerScreen() {
               <SecondaryButton
                 icon="pencil-outline"
                 fullWidth
+                disabled={scanBusy || phase === "loading"}
                 onPress={startManualEntry}
               >
                 Inserisci manualmente
@@ -513,15 +530,7 @@ export function AicScannerScreen() {
         </AppScreen>
       </YStack>
 
-      {phase === "confirm" ? (
-        <BottomActionBar
-          primaryLabel="Avanti"
-          primaryIcon="arrow-right"
-          onPrimaryPress={goToSchedule}
-          secondaryLabel="Annulla"
-          onSecondaryPress={resetToIdle}
-        />
-      ) : null}
+      <ScanProgressOverlay visible={phase === "loading"} step={scanStep} />
 
       {phase === "schedule" ? (
         <BottomActionBar

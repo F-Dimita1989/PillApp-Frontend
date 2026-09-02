@@ -92,9 +92,15 @@ export function mergeDoseStatuses(
     const key = `${dose.medicationId}-${dose.scheduledTime}`;
     const existing = savedMap.get(key);
     if (!existing) return dose;
+
+    const keepUserStatus =
+      existing.status === "taken" ||
+      existing.status === "skipped" ||
+      existing.status === "snoozed";
+
     return {
       ...dose,
-      status: existing.status,
+      status: keepUserStatus ? existing.status : dose.status,
       note: existing.note,
       confirmedAt: existing.confirmedAt,
     };

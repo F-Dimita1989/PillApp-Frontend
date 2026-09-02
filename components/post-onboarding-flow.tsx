@@ -25,6 +25,10 @@ import {
     validateManualMedication,
 } from "@/components/farmaci/manual-medication-form";
 import { MedicationQuantitySection } from "@/components/farmaci/medication-quantity-section";
+import {
+    ScanProgressOverlay,
+    waitForUiPaint,
+} from "@/components/farmaci/scan-progress-overlay";
 import { ScannedMedicationForm } from "@/components/farmaci/scanned-medication-form";
 import { ScreenSafeArea } from "@/components/screen-safe-area";
 import {
@@ -69,7 +73,11 @@ import {
     therapyDoseFromFormValues,
     type ScannedMedicationFormValues,
 } from "@/lib/farmaci/form-values";
-import { pickAndScanMedicine } from "@/lib/farmaci/scan";
+import {
+    pickMedicineImage,
+    scanMedicinePack,
+    type MedicineScanProgress,
+} from "@/lib/farmaci/scan";
 import { isValidGuestAge, saveGuestProfile } from "@/lib/profile/storage";
 import { nearestTherapyDoseOption } from "@/lib/therapy/dose-options";
 import {
@@ -107,6 +115,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   const [scanFormValues, setScanFormValues] =
     useState<ScannedMedicationFormValues | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanStep, setScanStep] = useState<MedicineScanProgress | null>(null);
   const [scanError, setScanError] = useState("");
   const [dose, setDose] = useState("1 compressa");
   const [reminderSettings, setReminderSettings] =
@@ -444,14 +453,19 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
   const handleScan = async (source: "camera" | "gallery") => {
     setIsScanning(true);
+    setScanStep(null);
     setScanError("");
     resetScan();
 
     try {
-      const result = await pickAndScanMedicine(source);
-      if (!result) {
+      const imageUri = await pickMedicineImage(source);
+      if (!imageUri) {
         return;
       }
+
+      setScanStep("ocr");
+      await waitForUiPaint();
+      const result = await scanMedicinePack(imageUri, setScanStep);
 
       const formValues = buildScannedMedicationFormValues(
         result.aic,
@@ -467,6 +481,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
       setScanError(message);
     } finally {
       setIsScanning(false);
+      setScanStep(null);
     }
   };
 
@@ -758,16 +773,22 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                                   onPress={() => void handleScan("camera")}
                                   fullWidth
                                   accessibilityRole="button"
-                                  accessibilityLabel="Scansiona codice AIC"
+                                  accessibilityLabel={
+                                    scanStep === "lookup"
+                                      ? "Cerco il farmaco nel catalogo"
+                                      : "Scansiona codice AIC"
+                                  }
                                   accessibilityHint={
                                     canScan
                                       ? "Apre la fotocamera per fotografare il codice AIC"
                                       : "Completa o salta la guida prima di scansionare"
                                   }
                                 >
-                                  {isScanning
-                                    ? "Sto leggendo..."
-                                    : "Scatta foto alla confezione"}
+                                  {scanStep === "lookup"
+                                    ? "Cerco il farmaco…"
+                                    : isScanning
+                                      ? "Sto leggendo..."
+                                      : "Scatta foto alla confezione"}
                                 </PrimaryButton>
                               </CoachmarkAnchor>
 
@@ -1073,6 +1094,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
         onSkip={() => setTourSkipped(true)}
       />
       {step === "therapy" ? <AicTourOverlay /> : null}
+      <ScanProgressOverlay visible={scanStep !== null} step={scanStep ?? "ocr"} />
     </YStack>
   );
 }

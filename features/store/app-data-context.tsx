@@ -40,6 +40,7 @@ import { refreshTherapyWidget } from "@/widgets/refresh-therapy-widget";
 
 type AppDataAction =
   | { type: "HYDRATE"; state: AppDataState }
+  | { type: "REFRESH_TODAY_DOSES" }
   | { type: "UPDATE_DOSE_STATUS"; doseId: string; status: DoseStatus; note?: string }
   | { type: "ADD_MEDICATION"; medication: Medication }
   | { type: "UPDATE_MEDICATION"; medication: Medication }
@@ -65,6 +66,8 @@ function appDataReducer(state: AppDataState, action: AppDataAction): AppDataStat
   switch (action.type) {
     case "HYDRATE":
       return action.state;
+    case "REFRESH_TODAY_DOSES":
+      return withRecalculatedDoses(state, state.medications);
     case "UPDATE_DOSE_STATUS":
       return {
         ...state,
@@ -199,7 +202,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     void sync();
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
-        void sync();
+        dispatch({ type: "REFRESH_TODAY_DOSES" });
       }
     });
     return () => subscription.remove();
@@ -326,7 +329,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   return (
     <AppDataContext.Provider value={value}>
       <AccessibilityProvider value={accessibility}>
-        <NotificationResponseHandler />
+        <NotificationResponseHandler
+          isReady={isReady}
+          markDoseTaken={markDoseTaken}
+        />
         {children}
       </AccessibilityProvider>
     </AppDataContext.Provider>

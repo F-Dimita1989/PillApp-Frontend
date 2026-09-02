@@ -1,43 +1,35 @@
 import * as ImageManipulator from "expo-image-manipulator";
-import { Image } from "react-native";
 
-/** Lato lungo sufficiente per le 9 cifre AIC, senza saturare ML Kit. */
-export const OCR_PRIMARY_MAX_WIDTH = 1600;
-/** Secondo tentativo solo se il primo non trova l'AIC. */
-export const OCR_FALLBACK_MAX_WIDTH = 2200;
-const OCR_JPEG_QUALITY = 0.72;
+/**
+ * Genera varianti ad alta qualità per ML Kit.
+ * L'originale resta il primo tentativo; JPEG 2400 e PNG 1800 coprono
+ * foto troppo grandi o cifre AIC piccole sulla confezione.
+ */
+export async function preprocessImageForOcr(uri: string): Promise<string[]> {
+  const variants = new Set<string>();
+  variants.add(uri);
 
-function getImageSize(uri: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    Image.getSize(
+  const [largeJpeg, mediumPng] = await Promise.all([
+    ImageManipulator.manipulateAsync(
       uri,
-      (width, height) => resolve({ width, height }),
-      reject,
-    );
-  });
-}
+      [{ resize: { width: 2400 } }],
+      {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.JPEG,
+      },
+    ),
+    ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 1800 } }],
+      {
+        compress: 1,
+        format: ImageManipulator.SaveFormat.PNG,
+      },
+    ),
+  ]);
 
-export async function downscaleForOcr(
-  uri: string,
-  maxWidth: number,
-): Promise<string> {
-  try {
-    const { width } = await getImageSize(uri);
-    if (width > 0 && width <= maxWidth) {
-      return uri;
-    }
-  } catch {
-    // Se non riusciamo a leggere le dimensioni, ridimensioniamo comunque.
-  }
+  variants.add(largeJpeg.uri);
+  variants.add(mediumPng.uri);
 
-  const result = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: maxWidth } }],
-    {
-      compress: OCR_JPEG_QUALITY,
-      format: ImageManipulator.SaveFormat.JPEG,
-    },
-  );
-
-  return result.uri;
+  return [...variants];
 }

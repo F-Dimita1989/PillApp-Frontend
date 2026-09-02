@@ -6,6 +6,10 @@ import { recognizeMedicinePackText } from "@/lib/ocr/recognizeText";
 import { fetchFarmacoByAic, type FarmacoLookupResult } from "./lookup";
 import { normalizeFarmacoRecord } from "./normalize-record";
 
+export type MedicineScanProgress = "ocr" | "lookup";
+
+export type MedicineScanProgressHandler = (step: MedicineScanProgress) => void;
+
 export type MedicineScanResult = FarmacoLookupResult & {
   ocrText: string;
   imageUri: string;
@@ -19,12 +23,12 @@ export async function pickMedicineImage(
       ? await ImagePicker.launchCameraAsync({
           mediaTypes: ["images"],
           allowsEditing: false,
-          quality: 0.7,
+          quality: 1,
         })
       : await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ["images"],
           allowsEditing: false,
-          quality: 0.7,
+          quality: 1,
         });
 
   if (pickerResult.canceled) {
@@ -41,7 +45,9 @@ export async function pickMedicineImage(
 
 export async function scanMedicinePack(
   imageUri: string,
+  onProgress?: MedicineScanProgressHandler,
 ): Promise<MedicineScanResult> {
+  onProgress?.("ocr");
   const ocrText = await recognizeMedicinePackText(imageUri);
   const extractedAicCodes = extractAicCodes(ocrText);
 
@@ -51,6 +57,7 @@ export async function scanMedicinePack(
     );
   }
 
+  onProgress?.("lookup");
   const lookup = await fetchFarmacoByAic(extractedAicCodes[0]);
 
   return {
@@ -63,11 +70,12 @@ export async function scanMedicinePack(
 
 export async function pickAndScanMedicine(
   source: "camera" | "gallery",
+  onProgress?: MedicineScanProgressHandler,
 ): Promise<MedicineScanResult | null> {
   const imageUri = await pickMedicineImage(source);
   if (!imageUri) {
     return null;
   }
 
-  return scanMedicinePack(imageUri);
+  return scanMedicinePack(imageUri, onProgress);
 }

@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 
 import { getTherapyNotificationLeadMinutes } from "@/constants/therapy-notification-lead";
+import { formatDateKey } from "@/lib/calendar/week-utils";
 import { DOSE_REMINDER_CATEGORY_ID } from "@/lib/notifications/categories";
 import { ensureExactAlarms } from "@/lib/notifications/exact-alarm";
 import {
@@ -172,9 +173,14 @@ async function scheduleWeeklyAndFollowUps(
   const notificationIds: string[] = [];
   const followUpMap: FollowUpIdMap = {};
   const now = new Date();
+  const todayKey = formatDateKey(now);
   const takenDoseIds = new Set(
     (options?.dosesToday ?? [])
-      .filter((dose) => dose.status === "taken" || dose.status === "skipped")
+      .filter(
+        (dose) =>
+          dose.date === todayKey &&
+          (dose.status === "taken" || dose.status === "skipped"),
+      )
       .map((dose) => dose.id),
   );
 
