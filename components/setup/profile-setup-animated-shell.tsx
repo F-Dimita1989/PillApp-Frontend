@@ -10,6 +10,7 @@ import Animated, {
 import {
   stepSwipeTiming,
   swipeEnterX,
+  swipeLayerOpacity,
 } from "@/lib/motion/screen-transition";
 
 export type ProfileSetupTransitionDirection = "forward" | "back";
@@ -41,6 +42,7 @@ export function ProfileSetupAnimatedShell({
   }, [direction, stepKey, translateX, width]);
 
   const animatedStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(translateX.value, width),
     transform: [{ translateX: translateX.value }],
   }));
 

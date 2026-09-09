@@ -1,11 +1,13 @@
-import type { ReactNode } from "react";
+import { NavigationContext } from "@react-navigation/native";
+import { useContext, useEffect, useRef, type ReactNode } from "react";
 import {
-    Platform,
-    ScrollView,
-    StyleSheet,
-    type ScrollViewProps,
-    type StyleProp,
-    type ViewStyle,
+  InteractionManager,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  type ScrollViewProps,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { YStack, type YStackProps } from "tamagui";
 
@@ -32,7 +34,35 @@ export function AppScreen({
   style,
 }: AppScreenProps) {
   const { highContrast } = useAccessibility();
+  const navigation = useContext(NavigationContext);
+  const scrollRef = useRef<ScrollView>(null);
+  const pinToTopUntilRef = useRef(0);
   const screenBackground = highContrast ? "#FFFFFF" : "transparent";
+
+  useEffect(() => {
+    if (!scroll || !navigation) {
+      return;
+    }
+
+    let interaction: { cancel: () => void } | undefined;
+    const scrollToTop = () => {
+      pinToTopUntilRef.current = Date.now() + 600;
+      const run = () => {
+        scrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+      };
+      run();
+      requestAnimationFrame(run);
+      interaction?.cancel();
+      interaction = InteractionManager.runAfterInteractions(run);
+    };
+
+    scrollToTop();
+    const unsubscribe = navigation.addListener("focus", scrollToTop);
+    return () => {
+      unsubscribe();
+      interaction?.cancel();
+    };
+  }, [navigation, scroll]);
 
   const body = (
     <YStack
@@ -46,10 +76,18 @@ export function AppScreen({
 
   const screen = scroll ? (
     <ScrollView
+      ref={scrollRef}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.scrollGrow}
+      contentOffset={{ x: 0, y: 0 }}
       {...scrollProps}
+      onContentSizeChange={(width, height) => {
+        scrollProps?.onContentSizeChange?.(width, height);
+        if (Date.now() < pinToTopUntilRef.current) {
+          scrollRef.current?.scrollTo({ x: 0, y: 0, animated: false });
+        }
+      }}
     >
       {hero}
       {body}

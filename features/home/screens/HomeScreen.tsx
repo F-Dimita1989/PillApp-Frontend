@@ -203,7 +203,7 @@ export function HomeScreen() {
       <YStack width="100%" gap="$3">
         <SectionHeader
           title="La tua settimana"
-          description="Terapia e impegni in calendario"
+          description="I giorni con farmaci da prendere"
         />
         <AppCard>
           <AppCardContent>

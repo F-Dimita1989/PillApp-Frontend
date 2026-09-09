@@ -14,6 +14,7 @@ import {
     screenSwipeTiming,
     swipeEnterX,
     swipeExitX,
+    swipeLayerOpacity,
 } from "@/lib/motion/screen-transition";
 import { skipOnboardingToHome } from "@/lib/onboarding/storage";
 
@@ -139,14 +140,17 @@ export function OnboardingFlow({
   }, [animateWelcomeExit]);
 
   const welcomeStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(welcomeX.value, width),
     transform: [{ translateX: welcomeX.value }],
   }));
 
   const introStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(introX.value, width),
     transform: [{ translateX: introX.value }],
   }));
 
   const accessStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(accessX.value, width),
     transform: [{ translateX: accessX.value }],
   }));
 

@@ -12,8 +12,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppEntryFlow } from "@/components/app-entry-flow";
 import { StartupSplash } from "@/components/startup-splash";
 import { AppPatternBackground } from "@/components/ui/app-pattern-background";
+import { ScreenFadeIn } from "@/components/ui/screen-fade-in";
 import { AppDataProvider } from "@/features/store/app-data-context";
 import { getHasCompletedAccessSetup } from "@/lib/access-setup/storage";
+import { useAccessibility } from "@/lib/accessibility/context";
+import {
+  nativeStackFadeAnimation,
+  SCREEN_FADE_MS,
+} from "@/lib/motion/screen-transition";
+import { warmupFarmaciBackend } from "@/lib/farmaci/api";
 import { initializeNotifications } from "@/lib/notifications/setup";
 import { getHasSeenOnboarding } from "@/lib/onboarding/storage";
 import { hasCompletedSetup } from "@/lib/profile/storage";
@@ -29,6 +36,7 @@ void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 void SystemUI.setBackgroundColorAsync(pillappColors.surface);
 void initializeNotifications();
+void warmupFarmaciBackend();
 
 function applyPhoneSystemBars(): void {
   void SystemUI.setBackgroundColorAsync(pillappColors.surface);
@@ -52,6 +60,26 @@ const navigationTheme = {
     border: pillappColors.border,
   },
 };
+
+function MainAppNavigator() {
+  const { reduceMotion } = useAccessibility();
+
+  return (
+    <ScreenFadeIn disabled={reduceMotion}>
+      <View style={{ flex: 1, backgroundColor: "transparent" }}>
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: "transparent" },
+            animation: reduceMotion ? "none" : nativeStackFadeAnimation,
+            animationDuration: SCREEN_FADE_MS,
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </View>
+    </ScreenFadeIn>
+  );
+}
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -142,20 +170,7 @@ export default function RootLayout() {
           <SafeAreaProvider>
             <ThemeProvider value={navigationTheme}>
               <AppPatternBackground>
-              <View
-                style={{ flex: 1, backgroundColor: "transparent" }}
-              >
-                <Stack
-                  screenOptions={{
-                    contentStyle: { backgroundColor: "transparent" },
-                  }}
-                >
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
-              </View>
+                <MainAppNavigator />
               </AppPatternBackground>
               <StatusBar
                 style="dark"

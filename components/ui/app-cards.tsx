@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { XStack, YStack } from "tamagui";
@@ -7,7 +6,7 @@ import { AppButton } from "@/components/ui/app-button";
 import { AppCard, AppCardContent } from "@/components/ui/app-card";
 import { BrandIconBadge } from "@/components/ui/brand-icon-badge";
 import { AppText } from "@/components/ui/app-text";
-import { pillappBrandGradient, pillappColors } from "@/theme/tokens";
+import { pillappColors } from "@/theme/tokens";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { speakAppText } from "@/lib/accessibility/speech";
 
@@ -159,54 +158,5 @@ export function QuickActionButton({
     >
       {label}
     </AppButton>
-  );
-}
-
-type BottomActionBarProps = {
-  primaryLabel: string;
-  onPrimaryPress: () => void;
-  primaryIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
-  secondaryLabel?: string;
-  onSecondaryPress?: () => void;
-};
-
-export function BottomActionBar({
-  primaryLabel,
-  onPrimaryPress,
-  primaryIcon,
-  secondaryLabel,
-  onSecondaryPress,
-}: BottomActionBarProps) {
-  return (
-    <YStack
-      width="100%"
-      borderTopWidth={0}
-      backgroundColor="$surface"
-      flexShrink={0}
-      overflow="hidden"
-    >
-      <LinearGradient
-        colors={[...pillappBrandGradient.colors]}
-        locations={[...pillappBrandGradient.locations]}
-        start={pillappBrandGradient.start}
-        end={pillappBrandGradient.end}
-        style={{ height: 4, width: "100%" }}
-      />
-      <YStack width="100%" gap="$2" padding="$4">
-        <AppButton
-          variant="primary"
-          fullWidth
-          icon={primaryIcon}
-          onPress={onPrimaryPress}
-        >
-          {primaryLabel}
-        </AppButton>
-        {secondaryLabel && onSecondaryPress ? (
-          <AppButton variant="ghost" fullWidth onPress={onSecondaryPress}>
-            {secondaryLabel}
-          </AppButton>
-        ) : null}
-      </YStack>
-    </YStack>
   );
 }

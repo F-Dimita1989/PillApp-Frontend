@@ -1,15 +1,25 @@
 import { Stack } from "expo-router";
 
+import { useAccessibility } from "@/lib/accessibility/context";
+import {
+  nativeStackSlideAnimation,
+  SCREEN_SWIPE_MS,
+} from "@/lib/motion/screen-transition";
+
 export const unstable_settings = {
   initialRouteName: "index",
 };
 
 export default function MedicationsLayout() {
+  const { reduceMotion } = useAccessibility();
+  const animation = reduceMotion ? "none" : nativeStackSlideAnimation;
+
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "slide_from_right",
+        animation,
+        animationDuration: SCREEN_SWIPE_MS,
         contentStyle: { backgroundColor: "transparent" },
       }}
     >
@@ -17,7 +27,7 @@ export default function MedicationsLayout() {
       <Stack.Screen
         name="[id]"
         options={{
-          animation: "slide_from_right",
+          animation,
         }}
       />
     </Stack>

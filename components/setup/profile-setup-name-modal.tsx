@@ -9,6 +9,7 @@ import {
 } from "@/components/setup/profile-setup-controls";
 import { ProfileSetupGradientCard } from "@/components/setup/profile-setup-gradient-card";
 import { ProfileSetupInputModal } from "@/components/setup/profile-setup-input-modal";
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
 import { pillappColors, pillappRadius } from "@/theme/tokens";
 
 const FIELD_HEIGHT = 52;
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
     color: pillappColors.onPrimary,
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: pillappFontFamily.semiBold,
     lineHeight: 20,
   },
   input: {
@@ -144,5 +146,6 @@ const styles = StyleSheet.create({
     color: pillappColors.textPrimary,
     fontSize: 16,
     lineHeight: 22,
+    fontFamily: pillappFontFamily.regular,
   },
 });

@@ -24,7 +24,6 @@ import {
     AppScreen,
     AppText,
     AppTopBar,
-    BottomActionBar,
     BrandIntroCard,
     ErrorState,
     PrimaryButton,
@@ -257,14 +256,11 @@ export function AicScannerScreen() {
   const isManual = phase === "manual";
   const isSchedule = phase === "schedule";
   const showScanArea = phase === "idle" || phase === "loading";
-  const showBottomBar = phase === "schedule";
 
   return (
     <YStack flex={1} backgroundColor="transparent" overflow="hidden">
-      <YStack flex={1} minHeight={0}>
-        <AppScreen
-          contentStyle={showBottomBar ? { paddingBottom: 120 } : undefined}
-          hero={
+      <AppScreen
+        hero={
             <AppTopBar
               image={
                 isSchedule
@@ -461,13 +457,25 @@ export function AicScannerScreen() {
                     onDoseChange={setDose}
                     unitaQuantita={scanFormValues.unitaQuantita}
                   />
+                  {formError ? (
+                    <AppText variant="caption" color="error">
+                      {formError}
+                    </AppText>
+                  ) : null}
+                  <AppCardActions>
+                    <PrimaryButton
+                      icon="pill"
+                      fullWidth
+                      onPress={saveMedication}
+                    >
+                      Aggiungi alla terapia
+                    </PrimaryButton>
+                    <SecondaryButton fullWidth onPress={backFromSchedule}>
+                      Indietro
+                    </SecondaryButton>
+                  </AppCardActions>
                 </AppCardContent>
               </AppCard>
-              {formError ? (
-                <AppText variant="caption" color="error">
-                  {formError}
-                </AppText>
-              ) : null}
             </YStack>
           ) : null}
 
@@ -528,19 +536,8 @@ export function AicScannerScreen() {
             </YStack>
           ) : null}
         </AppScreen>
-      </YStack>
 
       <ScanProgressOverlay visible={phase === "loading"} step={scanStep} />
-
-      {phase === "schedule" ? (
-        <BottomActionBar
-          primaryLabel="Aggiungi alla terapia"
-          primaryIcon="pill"
-          onPrimaryPress={saveMedication}
-          secondaryLabel="Indietro"
-          onSecondaryPress={backFromSchedule}
-        />
-      ) : null}
     </YStack>
   );
 }

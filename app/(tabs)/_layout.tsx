@@ -19,7 +19,9 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      detachInactiveScreens={false}
       screenOptions={{
+        animation: "none",
         tabBarActiveTintColor: tabBarTheme.activeTintColor,
         tabBarInactiveTintColor: tabBarTheme.inactiveTintColor,
         headerShown: false,

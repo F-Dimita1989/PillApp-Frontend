@@ -13,6 +13,7 @@ import {
     screenSwipeTiming,
     swipeEnterX,
     swipeExitX,
+    swipeLayerOpacity,
 } from "@/lib/motion/screen-transition";
 
 type AppEntryFlowProps = {
@@ -91,10 +92,12 @@ export function AppEntryFlow({
   ]);
 
   const onboardingStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(onboardingX.value, width),
     transform: [{ translateX: onboardingX.value }],
   }));
 
   const profileStyle = useAnimatedStyle(() => ({
+    opacity: swipeLayerOpacity(profileX.value, width),
     transform: [{ translateX: profileX.value }],
   }));
 

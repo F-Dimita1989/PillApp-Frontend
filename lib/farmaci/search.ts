@@ -5,12 +5,11 @@ import { normalizeFarmacoRecord, pickFarmacoField } from "./normalize-record";
 /** Sotto le tre lettere i risultati sono troppi per essere utili. */
 export const FARMACO_SEARCH_MIN_CHARS = 3;
 
-/** Si chiede qualche riga in più delle mostrate: i doppioni vengono scartati. */
-const SEARCH_LIMIT = 20;
-const MAX_SUGGESTIONS = 8;
+/** Pagine backend: si itera finché non arrivano tutte le corrispondenze. */
+const SEARCH_PAGE_SIZE = 100;
+/** Tetto di sicurezza se una query è troppo ampia o l’offset viene ignorato. */
+const SEARCH_MAX_ITEMS = 5000;
 
-/** Render a freddo può impiegare qualche secondo a svegliarsi. */
-const SEARCH_TIMEOUT_MS = 15000;
 
 export type FarmacoSuggestion = {
   key: string;
@@ -42,6 +41,13 @@ function itemsFromPayload(payload: unknown): Record<string, unknown>[] {
     return payload.items.filter(isRecord);
   }
   return [];
+}
+
+function totalFromPayload(payload: unknown): number | null {
+  if (isRecord(payload) && typeof payload.total === "number") {
+    return payload.total;
+  }
+  return null;
 }
 
 /**
@@ -123,30 +129,90 @@ function suggestionsFromItems(
 
     seen.add(dedupeKey);
     suggestions.push(suggestion);
-    if (suggestions.length >= MAX_SUGGESTIONS) {
-      break;
-    }
   }
 
   return suggestions;
 }
 
-async function searchFarmaciRemote(text: string): Promise<FarmacoSuggestion[]> {
+async function fetchSearchPage(
+  text: string,
+  offset: number,
+): Promise<{ items: Record<string, unknown>[]; total: number | null; status: number }> {
   const response = await fetchFarmaciApi(
-    `/search?q=${encodeURIComponent(text)}&limit=${SEARCH_LIMIT}`,
-    { timeoutMs: SEARCH_TIMEOUT_MS },
+    `/search?q=${encodeURIComponent(text)}&limit=${SEARCH_PAGE_SIZE}&offset=${offset}`,
   );
 
-  /* Query rifiutata o rotta assente: per chi digita equivale a nessun risultato. */
-  if (response.status === 400 || response.status === 404) {
-    return [];
-  }
   if (!response.ok) {
-    throw new Error(`Ricerca farmaci non disponibile (status ${response.status}).`);
+    return { items: [], total: 0, status: response.status };
   }
 
   const payload = (await response.json()) as unknown;
-  return suggestionsFromItems(itemsFromPayload(payload));
+  const items = itemsFromPayload(payload);
+  return {
+    items,
+    total: totalFromPayload(payload),
+    status: response.status,
+  };
+}
+
+function pageItemKey(item: Record<string, unknown>): string {
+  return [
+    scalar(item.aic) || scalar(item.codiceAic),
+    scalar(item.denominazioneConfezione) || scalar(item.denominazione_confezione),
+  ].join("|");
+}
+
+async function searchFarmaciRemote(text: string): Promise<FarmacoSuggestion[]> {
+  const first = await fetchSearchPage(text, 0);
+
+  /* Query rifiutata o rotta assente: per chi digita equivale a nessun risultato. */
+  if (first.status === 400 || first.status === 404) {
+    return [];
+  }
+  if (first.status !== 200) {
+    throw new Error(`Ricerca farmaci non disponibile (status ${first.status}).`);
+  }
+
+  const items: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+
+  const appendPage = (pageItems: Record<string, unknown>[]) => {
+    let added = 0;
+    for (const item of pageItems) {
+      const key = pageItemKey(item);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      items.push(item);
+      added += 1;
+    }
+    return added;
+  };
+
+  appendPage(first.items);
+
+  const pageStep =
+    first.items.length > 0 && first.items.length < SEARCH_PAGE_SIZE
+      ? first.items.length
+      : SEARCH_PAGE_SIZE;
+  const lastOffset = first.total ?? SEARCH_MAX_ITEMS;
+
+  for (
+    let offset = pageStep;
+    offset < lastOffset && items.length < SEARCH_MAX_ITEMS;
+    offset += pageStep
+  ) {
+    const page = await fetchSearchPage(text, offset);
+    if (page.status !== 200 || page.items.length === 0) {
+      break;
+    }
+    if (appendPage(page.items) === 0) {
+      break;
+    }
+  }
+
+  return suggestionsFromItems(items);
 }
 
 export async function searchFarmaciByName(
@@ -161,7 +227,7 @@ export async function searchFarmaciByName(
     return await searchFarmaciRemote(text);
   } catch {
     return suggestionsFromItems(
-      searchCatalogByName(text, MAX_SUGGESTIONS).map((item) => ({ ...item })),
+      searchCatalogByName(text).map((item) => ({ ...item })),
     );
   }
 }

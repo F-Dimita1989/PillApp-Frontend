@@ -10,18 +10,79 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, {
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+  Text as SvgText,
+} from "react-native-svg";
 import { YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
-import { onboardingHeroEmblemLayout } from "@/components/ui/intro-hero-arc";
-import { pillappBrandGradient, pillappColors, pillappLayout, pillappShadows } from "@/theme/tokens";
+import { useAccessibility } from "@/lib/accessibility/context";
+import { scaleFontSize } from "@/lib/accessibility/prefs";
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
+import { pillappColors, pillappLayout, pillappShadows } from "@/theme/tokens";
+
+/** Prova: gradiente brand diluito, per far leggere il wordmark blu/teal. */
+const welcomeLightGradient = {
+  colors: [
+    pillappColors.secondarySoft,
+    "#F4FBFA",
+    pillappColors.primarySoft,
+    pillappColors.background,
+  ] as const,
+  locations: [0, 0.35, 0.7, 1] as const,
+  start: { x: 0, y: 0 } as const,
+  end: { x: 1, y: 1 } as const,
+};
+
+const WELCOME_HEADLINE = "Benvenuto in PillApp";
+const WELCOME_HEADLINE_WIDTH = 328;
+
+/** Stesso blu → teal del wordmark PillApp. */
+function WelcomeHeadline() {
+  const { fontScale, largeText } = useAccessibility();
+  const fontSize = largeText ? scaleFontSize(24, fontScale) : 24;
+  const height = largeText ? scaleFontSize(32, fontScale) : 32;
+
+  return (
+    <Svg
+      width={WELCOME_HEADLINE_WIDTH}
+      height={height}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={WELCOME_HEADLINE}
+    >
+      <Defs>
+        <SvgLinearGradient id="welcomeHeadlineFill" x1="0%" y1="0%" x2="100%" y2="0%">
+          <Stop offset="0" stopColor={pillappColors.primary} />
+          <Stop offset="1" stopColor={pillappColors.secondary} />
+        </SvgLinearGradient>
+      </Defs>
+      <SvgText
+        fill="url(#welcomeHeadlineFill)"
+        fontSize={fontSize}
+        fontFamily={pillappFontFamily.bold}
+        fontWeight="700"
+        x={WELCOME_HEADLINE_WIDTH / 2}
+        y={fontSize * 0.92}
+        textAnchor="middle"
+      >
+        {WELCOME_HEADLINE}
+      </SvgText>
+    </Svg>
+  );
+}
 
 type WelcomeScreenProps = {
   onContinue: () => void;
   onSkipToHome: () => void;
 };
 
-const LOGO_SIZE = onboardingHeroEmblemLayout.logoSize;
+const LOGO_SIZE = 168;
+const WORDMARK_WIDTH = 268;
+const WORDMARK_HEIGHT = Math.round(WORDMARK_WIDTH * (181 / 397));
 
 const LOGO_DELAY_MS = 700;
 const LOGO_DURATION_MS = 2600;
@@ -111,10 +172,10 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
     <View style={styles.root}>
       <StatusBar style="dark" />
       <LinearGradient
-        colors={[...pillappBrandGradient.colors]}
-        locations={[...pillappBrandGradient.locations]}
-        start={pillappBrandGradient.start}
-        end={pillappBrandGradient.end}
+        colors={[...welcomeLightGradient.colors]}
+        locations={[...welcomeLightGradient.locations]}
+        start={welcomeLightGradient.start}
+        end={welcomeLightGradient.end}
         style={StyleSheet.absoluteFill}
       />
 
@@ -130,12 +191,21 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
         <View style={styles.heroArea}>
           <View style={styles.heroBlock}>
             <Animated.View style={logoAnimatedStyle}>
-              <Image
-                source={require("@/assets/images/pillapp-logo-welcome.png")}
-                style={{ width: LOGO_SIZE, height: LOGO_SIZE }}
-                resizeMode="contain"
-                accessibilityLabel="Logo PillApp"
-              />
+              <View style={styles.logoStack}>
+                <Image
+                  source={require("@/assets/images/pillapp-wordmark.png")}
+                  style={{ width: WORDMARK_WIDTH, height: WORDMARK_HEIGHT }}
+                  resizeMode="contain"
+                  accessibilityLabel="Logo PillApp"
+                />
+                <Image
+                  source={require("@/assets/images/pillapp-logo-welcome.png")}
+                  style={{ width: LOGO_SIZE, height: LOGO_SIZE }}
+                  resizeMode="contain"
+                  accessible={false}
+                  importantForAccessibility="no"
+                />
+              </View>
             </Animated.View>
 
             <Animated.View style={textAnimatedStyle}>
@@ -145,15 +215,8 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
                 alignItems="center"
                 maxWidth={360}
               >
-                <AppText variant="headline" color="inverse" textAlign="center">
-                  Benvenuto in PillApp
-                </AppText>
-                <AppText
-                  variant="body"
-                  color="inverse"
-                  textAlign="center"
-                  opacity={0.92}
-                >
+                <WelcomeHeadline />
+                <AppText variant="body" muted textAlign="center">
                   L&apos;app che ti aiuta a ricordare farmaci e orari, in modo semplice e
                   sicuro.
                 </AppText>
@@ -177,7 +240,7 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
                 pressed && styles.buttonPressed,
               ]}
             >
-              <AppText variant="body" color="primary" fontWeight="700">
+              <AppText variant="body" color="inverse" fontWeight="700" speakOnPress={false}>
                 Iniziamo
               </AppText>
             </Pressable>
@@ -193,7 +256,7 @@ export function WelcomeScreen({ onContinue, onSkipToHome }: WelcomeScreenProps) 
                 pressed && styles.buttonPressed,
               ]}
             >
-              <AppText variant="body" color="inverse" fontWeight="600" textAlign="center">
+              <AppText variant="body" color="primary" fontWeight="600" textAlign="center" speakOnPress={false}>
                 Salta e vai alla home
               </AppText>
             </Pressable>
@@ -221,6 +284,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 28,
   },
+  logoStack: {
+    alignItems: "center",
+    gap: 12,
+  },
   primaryButton: {
     minHeight: 48,
     borderRadius: 999,
@@ -228,7 +295,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: pillappColors.surface,
+    backgroundColor: pillappColors.primary,
     ...pillappShadows.sm,
   },
   secondaryButton: {
@@ -239,9 +306,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.88)",
+    borderColor: pillappColors.primary,
     backgroundColor: "transparent",
-    ...pillappShadows.sm,
   },
   buttonPressed: {
     opacity: 0.9,

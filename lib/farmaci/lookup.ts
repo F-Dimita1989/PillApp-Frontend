@@ -56,21 +56,26 @@ export async function fetchFarmacoByAic(
     const orFilter = candidates
       .map((value) => `${SUPABASE_AIC_COLUMN}.eq.${value}`)
       .join(",");
-    const { data, error } = await supabase
-      .from(SUPABASE_TABLE)
-      .select("*")
-      .or(orFilter)
-      .limit(1)
-      .maybeSingle();
+    try {
+      const query = supabase
+        .from(SUPABASE_TABLE)
+        .select("*")
+        .or(orFilter)
+        .limit(1)
+        .maybeSingle();
+      const timedOut = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Supabase timeout")), 8_000);
+      });
+      const { data, error } = await Promise.race([query, timedOut]);
 
-    if (error) {
-      throw new Error(lookupErrorMessage(`Supabase error: ${error.message}`));
-    }
-    if (data) {
-      return {
-        aic: candidates[0],
-        data: normalizeFarmacoRecord(data),
-      };
+      if (!error && data) {
+        return {
+          aic: candidates[0],
+          data: normalizeFarmacoRecord(data),
+        };
+      }
+    } catch {
+      /* Progetto in pausa o rete lenta: si passa al backend. */
     }
   }
 

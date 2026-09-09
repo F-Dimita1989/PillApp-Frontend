@@ -1,16 +1,16 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import type { ComponentProps, ReactNode } from "react";
 import {
-  Image,
-  type ImageSourcePropType,
-  Pressable,
-  StyleSheet,
-  View,
+    Image,
+    type ImageSourcePropType,
+    Pressable,
+    StyleSheet,
+    View,
 } from "react-native";
 
 import {
-  IntroHeroArc,
-  appScreenHeroLayout,
+    IntroHeroArc,
+    appScreenHeroLayout,
 } from "@/components/ui/intro-hero-arc";
 import { useAccessibility } from "@/lib/accessibility/context";
 import { useSpeakOnFocus } from "@/lib/accessibility/use-speak-on-focus";
@@ -98,7 +98,12 @@ export function AppTopBar({
           hitSlop={easyTap ? 12 : 8}
           style={[
             styles.backButton,
-            { top: 8, width: backSize, height: backSize, borderRadius: backSize / 2 },
+            {
+              top: 8,
+              width: backSize,
+              height: backSize,
+              borderRadius: backSize / 2,
+            },
           ]}
         >
           <MaterialCommunityIcons

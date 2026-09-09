@@ -1,5 +1,4 @@
-import { Platform } from "react-native";
-
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
 import { pillappColors } from "@/theme/tokens";
 
 /**
@@ -22,7 +21,7 @@ export const tabBarTheme = {
     fontSize: 11,
     lineHeight: 14,
     fontWeight: "700" as const,
-    fontFamily: Platform.OS === "ios" ? "InterSemiBold" : "InterSemiBold",
+    fontFamily: pillappFontFamily.bold,
     marginTop: 2,
     marginBottom: 0,
     letterSpacing: 0.2,

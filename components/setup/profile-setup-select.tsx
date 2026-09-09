@@ -12,6 +12,7 @@ import { Label, YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { layout, spacing } from "@/constants/spacing";
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
 import { pillappColors, pillappRadius, pillappShadows } from "@/theme/tokens";
 
 export type ProfileSetupSelectOption = {
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
     color: pillappColors.textPrimary,
     fontSize: 16,
     lineHeight: 22,
+    fontFamily: pillappFontFamily.regular,
   },
   triggerPlaceholder: {
     color: pillappColors.textMuted,

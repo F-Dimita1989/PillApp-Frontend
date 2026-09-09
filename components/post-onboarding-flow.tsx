@@ -136,9 +136,11 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   }>({});
 
   const therapyScrollRef = useRef<ScrollViewType>(null);
+  const scanActionsRef = useRef<View>(null);
   const framingBoxRef = useRef<View>(null);
   const resultCardRef = useRef<View>(null);
   const scrollYRef = useRef(0);
+  const pendingScrollToScanActions = useRef(false);
   const tourStartedRef = useRef(false);
   const tourCallbacksRef = useRef({
     onCompleted: () => {},
@@ -314,6 +316,46 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
     scrollYRef.current = event.nativeEvent.contentOffset.y;
   };
 
+  useEffect(() => {
+    if (!pendingScrollToScanActions.current || medicationPhase !== "scan") {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (cancelled) {
+        return;
+      }
+      pendingScrollToScanActions.current = false;
+
+      const scroll = therapyScrollRef.current;
+      const target = scanActionsRef.current;
+      if (!scroll) {
+        return;
+      }
+      if (!target) {
+        scroll.scrollTo({ y: 0, animated: true });
+        return;
+      }
+
+      target.measureInWindow((_x, windowY) => {
+        if (cancelled) {
+          return;
+        }
+        const visibleTop = insets.top + 16;
+        scroll.scrollTo({
+          y: Math.max(0, scrollYRef.current + (windowY - visibleTop)),
+          animated: true,
+        });
+      });
+    }, 80);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [configuredMedications.length, insets.top, medicationPhase]);
+
   const goNext = () => {
     setErrorMessage("");
     if (stepIndex < STEPS.length - 1) {
@@ -435,7 +477,10 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
   };
 
   const handleScheduleScanAnother = () => {
-    addCurrentMedicationToList();
+    if (!addCurrentMedicationToList()) {
+      return;
+    }
+    pendingScrollToScanActions.current = true;
   };
 
   const handleTherapyMedBack = () => {
@@ -445,6 +490,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
       return;
     }
     if (medicationPhase === "verify") {
+      pendingScrollToScanActions.current = true;
       resetScan();
       return;
     }
@@ -736,6 +782,8 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
 
                           {medicationPhase === "scan" ? (
                             <>
+                              <View ref={scanActionsRef} collapsable={false}>
+                                <YStack width="100%" gap="$3">
                               <XStack
                                 width="100%"
                                 alignItems="center"
@@ -811,6 +859,8 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
                               >
                                 Oppure inserisci il farmaco a mano
                               </AppButton>
+                                </YStack>
+                              </View>
 
                               <CoachmarkAnchor
                                 id={AIC_TOUR_ANCHORS.framingBox}
@@ -1055,7 +1105,7 @@ export function PostOnboardingFlow({ onComplete }: PostOnboardingFlowProps) {
               </KeyboardAvoidingView>
             </YStack>
           ) : (
-            <ProfileSetupLayout hero={profileHero} scrollable={false}>
+            <ProfileSetupLayout hero={profileHero}>
               <ProfileSetupStepContent
                 step={step}
                 welcomeMeta={welcomeMeta}

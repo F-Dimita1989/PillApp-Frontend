@@ -45,7 +45,7 @@ function digits(value: string): string {
 /** Ricerca locale sul dump: niente rete, adatta alla modalità offline. */
 export function searchCatalogByName(
   query: string,
-  limit: number,
+  limit?: number,
 ): CatalogFarmaco[] {
   const needle = fold(query.trim());
   if (!needle) {
@@ -67,7 +67,7 @@ export function searchCatalogByName(
 
     seen.add(key);
     matches.push(item);
-    if (matches.length >= limit) {
+    if (limit != null && matches.length >= limit) {
       break;
     }
   }

@@ -15,6 +15,7 @@ import type {
   AppPermissionKind,
   AppPermissionState,
 } from "@/lib/access-setup/permissions";
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
 import { pillappColors, pillappLayout } from "@/theme/tokens";
 
 const PERMISSION_COPY: Record<
@@ -218,6 +219,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
+    fontFamily: pillappFontFamily.semiBold,
     color: pillappColors.secondaryDark,
     includeFontPadding: false,
   },
@@ -231,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "500",
+    fontFamily: pillappFontFamily.medium,
     includeFontPadding: false,
   },
 });

@@ -12,6 +12,7 @@ import {
 import { ProfileSetupGradientCard } from "@/components/setup/profile-setup-gradient-card";
 import { ProfileSetupSelect } from "@/components/setup/profile-setup-select";
 import { AppText } from "@/components/ui";
+import { pillappFontFamily } from "@/theme/tamagui-fonts";
 import {
   GUEST_AGE_OPTIONS,
   GUEST_SEX_OPTIONS,
@@ -232,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 20,
+    fontFamily: pillappFontFamily.semiBold,
   },
   nameFieldPreview: {
     width: "100%",
@@ -247,6 +249,7 @@ const styles = StyleSheet.create({
     color: pillappColors.textPrimary,
     fontSize: 16,
     lineHeight: 22,
+    fontFamily: pillappFontFamily.regular,
   },
   nameFieldPlaceholder: {
     color: pillappColors.textMuted,

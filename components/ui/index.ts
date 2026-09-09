@@ -8,7 +8,7 @@ export {
     AppCard, AppCardActions, AppCardContent
 } from "@/components/ui/app-card";
 export {
-    BottomActionBar, MeasurementCard, MedicationCard, QuickActionButton
+    MeasurementCard, MedicationCard, QuickActionButton
 } from "@/components/ui/app-cards";
 export { AppChip } from "@/components/ui/app-chip";
 export { AppDivider } from "@/components/ui/app-divider";

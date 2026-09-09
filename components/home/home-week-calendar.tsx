@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   type NativeSyntheticEvent,
@@ -10,10 +9,6 @@ import { XStack, YStack } from "tamagui";
 
 import { AppText } from "@/components/ui/app-text";
 import { useCardSurface } from "@/components/ui/card-surface";
-import {
-  getDeviceEventsMarkedDates,
-  type MarkedDates,
-} from "@/lib/calendar/device-calendar";
 import {
   formatDateKey,
   getWeekDateKeys,
@@ -59,14 +54,10 @@ export function HomeWeekCalendar({
   selectedDate,
   onSelectedDateChange,
 }: HomeWeekCalendarProps) {
-  const onBrand = useCardSurface() === "brand";
   const listRef = useRef<FlatList<Date>>(null);
   const pageWidthRef = useRef(0);
   const visibleIndexRef = useRef(-1);
   const [pageWidth, setPageWidth] = useState(0);
-  const [deviceMarks, setDeviceMarks] = useState<MarkedDates>({});
-  const [isLoadingDeviceEvents, setIsLoadingDeviceEvents] = useState(false);
-  const [calendarError, setCalendarError] = useState("");
 
   const now = useNow();
   const todayKey = formatDateKey(now);
@@ -76,30 +67,6 @@ export function HomeWeekCalendar({
     const weekKey = formatDateKey(getWeekStart(parseDateKey(selectedDate)));
     return weeks.findIndex((week) => formatDateKey(week) === weekKey);
   }, [selectedDate, weeks]);
-
-  const loadDeviceWeekEvents = useCallback(async (anchorDate: string) => {
-    setIsLoadingDeviceEvents(true);
-    setCalendarError("");
-
-    try {
-      const start = getWeekStart(parseDateKey(anchorDate));
-      const marks = await getDeviceEventsMarkedDates(start);
-      setDeviceMarks(marks);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Impossibile leggere il calendario del telefono.";
-      setCalendarError(message);
-      setDeviceMarks({});
-    } finally {
-      setIsLoadingDeviceEvents(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadDeviceWeekEvents(selectedDate);
-  }, [loadDeviceWeekEvents, selectedDate]);
 
   useEffect(() => {
     if (pageWidth <= 0 || selectedWeekIndex < 0) return;
@@ -160,11 +127,11 @@ export function HomeWeekCalendar({
         </YStack>
       </XStack>
 
-      <AppText variant="caption" muted>
-        {hasTherapyDays
-          ? "Teal: giorni terapia · Blu: eventi del calendario del telefono"
-          : "Blu: eventi del calendario del telefono"}
-      </AppText>
+      {hasTherapyDays ? (
+        <AppText variant="caption" muted>
+          Il pallino indica un giorno con farmaci da prendere.
+        </AppText>
+      ) : null}
 
       <YStack
         width="100%"
@@ -185,7 +152,7 @@ export function HomeWeekCalendar({
             directionalLockEnabled
             showsHorizontalScrollIndicator={false}
             keyExtractor={(week) => formatDateKey(week)}
-            extraData={`${selectedDate}:${todayKey}:${Object.keys(deviceMarks).join(",")}`}
+            extraData={`${selectedDate}:${todayKey}`}
             getItemLayout={(_, index) => ({
               length: pageWidth,
               offset: pageWidth * index,
@@ -212,7 +179,6 @@ export function HomeWeekCalendar({
                 selectedDate={selectedDate}
                 todayKey={todayKey}
                 dayPlan={dayPlan}
-                deviceMarks={deviceMarks}
                 onSelectDate={onSelectedDateChange}
               />
             )}
@@ -221,24 +187,6 @@ export function HomeWeekCalendar({
           <YStack height={88} />
         )}
       </YStack>
-
-      {isLoadingDeviceEvents ? (
-        <XStack alignItems="center" gap="$2">
-          <ActivityIndicator
-            size="small"
-            color={onBrand ? pillappColors.onPrimary : pillappColors.secondary}
-          />
-          <AppText variant="caption" muted>
-            Aggiornamento eventi del telefono...
-          </AppText>
-        </XStack>
-      ) : null}
-
-      {calendarError ? (
-        <AppText variant="caption" color="error">
-          {calendarError}
-        </AppText>
-      ) : null}
     </YStack>
   );
 }
@@ -249,7 +197,6 @@ function WeekPage({
   selectedDate,
   todayKey,
   dayPlan,
-  deviceMarks,
   onSelectDate,
 }: {
   weekStart: Date;
@@ -257,7 +204,6 @@ function WeekPage({
   selectedDate: string;
   todayKey: string;
   dayPlan: TherapyDayPlan;
-  deviceMarks: MarkedDates;
   onSelectDate: (date: string) => void;
 }) {
   const dateKeys = getWeekDateKeys(weekStart);
@@ -271,7 +217,6 @@ function WeekPage({
           selected={dateKey === selectedDate}
           isToday={dateKey === todayKey}
           hasTherapy={Boolean(dayPlan[dateToTherapyDayKey(parseDateKey(dateKey))])}
-          hasDeviceEvent={Boolean(deviceMarks[dateKey]?.marked)}
           onPress={() => onSelectDate(dateKey)}
         />
       ))}
@@ -284,14 +229,12 @@ function DayCell({
   selected,
   isToday,
   hasTherapy,
-  hasDeviceEvent,
   onPress,
 }: {
   dateKey: string;
   selected: boolean;
   isToday: boolean;
   hasTherapy: boolean;
-  hasDeviceEvent: boolean;
   onPress: () => void;
 }) {
   const onBrand = useCardSurface() === "brand";
@@ -304,7 +247,6 @@ function DayCell({
     isToday ? "oggi" : null,
     selected ? "selezionato" : null,
     hasTherapy ? "giorno di terapia" : null,
-    hasDeviceEvent ? "eventi in calendario" : null,
   ].filter(Boolean);
 
   const selectedBg = onBrand ? pillappColors.surface : pillappColors.secondary;
@@ -363,14 +305,6 @@ function DayCell({
               height={6}
               borderRadius={3}
               backgroundColor={onBrand ? "rgba(255,255,255,0.92)" : pillappColors.secondary}
-            />
-          ) : null}
-          {hasDeviceEvent ? (
-            <YStack
-              width={6}
-              height={6}
-              borderRadius={3}
-              backgroundColor={onBrand ? "rgba(255,255,255,0.55)" : pillappColors.primary}
             />
           ) : null}
         </XStack>

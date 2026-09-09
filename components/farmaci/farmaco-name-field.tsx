@@ -1,7 +1,7 @@
 "use no memo";
 
 import { useState } from "react";
-import { ActivityIndicator, Keyboard } from "react-native";
+import { ActivityIndicator, FlatList, Keyboard } from "react-native";
 import { XStack, YStack } from "tamagui";
 
 import { AppDivider, AppInput, AppListItem, AppText } from "@/components/ui";
@@ -39,7 +39,7 @@ function hintText(
       return "Suggerimenti non disponibili ora: scrivi il nome a mano.";
     case "ready":
       return count > 0
-        ? "Tocca un farmaco per compilare gli altri campi."
+        ? `Trovati ${count} farmaci. Tocca uno per compilare gli altri campi.`
         : "Nessun farmaco trovato: scrivi il nome come preferisci.";
     default:
       return typedLength > 0
@@ -113,16 +113,22 @@ export function FarmacoNameField({
       ) : null}
 
       {showPanel && suggestions.length > 0 ? (
-        <YStack
-          width="100%"
-          backgroundColor={pillappColors.surface}
-          borderWidth={1}
-          borderColor="$border"
-          borderRadius="$3"
-          paddingHorizontal="$3"
-        >
-          {suggestions.map((suggestion, index) => (
-            <YStack key={suggestion.key} width="100%">
+        <FlatList
+          data={suggestions}
+          keyExtractor={(suggestion) => suggestion.key}
+          nestedScrollEnabled
+          keyboardShouldPersistTaps="handled"
+          style={{
+            width: "100%",
+            maxHeight: 320,
+            backgroundColor: pillappColors.surface,
+            borderWidth: 1,
+            borderColor: pillappColors.border,
+            borderRadius: 12,
+          }}
+          contentContainerStyle={{ paddingHorizontal: 12 }}
+          renderItem={({ item: suggestion, index }) => (
+            <YStack width="100%">
               {index > 0 ? <AppDivider marginVertical={0} /> : null}
               <AppListItem
                 icon="pill"
@@ -133,8 +139,8 @@ export function FarmacoNameField({
                 accessibilityHint="Compila i campi con i dati di questo farmaco"
               />
             </YStack>
-          ))}
-        </YStack>
+          )}
+        />
       ) : null}
     </YStack>
   );
